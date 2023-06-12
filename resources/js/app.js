@@ -18,6 +18,9 @@ const app = createApp({});
 import TournamentCard from './components/TournamentCard.vue';
 app.component('tournament-card', TournamentCard);
 
+import CreateNewUser from './components/CreateNewUser.vue';
+app.component('create-new-user', CreateNewUser);
+
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue

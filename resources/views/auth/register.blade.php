@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="max-w-lg p-8 mx-auto my-10 bg-white shadow rounded-xl shadow-slate-300">
+    <div class="max-w-lg p-8 mx-auto my-10 bg-white shadow rounded shadow-slate-300">
         <h1 class="pb-5 text-4xl font-medium">Register</h1>
         
         <form method="POST" action="{{ route('register') }}">

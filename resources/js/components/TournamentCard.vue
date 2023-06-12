@@ -1,10 +1,10 @@
 <template>
-    <div class="mx-auto mt-10 border rounded shadow md:max-w-2xl lg:max-w-5xl">
-        <div class="flex items-center justify-around my-3">
+    <div class="mx-auto mt-10 border rounded shadow md:max-w-2xl ">
+        <div class="flex items-center justify-around p-3">
             <div class="text-2xl">{{tournament.course_name}}</div>
             <div class="text-2xl">{{tournament.tournament_name}}</div>
         </div>
-        <div class="flex items-center justify-around my-2">
+        <div class="flex items-center justify-around p-3">
             <div class="flex flex-col text-center">
                 <div class="text-lg">Entry Cost</div>
                 <div class="text-lg">{{tournament.entry_cost}}</div>
@@ -23,7 +23,7 @@
 
 <script>
     export default {
-        data(){
+        data() {
             return {
                 tournament: {}
             }
