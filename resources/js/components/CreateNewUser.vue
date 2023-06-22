@@ -13,7 +13,7 @@
                 <label for="handicap">
                     <p class="pb-2 font-medium text-slate-700">Handicap</p>
 
-                    <input id="handicap" type="number" class="w-full p-2 border rounded-lg sm:w-44 border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow" name="handicap" v-model="form.handicap" required autofocus>
+                    <input id="handicap" type="number" step=".1" class="w-full p-2 border rounded-lg sm:w-44 border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow" name="handicap" v-model="form.handicap" required autofocus>
                 </label>
 
                 <button class="inline-flex items-center self-end justify-center w-full p-2 mt-6 font-medium text-white bg-green-600 border border-green-700 rounded-lg sm:mt-0 sm:w-40 sm:flex-1 hover:bg-green-700 hover:shadow">
