@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->integer('handicap')->nullable();
+            $table->decimal('handicap', 4,2)->nullable();
             $table->string('role')->default('player');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
