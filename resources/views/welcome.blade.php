@@ -18,6 +18,6 @@
     <body>
         @include('partials.header')
 
-        
+        welcome
     </body>
 </html>
