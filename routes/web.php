@@ -1,7 +1,11 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TournamentConfigController;
+use App\Http\Controllers\UserController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -19,10 +23,11 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('home');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 
 
 
-Route::get('/get/tournament', [App\Http\Controllers\TournamentController::class, 'index']);
-Route::post('/create/user', [App\Http\Controllers\UserController::class, 'store']);
+Route::get('/get/tournament', [TournamentConfigController::class, 'index']);
+Route::post('/select/tournament/{id}', [TournamentConfigController::class, 'selectTournament']);
+Route::post('/create/user', [UserController::class, 'store']);

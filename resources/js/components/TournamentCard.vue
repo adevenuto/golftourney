@@ -1,5 +1,5 @@
 <template>
-    <div class="mx-auto mt-10 border rounded shadow md:max-w-2xl ">
+    <div @click="selectTournament" class="border rounded shadow hover:cursor-pointer hover:shadow-md">
         <div class="flex items-center justify-around p-3">
             <div class="text-2xl">{{tournament.course_name}}</div>
             <div class="text-2xl">{{tournament.tournament_name}}</div>
@@ -10,7 +10,7 @@
                 <div class="text-lg">{{tournament.entry_cost}}</div>
             </div>
             <div class="flex flex-col text-center">
-                <div class="text-lg">Entry Skin/Prox Cost</div>
+                <div class="text-lg">Skins Cost</div>
                 <div class="text-lg">{{tournament.skin_prox_cost}}</div>
             </div>
             <div class="flex flex-col text-center">
@@ -35,6 +35,16 @@
                 }).catch(err => {
                     console.log(err)
                 })
+        },
+        methods: {
+            selectTournament() {
+                axios.post(`/select/tournament/${this.tournament.id}`)
+                .then(res => {
+                    console.log(res.data)
+                }).catch(err => {
+                    console.log(err)
+                })
+            }
         }
     }
 </script>

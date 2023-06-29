@@ -4,16 +4,15 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-class TournamentSeeder extends Seeder
+class TournamentConfigSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        DB::table('tournaments')->insert([
+        DB::table('tournament_config')->insert([
             'entry_cost' => 15,
             'skin_prox_cost' => 15,
             'hole_count' => 9,
