@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Tournament extends Model
+class TournamentConfig extends Model
 {
-    use HasFactory;
+    public $table = 'tournament_config';
 
     protected $fillable = [];
 }

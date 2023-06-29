@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Tournament;
+use App\Models\TournamentConfig;
 
-class TournamentController extends Controller
+class TournamentConfigController extends Controller
 {   
     /**
      * Create a new controller instance.
@@ -19,6 +19,11 @@ class TournamentController extends Controller
     
     public function index()
     {
-        return Tournament::first();
+        return TournamentConfig::first();
+    }
+
+    public function selectTournament($id)
+    {   
+        \Log::info($id);
     }
 }
