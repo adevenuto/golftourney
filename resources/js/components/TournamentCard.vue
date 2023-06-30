@@ -32,8 +32,9 @@
             </div>
         </div>
     </div>
+
     <div v-if="userHasActiveTournament">
-        Dashboard cannot be accessed while a tournament is active!
+        Currently in a tournement
     </div>
 </template>
 
@@ -43,39 +44,44 @@
             return {
                 tournament_config: {},
                 tournament_holes: [],
-                userHasActiveTournament: false
+                userHasActiveTournament: true
             }
         },
         created() {
             this.checkActiveTournaments()
-            this.getTournaments()
         },
         methods: {
-            selectTournament() {
-                axios.post(`/select/tournament/${this.tournament_config.id}`)
-                .then(res => {
-                    window.location = res.data.redirectUrl
-                }).catch(err => {
-                    console.log(err)
-                })
+            async selectTournament() {
+                try {
+                    const res = await axios.post(`/select/tournament/${this.tournament_config.id}`)
+                    if(res.data) {
+                        window.location = res.data.redirectUrl
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
             },
-            getTournaments() {
-                axios.get('/get/tournament')
-                .then(res => {
-                    this.tournament_config = res.data
-                    this.tournament_holes = JSON.parse(res.data.course_details).holes
-                }).catch(err => {
-                    console.log(err)
-                })
+            async getTournaments() {
+                try {
+                    const res = await axios.get('/get/tournament')
+                    if(res.data) {
+                        this.tournament_config = res.data
+                        this.tournament_holes = JSON.parse(res.data.course_details).holes
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
             },
-            checkActiveTournaments() {
-                axios.get('/user/active/tournament')
-                .then(res => {
-                    if (res.data) return this.userHasActiveTournament = true
-                    return false
-                }).catch(err => {
-                    console.log(err)
-                })
+            async checkActiveTournaments() {
+                try {
+                    const res = await axios.get('/user/active/tournament')
+                    if(!res.data) {
+                        this.getTournaments()
+                        this.userHasActiveTournament = false
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
             }
         }
     }
