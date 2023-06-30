@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('skin_prox_cost')->nullable();
             $table->integer('hole_count')->nullable();
             $table->string('course_name')->nullable();
+            $table->json('course_details')->nullable();
             $table->string('tournament_name')->nullable();
             $table->timestamps();
         });

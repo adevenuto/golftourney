@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {   
@@ -85,5 +86,10 @@ class UserController extends Controller
     {
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully!');
+    }
+
+    public function activeTournament()
+    {
+        return Auth::user()->hasActiveTournament();
     }
 }
