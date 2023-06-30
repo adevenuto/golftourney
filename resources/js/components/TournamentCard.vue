@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!userHasActiveTournament" @click="selectTournament" class="border rounded hover:cursor-pointer hover:shadow-md">
+    <div v-if="!activeTournament" @click="selectTournament" class="border rounded hover:cursor-pointer hover:shadow-md">
         <div class="flex items-center justify-around p-3">
             <div class="text-2xl">{{tournament_config.course_name}}</div>
             <div class="text-2xl">{{tournament_config.tournament_name}}</div>
@@ -21,9 +21,9 @@
         
         <div class="flex mt-3 border-t">
             <div class="flex flex-col border-r">
-                <div class="w-24 p-1 border-b">Hole</div>
-                <div class="w-24 p-1 border-b">Par</div>
-                <div class="w-24 p-1">Length</div>
+                <div class="w-24 px-3 py-1 border-b">Hole</div>
+                <div class="w-24 px-3 py-1 border-b">Par</div>
+                <div class="w-24 px-3 py-1">Length</div>
             </div>
             <div v-for="(hole, i) in tournament_holes" :key="hole" class="flex flex-col flex-1">
                 <div :class="[{'border-r': tournament_holes.length !== i+1},'p-1 text-center border-b']">{{ i+1 }}</div>
@@ -33,17 +33,20 @@
         </div>
     </div>
     <div v-else>
-        Currently in a tournement
+        Active tournament found – <a class="inline-flex items-center px-2 py-0.5 bg-green-600 text-white rounded-md" :href="`/tournament/${activeTournament.uuid}`">
+            Back to tournament <box-icon class="ml-3" name='right-arrow-circle' type='solid' animation='tada' size="sm" color="white"></box-icon> </a>
+        
     </div>
 </template>
 
 <script>
+    import 'boxicons'
     export default {
         data() {
             return {
                 tournament_config: {},
                 tournament_holes: [],
-                userHasActiveTournament: true
+                activeTournament: true
             }
         },
         created() {
@@ -76,7 +79,9 @@
                     const res = await axios.get('/user/active/tournament')
                     if(!res.data) {
                         this.getTournaments()
-                        this.userHasActiveTournament = false
+                        this.activeTournament = false
+                    } else {
+                        this.activeTournament = res.data
                     }
                 } catch (error) {
                     console.error(error);

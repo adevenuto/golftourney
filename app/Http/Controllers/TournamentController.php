@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class TournamentController extends Controller
-{
+{   
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
     /**
      * Display a listing of the resource.
      */
@@ -28,7 +33,7 @@ class TournamentController extends Controller
         })->first();
 
         if (!$tournament) abort(404); 
-        
+
         return view('tournament.index');
     }
 
