@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TournamentConfig;
+use Illuminate\Support\Facades\Auth;
 
 class TournamentConfigController extends Controller
 {   
@@ -18,12 +19,7 @@ class TournamentConfigController extends Controller
     }
     
     public function index()
-    {
+    {       
         return TournamentConfig::first();
-    }
-
-    public function selectTournament($id)
-    {   
-        \Log::info($id);
     }
 }
