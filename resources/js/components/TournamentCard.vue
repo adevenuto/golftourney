@@ -32,8 +32,7 @@
             </div>
         </div>
     </div>
-
-    <div v-if="userHasActiveTournament">
+    <div v-else>
         Currently in a tournement
     </div>
 </template>
