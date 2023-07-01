@@ -34,3 +34,4 @@ Route::post('/select/tournament/{id}', [TournamentController::class, 'store']);
 Route::get('/tournament/{uuid}', [TournamentController::class, 'create']);
 Route::post('/create/user', [UserController::class, 'store']);
 Route::get('/user/active/tournament', [UserController::class, 'activeTournament']);
+Route::get('/users', [UserController::class, 'index']);
