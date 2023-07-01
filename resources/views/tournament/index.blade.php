@@ -1,5 +1,5 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>tournament</h1>
+    <data-table></data-table>
 @endsection
