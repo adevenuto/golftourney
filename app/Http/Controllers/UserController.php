@@ -44,8 +44,8 @@ class UserController extends Controller
             
             $random = Str::random(10);
 
-            \Log::info($random);
-            \Log::info($request);
+            // \Log::info($random);
+            // \Log::info($request);
 
             $user = new User();
             $user->name = $request->name;

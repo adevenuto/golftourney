@@ -78,6 +78,7 @@
                 try {
                     const res = await axios.get('/user/active/tournament')
                     if(!res.data) {
+                        console.log('here')
                         this.getTournaments()
                         this.activeTournament = false
                     } else {

@@ -21,8 +21,9 @@ app.component('tournament-card', TournamentCard);
 import CreateNewUser from './components/CreateNewUser.vue';
 app.component('create-new-user', CreateNewUser);
 
-import DataTable from './components/DataTable.vue';
-app.component('data-table', DataTable);
+import PlayersList from './components/players/PlayersList.vue';
+app.component('players-list', PlayersList);
+
 
 /**
  * The following block of code may be used to automatically register your

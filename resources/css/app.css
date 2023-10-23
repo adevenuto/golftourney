@@ -12,3 +12,25 @@
     opacity: 0;
 }
 
+.dataTables_scroll {
+    display: inline-block;
+    overflow: auto;
+    max-height: 32rem;
+    width: 100%;
+}
+.dataTables_scrollHead {
+    position: absolute !important;
+    /* backdrop-filter: blur(4px); */
+    background-color: #15803d;
+    color: #fff;
+    top: 45;
+    z-index: 1000;
+}
+
+.dataTables_scrollBody {
+    margin-top: 45px;
+}
+
+#dt-players-list_filter, .dataTables_length {
+    margin-bottom: 1.3rem;
+}
