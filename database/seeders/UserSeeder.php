@@ -13,33 +13,19 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         DB::table('users')->insert([
-            "name" => "Admin",
-            "handicap" => 5.50,
+            "first_name" => "Anthony",
+            "last_name" => "DeVenuto",
             "role" => "admin",
             "email" => "anthonydevenuto@gmail.com",
-            "password" => bcrypt('PT6t0f9wnpc4X85fzCRv'),
+            "password" => bcrypt('password123'),
         ]);
 
-
-        $path = storage_path()."/data.csv";
-        if (($handle = fopen($path, 'r')) !== false) {
-            fgetcsv($handle);
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-                $data = [];
-                foreach ($row as $column) {
-                    $data[] = $column;
-                }
-                DB::table('users')->insert([
-                    'name' => $data[0],
-                    'handicap' => intval($data[1]),
-                    'role' => 'player',
-                    'email' => str_replace(' ', '', strtolower($data[0])).'@noreply.com' ,
-                    'password' => bcrypt('password')
-                ]);
-            }
-            fclose($handle);
-        }
-
-        
+        DB::table('users')->insert([
+            "first_name" => "John",
+            "last_name" => "Milne",
+            "role" => "admin",
+            "email" => "jmilne@yahoo.com",
+            "password" => bcrypt('moharder'),
+        ]);
     }
 }

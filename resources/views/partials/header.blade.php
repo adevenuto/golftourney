@@ -15,7 +15,7 @@
             @endif
         @else
             <li>
-                {{ Auth::user()->name }} - <span class="pb-0.5 px-2 bg-green-700 text-white rounded-full text-sm">{{ Auth::user()->role }}</span>
+                {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="pb-0.5 px-2 bg-green-700 text-white rounded-full text-sm">{{ Auth::user()->role }}</span>
             </li>
             <li>
                 <a class="text-xs text-red-400 hover:text-red-500 hover:underline" href="{{ route('logout') }}"

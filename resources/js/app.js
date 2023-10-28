@@ -15,11 +15,6 @@ import { createApp } from 'vue';
 
 const app = createApp({});
 
-import TournamentCard from './components/TournamentCard.vue';
-app.component('tournament-card', TournamentCard);
-
-import CreateNewUser from './components/CreateNewUser.vue';
-app.component('create-new-user', CreateNewUser);
 
 import PlayersList from './components/players/PlayersList.vue';
 app.component('players-list', PlayersList);

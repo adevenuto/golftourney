@@ -1,21 +1,31 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="max-w-lg p-8 mx-auto my-10 bg-white shadow rounded shadow-slate-300">
+    <div class="max-w-lg p-8 mx-auto my-10 bg-white rounded shadow shadow-slate-300">
         <h1 class="pb-5 text-4xl font-medium">Register</h1>
         
         <form method="POST" action="{{ route('register') }}">
             @csrf
             <div class="flex flex-col space-y-5">
-                <label for="name">
-                    <p class="pb-2 font-medium text-slate-700">{{ __('Name') }}</p>
-                    <input id="name" type="name" class="w-full p-2 border rounded-lg border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
-                    @error('name')
+                <label for="first_name">
+                    <p class="pb-2 font-medium text-slate-700">{{ __('First Name') }}</p>
+                    <input id="first_name" type="first_name" class="w-full p-2 border rounded-lg border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name') }}" required autocomplete="first_name" autofocus>
+                    @error('first_name')
                         <span class="text-red-500" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
                 </label>
+                <label for="last_name">
+                    <p class="pb-2 font-medium text-slate-700">{{ __('Last Name') }}</p>
+                    <input id="last_name" type="last_name" class="w-full p-2 border rounded-lg border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name') }}" required autocomplete="last_name" autofocus>
+                    @error('last_name')
+                        <span class="text-red-500" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </label>
+
                 <label for="email">
                     <p class="pb-2 font-medium text-slate-700">{{ __('Email Address') }}</p>
                     <input id="email" type="email" class="w-full p-2 border rounded-lg border-slate-200 focus:outline-none focus:border-slate-500 hover:shadow @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>

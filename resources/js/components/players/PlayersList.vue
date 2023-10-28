@@ -19,7 +19,7 @@
         watch: {
             table: function(isSet) {
                 if(isSet) {
-                    this.getPlayers()
+                    // this.getPlayers()
                 }
             }
         },
@@ -29,10 +29,10 @@
             },
             async getPlayers() {
                 try {
-                    const res = await axios.get('/users')
+                    const res = await axios.get('/golfers')
                     if(res.data) {
-                        console.log(res.data.users)
-                        this.playersList = res.data.users
+                        console.log(res.data.golfers)
+                        this.playersList = res.data.golfers
                         this.reloadTable()
                     } 
                 } catch (err) {
@@ -49,18 +49,18 @@
                 iDisplayLength: 30,
                 data: _this.playersList,
                 columns: [
-                    // {
-                    //     title: '',
-                    //     orderable: false,
-                    //     defaultContent: `<tr></tr>`
-                    // },
                     {
                         data: 'id',
                         visible: false,
                     },
                     {
-                        data: 'name',
-                        title: 'Name',
+                        data: 'first_name',
+                        title: 'First Name',
+                        className: 'text-left'
+                    },
+                    {
+                        data: 'last_name',
+                        title: 'Last Name',
                         className: 'text-left'
                     },
                     {
@@ -71,6 +71,11 @@
                     {
                         data: 'email',
                         title: 'Email',
+                        className: 'text-left'
+                    },
+                    {
+                        data: 'phone',
+                        title: 'Phone',
                         className: 'text-left'
                     }
                 ]

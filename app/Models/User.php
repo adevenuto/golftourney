@@ -18,7 +18,9 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
+        'role',
         'email',
         'password',
     ];
@@ -42,14 +44,4 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
-    public function tournaments()
-    {
-        return $this->hasMany(Tournament::class);
-    }
-
-    public function hasActiveTournament()
-    {
-        return self::tournaments()->where('status', 'created')->orWhere('status', 'active')->first();
-    }
 }

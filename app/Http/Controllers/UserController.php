@@ -29,16 +29,12 @@ class UserController extends Controller
         }
     }
 
-    // public function create()
-    // {
-    //     return view('users.create');
-    // }
-
     public function store(Request $request)
     {
         try {
             $request->validate([
-                'name' => 'required',
+                'first_name' => 'required',
+                'last_name' => 'required',
                 'handicap' => 'required|numeric'
             ]);
             
@@ -48,7 +44,8 @@ class UserController extends Controller
             // \Log::info($request);
 
             $user = new User();
-            $user->name = $request->name;
+            $user->first_name = $request->first_name;
+            $user->last_name = $request->last_name;
             $user->email = $random."_testuser@test.com";
             $user->handicap = $request->handicap;
             $user->role = 'player';
@@ -61,20 +58,17 @@ class UserController extends Controller
         }
     }
 
-    // public function edit(User $user)
-    // {
-    //     return view('users.edit', compact('user'));
-    // }
-
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'required',
+            'first_name' => 'required',
+            'last_name' => 'required',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6',
         ]);
 
-        $user->name = $request->name;
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
         $user->email = $request->email;
         
         if ($request->password) {
@@ -92,8 +86,4 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User deleted successfully!');
     }
 
-    public function activeTournament()
-    {
-        return Auth::user()->hasActiveTournament();
-    }
 }
