@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('rounds', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('round_id')->comment('RoundId from original MSAccess data');
+            $table->unsignedBigInteger('golfer_id');
             $table->integer('score')->nullable();
             $table->string('course_name')->nullable();
             $table->timestamp('date_of_round')->nullable();

@@ -19,7 +19,7 @@
         watch: {
             table: function(isSet) {
                 if(isSet) {
-                    // this.getPlayers()
+                    this.getPlayers()
                 }
             }
         },
@@ -29,7 +29,7 @@
             },
             async getPlayers() {
                 try {
-                    const res = await axios.get('/golfers')
+                    const res = await axios.get('/golfers-list')
                     if(res.data) {
                         console.log(res.data.golfers)
                         this.playersList = res.data.golfers

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PlayersController;
+use App\Http\Controllers\GolfersController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -26,9 +26,5 @@ Auth::routes();
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 
-Route::get('/users', [UserController::class, 'index']);
-
-
-
-
-Route::get('/players', [PlayersController::class, 'index']);
+Route::get('/golfers-list', [GolfersController::class, 'index']);
+Route::get('/golfers', [GolfersController::class, 'create']);

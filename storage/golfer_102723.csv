@@ -1,5 +1,4 @@
 GolferId,GolferNameShort,GolferNameFirst,GolferNameLast,CMGolferCode,Gender,HomeCourseId,HomeConfigId,HomeTeeId,ApproxHandi,OverrideIndex,OverrideCourseHandicap,CurrentIndex,RoundsPlayed,CurrentHandicapDate,StatRoundsPlayed,AverageScore,AveragePutts,FairwayChances,FairwaysHit,GreenChances,GreensHit,PenaltyStrokes,AverageDriveLength,TrapChances,TrapSaves,MissHits,UpDownChances,UpDownMade,GoodRoundVal,BadRoundVal,GoodHoleScore,BadHoleScore,StatRounds,SSRounds,LowestAnalysisScore,ClubPW
-3,DemoF1,DemoF1,Golfer,DM01,M,11,22,3,18,18,18,10.5,153,12/30/1899,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,22,0,2,20,100,-1,123456789012
 10,Biagi,Tom,Biagi,NXXX,M,15,28,2,18,18,18,8.30000019073486,232,12/30/1899,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,17,24,0,2,20,100,0,123456789012
 12,TP,Tom,Harris,NXXX,M,15,28,2,18,18,18,19.1000003814697,338,12/30/1899,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,17,24,0,2,20,100,0,123456789012
 13,Hasty1,Coleson,Hasty,0IXX,M,15,28,2,18,18,18,23.7999992370605,111,12/30/1899,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,17,24,0,2,20,100,0,123456789012

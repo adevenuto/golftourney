@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->decimal('handicap', 4,2)->nullable()->default(00.00);
-            $table->string('email')->unique();
-            $table->string('phone')->unique();
+            $table->string('email')->nullable()->unique();
+            $table->string('phone')->nullable();
         });
     }
 

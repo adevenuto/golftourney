@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Golfer;
 use Illuminate\Http\Request;
 
-class PlayersController extends Controller
+class GolfersController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -23,6 +24,16 @@ class PlayersController extends Controller
      */
     public function index()
     {
-        return view('players.index');
+        try {
+            $golfers = Golfer::all();
+            return response()->json(['golfers' => $golfers], 200);
+        } catch (\exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function create()
+    {
+        return view('golfers.index');
     }
 }
