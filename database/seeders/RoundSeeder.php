@@ -17,6 +17,9 @@ class RoundSeeder extends Seeder
                 foreach ($row as $column) {
                     $data[] = $column;
                 }
+
+                // if($data[1]==297) \Log::info($data);
+
                 if($data[13]==='Robert A. Black') {
                     DB::table('rounds')->insert([
                         'golfer_id' => $data[1],

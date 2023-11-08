@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('handicap', 4,2)->nullable()->default(00.00);
             $table->string('email')->nullable()->unique();
             $table->string('phone')->nullable();
+            $table->timestamps();
         });
     }
 

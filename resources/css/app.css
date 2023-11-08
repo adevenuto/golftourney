@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+
+
+
+@layer components {
+    .field-base {
+      @apply w-full p-2 text-gray-900 border border-gray-300 rounded bg-gray-50 focus:ring-blue-500 focus:border-blue-500;
+    }
+
+    .btn-base {
+      @apply px-2 py-1.5 text-sm text-center rounded cursor-pointer whitespace-nowrap;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.3s ease;
@@ -18,18 +47,16 @@
     max-height: 32rem;
     width: 100%;
 }
-.dataTables_scrollHead {
+/* .dataTables_scrollHead {
     position: absolute !important;
-    /* backdrop-filter: blur(4px); */
     background-color: #15803d;
     color: #fff;
-    top: 45;
     z-index: 1000;
 }
 
 .dataTables_scrollBody {
     margin-top: 45px;
-}
+} */
 
 #dt-players-list_filter, .dataTables_length {
     margin-bottom: 1.3rem;

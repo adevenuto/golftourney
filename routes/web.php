@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GolfersController;
 /*
@@ -28,3 +27,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 Route::get('/golfers-list', [GolfersController::class, 'index']);
 Route::get('/golfers', [GolfersController::class, 'create']);
+
+
+
+Route::post('/golfers/{id}', [GolfersController::class, 'delete']);
+Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);

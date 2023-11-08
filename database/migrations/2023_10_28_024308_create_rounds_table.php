@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('rounds', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('golfer_id');
-            $table->integer('score')->nullable();
+            $table->decimal('score')->nullable();
             $table->string('course_name')->nullable();
             $table->timestamp('date_of_round')->nullable();
         });
