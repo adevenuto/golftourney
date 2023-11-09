@@ -8,8 +8,8 @@ import './bootstrap';
 import { createApp } from 'vue';
 
 import { OhVueIcon, addIcons } from "oh-vue-icons";
-import { IoCloseOutline, CoTrash, CoGolfAlt, IoWarning } from "oh-vue-icons/icons"
-addIcons(IoCloseOutline, CoTrash, CoGolfAlt, IoWarning);
+import { IoCloseOutline, CoTrash, IoWarning, GiGolfTee } from "oh-vue-icons/icons"
+addIcons(IoCloseOutline, CoTrash, IoWarning, GiGolfTee);
 
 import GolfersList from './components/golfers/GolfersList.vue';
 

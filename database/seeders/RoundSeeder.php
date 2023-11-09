@@ -25,7 +25,7 @@ class RoundSeeder extends Seeder
                         'golfer_id' => $data[1],
                         'score' => intval($data[18])/2,
                         'course_name' => $data[13],
-                        'date_of_round' => \Carbon\Carbon::parse($data[5])->format('Y/m/d H:i:s')
+                        'created_at' => \Carbon\Carbon::parse($data[5])->format('Y/m/d H:i:s')
                     ]);
                 }
                 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('golfer_id');
             $table->decimal('score')->nullable();
             $table->string('course_name')->nullable();
-            $table->timestamp('date_of_round')->nullable();
+            $table->timestamps();
         });
     }
 

@@ -18,6 +18,7 @@ class Round extends Model
         'golfer_id',
         'score',
         'course_name',
-        'date_of_round',
+        'created_at',
+        'updated_at',
     ];
 }

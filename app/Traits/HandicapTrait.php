@@ -8,24 +8,26 @@ trait HandicapTrait
 {
 
     /**
-     * @param $golfer_id
+     * @param int $golfer_id
      *
-     * @return Golfer[]
+     * @return array
      */
     public function latest_rounds(Int $golfer_id): array
     {
-        return DB::table('golfers')
+        $latest20 = DB::table('golfers')
         ->leftJoin('rounds', 'golfers.golfer_id', '=', 'rounds.golfer_id')
-        ->orderBy('rounds.date_of_round', 'desc')
+        ->orderBy('rounds.created_at', 'desc')
         ->where('golfers.golfer_id', $golfer_id)
-        ->limit('8')
+        ->limit('20')
         ->get()
         ->toArray();
+
+        return collect($latest20)->sortBy('score')->take(8)->toArray();
     }
 
 
     /**
-     * @param $rounds
+     * @param array $rounds
      *
      * @return float
      */
@@ -35,11 +37,11 @@ trait HandicapTrait
         foreach ($rounds as $round) {
             if($round->score) {
                 $score = $round->score;
-                $score_diff = ($score-31.5)-113/104;
+                $score_diff = ($score-31.5)*113/104;
                 $score_diff_sum += $score_diff;
             }
         }
-        $handicap = round($score_diff_sum/count($rounds),1);
+        $handicap = round($score_diff_sum/count($rounds),3);
         return $handicap;
     }
 }

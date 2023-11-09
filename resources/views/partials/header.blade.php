@@ -1,5 +1,5 @@
 <div class="flex items-center justify-between p-6">
-    <a href={{ url('/') }} class="text-lg">Golf Tourney</a>
+    <a href={{ url('/') }} class="text-2xl">Black League</a>
     <ul class="flex gap-4">
         @guest
             @if (Route::has('login'))
@@ -24,11 +24,10 @@
                     {{ __('Logout') }}
                 </a>
             </li>   
-               
-
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-                    @csrf
-                </form>
+            
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                @csrf
+            </form>
         @endguest
     </ul>
 </div>

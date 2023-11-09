@@ -19,9 +19,9 @@ class GolfersController extends Controller
     }
 
     /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * Store a newly created resource in storage.
+     * 
+     * @return Response
      */
     public function index()
     {
@@ -38,8 +38,13 @@ class GolfersController extends Controller
         return view('golfers.index');
     }
 
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return Response
+     */
     public function update(Request $request, $id)
-    {
+    {   
         $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -68,6 +73,11 @@ class GolfersController extends Controller
         return response()->json(['message' => 'Golfer updated successfully'], 200);
     }
 
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return Response
+     */
     public function delete($id)
     {   
         try {

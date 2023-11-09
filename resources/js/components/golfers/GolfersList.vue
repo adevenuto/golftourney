@@ -8,7 +8,7 @@
         <Modal 
             v-show="deleteModal" 
             @close_modal="closeModal" 
-            :title="`${this.selectedRow.first_name} ${this.selectedRow.last_name}`"
+            :title="golferFullName"
         >
             <div class="mb-4">
                 <v-icon 
@@ -18,7 +18,7 @@
                     class="self-start cursor-pointer"
                 />
                 <span class="text-gray-400">You are about to</span> 
-                delete {{ selectedRow.first_name }} {{ selectedRow.last_name }}<span class="text-gray-400">, are you sure?</span>
+                delete {{ golferFullName }}<span class="text-gray-400">, are you sure?</span>
             </div>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                 <div    
@@ -31,7 +31,7 @@
                     @click="deleteGolfer"
                     class="text-white bg-red-500 btn-base hover:bg-red-600"
                 >
-                    Yes, delete {{ selectedRow.first_name }} {{ selectedRow.last_name }}
+                    Yes, delete {{ golferFullName }}
                 </div>
             </div>
         </Modal>
@@ -40,7 +40,7 @@
         <Modal 
             v-show="editModal" 
             @close_modal="closeModal" 
-            :title="`${this.selectedRow.first_name} ${this.selectedRow.last_name}`"
+            :title="golferFullName"
         >
             <form @submit.prevent="updateGolfer">
                 <div class="flex flex-col sm:gap-3 sm:flex-row">
@@ -96,10 +96,12 @@
         </Modal>
 
         <!-- ADD SCORE MODAL -->
-        <Modal v-show="addScoreModal" @close_modal="closeModal" title="Add score">
-            <form @submit.prevent="updateGolfer">
-                
-                
+        <Modal 
+            v-show="addScoreModal" 
+            @close_modal="closeModal" 
+            :title="golferFullName"
+        >
+            <form @submit.prevent="addScore">
                 <div class="my-2">
                     <label for="email" class="block mb-1 text-xs">New score</label>
                     <input 
@@ -114,12 +116,36 @@
                         required
                     >
                 </div>
-                    
                 <div class="flex">
-                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">Save score</button>   
+                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">
+                        Save score
+                    </button>   
+                </div>
+            </form>
+        </Modal>
+
+        <!-- ADD SCORE MODAL -->
+        <Modal 
+            v-show="recentRoundsModal" 
+            @close_modal="closeModal" 
+            :title="golferFullName"
+        >
+            <div 
+                class="flex items-center justify-between gap-3 px-2 py-1 my-1 border rounded"
+                :key="round.id" 
+                v-for="round in golfersRecentRounds"
+            >   
+                <div>
+                    <v-icon 
+                        name="gi-golf-tee" 
+                        fill="#046C4E"
+                        scale="1.2" 
+                    />
+                    {{ _remove_decimals(round.score) }}
                 </div>
                 
-            </form>
+                {{ _format_date(round.created_at) }}
+            </div>
         </Modal>
         
     </div>
@@ -127,6 +153,7 @@
 </template>
 <script>
     import Modal from '../ui/Modal.vue';
+    import { format_date, remove_decimals } from '../../utilities'
     export default {
         components: {
             Modal
@@ -134,13 +161,15 @@
         data() {
             return {
                 table: null,
-                playersList: [],
+                golfersList: [],
+                golfersRecentRounds: [],
                 selectedRow: {},
                 newScore: null,
 
                 deleteModal: false,
                 editModal: false,
-                addScoreModal: false
+                addScoreModal: false,
+                recentRoundsModal: false,
             }
         },
         watch: {
@@ -149,17 +178,26 @@
                     this.setDataTableLogic()
                     this.getGolfers()
                 }
+            },
+            recentRoundsModal: function(isOpen) {
+                if(isOpen) return this.getRounds()
+                return this.golfersRecentRounds = []
+            }
+        },
+        computed: {
+            golferFullName: function() {
+                return `${this.selectedRow.first_name} ${this.selectedRow.last_name}`
             }
         },
         methods: {
             reloadTable: function() {
-                this.table.clear().rows.add(this.playersList).draw();
+                this.table.clear().rows.add(this.golfersList).draw();
             },
             async getGolfers() {
                 try {
                     const res = await axios.get('/golfers-list')
                     if(res.data) {
-                        this.playersList = res.data.golfers
+                        this.golfersList = res.data.golfers
                         this.reloadTable()
                     } 
                 } catch (err) {
@@ -168,7 +206,7 @@
             },
             async deleteGolfer() {
                 try {
-                    const res = await axios.post(`/golfers/${this.selectedRow.golfer_id}`)
+                    const res = await axios.delete(`/golfers/${this.selectedRow.golfer_id}`)
                     if(res.status===200) {
                         console.log(res)
                         this.closeModal()
@@ -197,6 +235,9 @@
                         case 'add_score':
                             _this.addScoreModal = !_this.addScoreModal
                             break
+                        case 'handicap_round_data':
+                            _this.recentRoundsModal = !_this.recentRoundsModal
+                            break
                         default:
                             break;
                     }
@@ -216,22 +257,33 @@
                 }
             },
             async addScore() {
-                
-                // try {
-                //     const res = await axios.post(`/golfers/${this.selectedRow.id}/edit`, this.selectedRow)
-                //     if(res.status===200) {
-                //         console.log(res)
-                //         this.closeModal()
-                //         this.getGolfers()
-                //     }
-                // } catch (err) {
-                //     console.error(err);
-                // }
+                try {
+                    const res = await axios.post(`/golfers/${this.selectedRow.id}/add/score/${this.newScore}`)
+                    if(res.status===200) {
+                        console.log(res)
+                        this.closeModal()
+                        this.getGolfers()
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            },
+            async getRounds() {
+                try {
+                    const res = await axios.get(`/golfers/${this.selectedRow.id}/latest`)
+                    if(res.status===200) {
+                        console.log(res)
+                        this.golfersRecentRounds = res.data.latest_rounds
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
             },
             closeModal() {
                 this.deleteModal = false
                 this.editModal = false
                 this.addScoreModal = false
+                this.recentRoundsModal = false
                 this.selectedRow = {}
                 this.newScore = null
             },
@@ -239,9 +291,15 @@
                 var x = this.selectedRow.phone.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/)
                 this.selectedRow.phone = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '')
             },
-            limitTwo(val) {
+            limitTwo() {
                 var x = this.newScore.replace(/\D/g, '').match(/^[1-9][0-9]?$|^150$/)
                 this.newScore = x
+            },
+            _format_date: function(date) {
+                return format_date(date)
+            },
+            _remove_decimals: function(string) {
+                return remove_decimals(string)
             }
         },
         mounted() {
@@ -251,7 +309,7 @@
                 scrollX: true,
                 rowId: 'id',
                 iDisplayLength: 30,
-                data: _this.playersList,
+                data: _this.golfersList,
                 columns: [
                     {
                         data: 'id',
@@ -270,7 +328,15 @@
                     {
                         data: 'handicap',
                         title: 'Handicap',
-                        className: 'text-left'
+                        className: 'text-left',
+                        render: function(data, type, row) {
+                            return `<div data-action="handicap_round_data" class="tablerow_clickevent_target">
+                                        <div class="flex items-center justify-between w-20 p-1 bg-white border rounded shadow-sm cursor-pointer">
+                                            ${row.handicap}
+                                            <svg class="ov-icon" aria-hidden="true" width="19.2" height="19.2" viewBox="-1.6 -1.6 19.2 19.2" fill="#046C4E" style="font-size: 1.2em;"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                        </div>
+                                    </div>`;
+                        }
                     },
                     {
                         data: 'email',

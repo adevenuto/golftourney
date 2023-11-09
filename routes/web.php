@@ -3,8 +3,9 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GolfersController;
+use App\Http\Controllers\HandicapController;
+use App\Http\Controllers\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -30,5 +31,9 @@ Route::get('/golfers', [GolfersController::class, 'create']);
 
 
 
-Route::post('/golfers/{id}', [GolfersController::class, 'delete']);
+Route::delete('/golfers/{id}', [GolfersController::class, 'delete']);
 Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);
+
+
+Route::post('/golfers/{id}/add/score/{newScore}', [HandicapController::class, 'store']);
+Route::get('/golfers/{id}/latest', [HandicapController::class, 'latest']);

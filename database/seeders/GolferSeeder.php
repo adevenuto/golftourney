@@ -23,6 +23,7 @@ class GolferSeeder extends Seeder
                     'first_name' => $data[2],
                     'last_name' => $data[3],
                     'email' => strtolower($data[2].$data[3].'@noreply.com'),
+                    'created_at' => \Carbon\Carbon::parse($data[5])->format('Y/m/d H:i:s'),
                 ]);
             }
             fclose($handle);

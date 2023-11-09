@@ -20,6 +20,8 @@ class Golfer extends Model
         'last_name',
         'handicap',
         'email',
+        'created_at',
+        'updated_at',
     ];
 }
 
