@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tournament_config', function (Blueprint $table) {
+        Schema::create('rounds', function (Blueprint $table) {
             $table->id();
-            $table->integer('entry_cost')->nullable();
-            $table->integer('skin_prox_cost')->nullable();
-            $table->integer('hole_count')->nullable();
+            $table->unsignedBigInteger('golfer_id');
+            $table->decimal('score')->nullable();
             $table->string('course_name')->nullable();
-            $table->json('course_details')->nullable();
-            $table->string('tournament_name')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tournament_config');
+        Schema::dropIfExists('rounds');
     }
 };

@@ -3,10 +3,9 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\GolfersController;
+use App\Http\Controllers\HandicapController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\TournamentController;
-use App\Http\Controllers\TournamentConfigController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -27,11 +26,14 @@ Auth::routes();
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 
+Route::get('/golfers-list', [GolfersController::class, 'index']);
+Route::get('/golfers', [GolfersController::class, 'create']);
 
 
-Route::get('/get/tournament', [TournamentConfigController::class, 'index']);
-Route::post('/select/tournament/{id}', [TournamentController::class, 'store']);
-Route::get('/tournament/{uuid}', [TournamentController::class, 'create']);
-Route::post('/create/user', [UserController::class, 'store']);
-Route::get('/user/active/tournament', [UserController::class, 'activeTournament']);
-Route::get('/users', [UserController::class, 'index']);
+
+Route::delete('/golfers/{id}', [GolfersController::class, 'delete']);
+Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);
+
+
+Route::post('/golfers/{id}/add/score/{newScore}', [HandicapController::class, 'store']);
+Route::get('/golfers/{id}/latest', [HandicapController::class, 'latest']);
