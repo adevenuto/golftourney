@@ -17,6 +17,6 @@
     </head>
     <body>
         @include('partials.header')
-        welcome
+        {{-- welcome --}}
     </body>
 </html>
