@@ -1,7 +1,36 @@
 <template>
     
     <div class="w-3/4 mt-10 sm:mx-auto">
-        <p class="my-10 text-5xl">Golfers</p>
+        <p class="mt-10 text-5xl">Golfers</p>
+
+        <!-- SEARCH/CLEAR | ADD GOLFER -->
+        <div class="flex items-center justify-between my-10">
+            <div class="flex">
+                <div class="mr-2">
+                    <input class="px-3 py-1 border rounded"
+                    type="text"
+                    id="searchBox"
+                    placeholder="Search table">
+                </div>
+                <div class="px-3 py-1 text-white bg-gray-500 rounded cursor-pointer clear-filters hover:bg-gray-600">
+                    Clear filters
+                </div>
+            </div>
+
+            <button 
+                class="flex items-center px-3 py-1 text-white bg-green-500 rounded hover:bg-green-600 tablerow_clickevent_target"
+                @click="newGolferModal = !newGolferModal"
+            >   
+                <v-icon 
+                    class="-ml-1"
+                    name="hi-plus-sm" 
+                    fill="#fff"
+                    scale="1.2" 
+                />
+                New golfer
+            </button>
+        </div>
+        
         <table id="dt_players_list" class="table text-sm table-striped hover row-border" cellspacing="0" width="100%"></table>
 
         <!-- DELETE MODAL -->
@@ -69,7 +98,7 @@
                     <div class="flex-1 my-2">
                         <label for="email" class="block mb-1 text-xs">Email</label>
                         <input 
-                            type="text" 
+                            type="email" 
                             id="email" 
                             class="field-base" 
                             v-model="selectedRow.email" 
@@ -84,12 +113,71 @@
                             class="field-base" 
                             v-model="selectedRow.phone"
                             placeholder="(***) *** ****"
-                            @input="acceptNumber"
+                            v-phone-format="selectedRow.phone"
                         >
                     </div>
                 </div>
                 <div class="flex">
                     <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">Save changes</button>   
+                </div>
+                
+            </form>
+        </Modal>
+
+        <!-- NEW GOLFER MODAL -->
+        <Modal 
+            v-show="newGolferModal" 
+            @close_modal="closeModal" 
+            :title="`${newGolfer.first_name} ${newGolfer.last_name}`"
+        >
+            <form @submit.prevent="addNewGolfer">
+                <div class="flex flex-col sm:gap-3 sm:flex-row">
+                    <div class="flex-1 my-2">
+                        <label for="first_name" class="block mb-1 text-xs">First name</label>
+                        <input 
+                            type="text" 
+                            id="first_name" 
+                            class="field-base" 
+                            v-model="newGolfer.first_name" 
+                            required
+                        >
+                    </div>
+                    <div class="flex-1 my-2">
+                        <label for="last_name" class="block mb-1 text-xs">Last name</label>
+                        <input 
+                            type="text" 
+                            id="last_name" 
+                            class="field-base" 
+                            v-model="newGolfer.last_name" 
+                            required
+                        >
+                    </div>
+                </div>
+                <div class="flex flex-col sm:gap-3 sm:flex-row">
+                    <div class="flex-1 my-2">
+                        <label for="email" class="block mb-1 text-xs">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="field-base" 
+                            v-model="newGolfer.email" 
+                            required
+                        >
+                    </div>
+                    <div class="flex-1 my-2">
+                        <label for="phone" class="block mb-1 text-xs">Phone</label>
+                        <input 
+                            type="text" 
+                            id="phone" 
+                            class="field-base" 
+                            v-model="newGolfer.phone"
+                            placeholder="(***) *** ****"
+                            v-phone-format="newGolfer.phone"
+                        >
+                    </div>
+                </div>
+                <div class="flex">
+                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">Add new golfer</button>   
                 </div>
                 
             </form>
@@ -124,12 +212,13 @@
             </form>
         </Modal>
 
-        <!-- ADD SCORE MODAL -->
+        <!-- RECENT ROUNDS MODAL -->
         <Modal 
             v-show="recentRoundsModal" 
             @close_modal="closeModal" 
             :title="golferFullName"
-        >
+        >   
+            <div class="flex items-center gap-3"></div>
             <div 
                 class="flex items-center justify-between gap-3 px-2 py-1 my-1 border rounded"
                 :key="round.id" 
@@ -164,12 +253,19 @@
                 golfersList: [],
                 golfersRecentRounds: [],
                 selectedRow: {},
+                newGolfer: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: ''
+                },
                 newScore: null,
 
                 deleteModal: false,
                 editModal: false,
                 addScoreModal: false,
                 recentRoundsModal: false,
+                newGolferModal: false,
             }
         },
         watch: {
@@ -242,9 +338,18 @@
                             break;
                     }
                 })
+
+                $("#searchBox").keyup(function() {
+                    _this.table.search(this.value).draw();
+                });
+
+                $('.clear-filters').click(function () {
+                    $('#searchBox').val('')
+                    _this.table.order([]).search('').draw()
+                    _this.reloadTable()
+                });
             },
             async updateGolfer() {
-                
                 try {
                     const res = await axios.post(`/golfers/${this.selectedRow.id}/edit`, this.selectedRow)
                     if(res.status===200) {
@@ -259,6 +364,18 @@
             async addScore() {
                 try {
                     const res = await axios.post(`/golfers/${this.selectedRow.id}/add/score/${this.newScore}`)
+                    if(res.status===200) {
+                        console.log(res)
+                        this.closeModal()
+                        this.getGolfers()
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            },
+            async addNewGolfer() {
+                try {
+                    const res = await axios.post('/create/golfer', this.newGolfer)
                     if(res.status===200) {
                         console.log(res)
                         this.closeModal()
@@ -284,12 +401,9 @@
                 this.editModal = false
                 this.addScoreModal = false
                 this.recentRoundsModal = false
+                this.newGolferModal = false
                 this.selectedRow = {}
                 this.newScore = null
-            },
-            acceptNumber(e) {
-                var x = this.selectedRow.phone.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/)
-                this.selectedRow.phone = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '')
             },
             limitTwo() {
                 var x = this.newScore.replace(/\D/g, '').match(/^[1-9][0-9]?$|^150$/)
@@ -307,6 +421,7 @@
             _this.table = $('#dt_players_list').DataTable({
                 responsive: true,
                 scrollX: true,
+                aaSorting: [[2, 'asc']],
                 rowId: 'id',
                 iDisplayLength: 30,
                 data: _this.golfersList,
@@ -333,7 +448,7 @@
                             return `<div data-action="handicap_round_data" class="tablerow_clickevent_target">
                                         <div class="flex items-center justify-between w-20 p-1 bg-white border rounded shadow-sm cursor-pointer">
                                             ${row.handicap}
-                                            <svg class="ov-icon" aria-hidden="true" width="19.2" height="19.2" viewBox="-1.6 -1.6 19.2 19.2" fill="#046C4E" style="font-size: 1.2em;"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                            <svg class="ov-icon" aria-hidden="true" width="19.2" height="19.2" viewBox="-1.6 -1.6 19.2 19.2" fill="#22c55e" style="font-size: 1.2em;"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
                                         </div>
                                     </div>`;
                         }

@@ -182,12 +182,3 @@ _fnVisibleToColumnIndex:sa,_fnColumnIndexToVisible:ta,_fnVisbleColumns:na,_fnGet
 _fnClearTable:Ha,_fnDeleteIndex:Ia,_fnInvalidate:va,_fnGetRowElements:$a,_fnCreateTr:Za,_fnBuildHead:Eb,_fnDrawHead:xa,_fnDraw:fa,_fnReDraw:ja,_fnAddOptionsHtml:Hb,_fnDetectHeader:wa,_fnGetUniqueThs:Ka,_fnFeatureHtmlFilter:Jb,_fnFilterComplete:ya,_fnFilterCustom:Sb,_fnFilterColumn:Rb,_fnFilter:Qb,_fnFilterCreateSearch:gb,_fnEscapeRegex:hb,_fnFilterData:Tb,_fnFeatureHtmlInfo:Mb,_fnUpdateInfo:Wb,_fnInfoMacros:Xb,_fnInitialise:za,_fnInitComplete:Na,_fnLengthChange:ib,_fnFeatureHtmlLength:Ib,_fnFeatureHtmlPaginate:Nb,
 _fnPageChange:kb,_fnFeatureHtmlProcessing:Kb,_fnProcessingDisplay:U,_fnFeatureHtmlTable:Lb,_fnScrollDraw:Ea,_fnApplyToChildren:Z,_fnCalculateColumnWidths:Xa,_fnThrottle:fb,_fnConvertToWidth:Zb,_fnGetWidestNode:$b,_fnGetMaxLenString:ac,_fnStringToCss:K,_fnSortFlatten:pa,_fnSort:Gb,_fnSortAria:cc,_fnSortListener:nb,_fnSortAttachListener:db,_fnSortingClasses:Pa,_fnSortData:bc,_fnSaveState:Qa,_fnLoadState:dc,_fnSettingsFromNode:Ra,_fnLog:aa,_fnMap:V,_fnBindAction:ob,_fnCallbackReg:Q,_fnCallbackFire:H,
 _fnLengthOverflow:jb,_fnRenderer:eb,_fnDataSource:P,_fnRowAttributes:cb,_fnExtend:pb,_fnCalculateEnd:function(){}});k.fn.dataTable=u;u.$=k;k.fn.dataTableSettings=u.settings;k.fn.dataTableExt=u.ext;k.fn.DataTable=function(a){return k(this).dataTable(a).api()};k.each(u,function(a,b){k.fn.DataTable[a]=b});return k.fn.dataTable});
-
-// // This code was added to assist in sorting via js Datatables. 
-// // It will only sort non-empty strings and push empty strings to the bottom
-// jQuery.extend(jQuery.fn.dataTableExt.oSort,{"non-empty-string-asc":function(n,t){return""==n?1:""==t?-1:n<t?-1:n>t?1:0},"non-empty-string-desc":function(n,t){return""==n?1:""==t?-1:n<t?1:n>t?-1:0}});
-
-// // Allows searchability of renderd HTML elements
-// $.fn.dataTableExt.ofnSearch['html-input'] = function(value) {
-//   return $(value).val();
-// };
