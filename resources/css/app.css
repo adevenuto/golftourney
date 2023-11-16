@@ -58,9 +58,9 @@
     margin-top: 45px;
 } */
 
-#dt-players-list_filter, .dataTables_length {
+#dt_players_list_filter, .dataTables_length {
     display: none;
 }
-#dt-players-list_filter, .dataTables_filter {
+/* #dt-players-list_filter, .dataTables_filter {
     margin-bottom: 1.3rem;
-}
+} */

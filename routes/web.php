@@ -33,6 +33,7 @@ Route::get('/golfers', [GolfersController::class, 'create']);
 
 Route::delete('/golfers/{id}', [GolfersController::class, 'delete']);
 Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);
+Route::post('/create/golfer', [GolfersController::class, 'store']);
 
 
 Route::post('/golfers/{id}/add/score/{newScore}', [HandicapController::class, 'store']);
