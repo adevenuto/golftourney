@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('golfers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('golfer_id')->default(2000)->comment('GolferId from original MSAccess data');
             $table->string('first_name');
             $table->string('last_name');
             $table->decimal('handicap', 4,2)->nullable()->default(00.00);

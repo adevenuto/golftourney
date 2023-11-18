@@ -17,10 +17,10 @@ class HandicapSeeder extends Seeder
     { 
         $golfers = Golfer::all();
         foreach ($golfers as $golfer) {
-            $rounds = $this->latest_rounds($golfer->golfer_id);
+            $rounds = $this->latest_rounds($golfer->id);
             if (count($rounds)>0) {
                 $handicap = $this->calc_handicap($rounds);
-                $golfer = Golfer::where('golfer_id', $golfer->golfer_id)->first();
+                $golfer = Golfer::where('id', $golfer->id)->first();
                 $golfer->handicap = $handicap;
                 $golfer->save();
             }

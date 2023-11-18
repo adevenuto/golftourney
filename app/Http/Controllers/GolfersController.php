@@ -26,7 +26,7 @@ class GolfersController extends Controller
     public function index()
     {
         try {
-            $golfers = DB::table('golfers')->orderBy('last_name', 'asc')->get();
+            $golfers = DB::table('golfers')->get();
             return response()->json(['golfers' => $golfers], 200);
         } catch (\exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
@@ -118,7 +118,7 @@ class GolfersController extends Controller
     public function delete($id)
     {   
         try {
-            DB::table('golfers')->where('golfer_id', $id)->delete();
+            DB::table('golfers')->where('id', $id)->delete();
             return response()->json(['success' => 'Golfer deleted'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);

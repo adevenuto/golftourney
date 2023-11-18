@@ -24,13 +24,13 @@ class HandicapController extends Controller
             // store new round
             $golfer = Golfer::find($id);
             $round = new Round();
-            $round->golfer_id = $golfer->golfer_id;
+            $round->golfer_id = $golfer->id;
             $round->score = number_format($newScore,2);
             $round->course_name = 'Robert A. Black';
             $round->save();
 
             // calc new handicap
-            $latest_rounds = $this->latest_rounds($golfer->golfer_id);
+            $latest_rounds = $this->latest_rounds($golfer->id);
             $new_handicap = $this->calc_handicap($latest_rounds);
 
             $golfer->handicap = $new_handicap;
@@ -52,7 +52,7 @@ class HandicapController extends Controller
     {   
         try {
             $golfer = Golfer::find($id);
-            $latest_rounds = $this->latest_rounds($golfer->golfer_id);
+            $latest_rounds = $this->latest_rounds($golfer->id);
             return response()->json(['latest_rounds' => $latest_rounds], 200);
         } catch (\exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);

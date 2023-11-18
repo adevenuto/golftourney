@@ -15,7 +15,6 @@ class Golfer extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'golfer_id',
         'first_name',
         'last_name',
         'handicap',

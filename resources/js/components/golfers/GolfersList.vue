@@ -65,7 +65,7 @@
             </div>
         </Modal>
 
-        <!-- EDIT MODAL -->
+        <!-- UPDATE MODAL -->
         <Modal 
             v-show="editModal" 
             @close_modal="closeModal" 
@@ -302,7 +302,7 @@
             },
             async deleteGolfer() {
                 try {
-                    const res = await axios.delete(`/golfers/${this.selectedRow.golfer_id}`)
+                    const res = await axios.delete(`/golfers/${this.selectedRow.id}`)
                     if(res.status===200) {
                         console.log(res)
                         this.closeModal()
@@ -365,7 +365,6 @@
                 try {
                     const res = await axios.post(`/golfers/${this.selectedRow.id}/add/score/${this.newScore}`)
                     if(res.status===200) {
-                        console.log(res)
                         this.closeModal()
                         this.getGolfers()
                     }

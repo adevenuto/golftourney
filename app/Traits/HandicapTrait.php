@@ -8,16 +8,16 @@ trait HandicapTrait
 {
 
     /**
-     * @param int $golfer_id
+     * @param int $id
      *
      * @return array
      */
-    public function latest_rounds(Int $golfer_id): array
+    public function latest_rounds(Int $id): array
     {
         $latest20 = DB::table('golfers')
-        ->leftJoin('rounds', 'golfers.golfer_id', '=', 'rounds.golfer_id')
+        ->leftJoin('rounds', 'golfers.id', '=', 'rounds.golfer_id')
         ->orderBy('rounds.created_at', 'desc')
-        ->where('golfers.golfer_id', $golfer_id)
+        ->where('golfers.id', $id)
         ->limit('20')
         ->get()
         ->toArray();
