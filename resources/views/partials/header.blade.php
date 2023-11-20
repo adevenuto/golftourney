@@ -15,10 +15,10 @@
             @endif
         @else
             <li>
-                {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="pb-0.5 px-2 bg-green-500 text-white rounded-full text-sm">{{ Auth::user()->role }}</span>
+                {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="pb-0.5 px-1.5 bg-green-800 text-white rounded text-sm">{{ Auth::user()->role }}</span>
             </li>
             <li>
-                <a class="text-xs text-red-400 hover:text-red-500 hover:underline" href="{{ route('logout') }}"
+                <a class="text-xs text-red-600 hover:text-red-700 hover:underline" href="{{ route('logout') }}"
                     onclick="event.preventDefault();
                     document.getElementById('logout-form').submit();">
                     {{ __('Logout') }}

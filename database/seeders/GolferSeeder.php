@@ -9,7 +9,7 @@ class GolferSeeder extends Seeder
 {   
     public function run(): void
     {
-        $path = storage_path()."/golfers_111723.csv";
+        $path = storage_path()."/golfers_copy.csv";
         if (($handle = fopen($path, 'r')) !== false) {
             fgetcsv($handle);
             while (($row = fgetcsv($handle, 1000, ',')) !== false) {
