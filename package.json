@@ -18,6 +18,7 @@
         "vue": "^3.2.37"
     },
     "dependencies": {
+        "@headlessui/vue": "^1.7.16",
         "boxicons": "^2.1.4",
         "oh-vue-icons": "^1.0.0-rc3",
         "tippy.js": "^6.3.7"

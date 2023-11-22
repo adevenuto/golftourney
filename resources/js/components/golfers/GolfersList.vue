@@ -2,15 +2,16 @@
     
     <div class="w-3/4 mt-10 sm:mx-auto">
         <p class="mt-10 text-5xl">Golfers</p>
-
+        <Menu></Menu>
         <!-- SEARCH/CLEAR | ADD GOLFER -->
         <div class="flex justify-between my-10">
             <div class="flex">
                 <div class="relative mr-2">
-                    <input class="py-1 pr-3 border border-gray-500 rounded pl-7"
-                    type="text"
-                    id="searchBox"
-                    placeholder="Search">
+                    <input 
+                        class="py-1 pr-3 border border-gray-500 rounded pl-7"
+                        type="text"
+                        id="searchBox"
+                        placeholder="Search">
 
                     <v-icon 
                         class="absolute left-1.5 top-2"
@@ -190,70 +191,26 @@
             </form>
         </Modal>
 
-        <!-- ADD SCORE MODAL -->
-        <Modal 
-            v-show="addScoreModal" 
-            @close_modal="closeModal" 
+        <!-- MANAGE HANDICAP/ROUNDS -->
+        <MangeHandicap 
+            :showModal="manageHandicapModal"
             :title="golferFullName"
-        >
-            <form @submit.prevent="addScore">
-                <div class="my-2">
-                    <label for="email" class="block mb-1 text-xs">New score</label>
-                    <input 
-                        @input="limitTwo"
-                        v-model="newScore"
-                        type="text"
-                        min="0"
-                        step="1"
-                        id="email" 
-                        class="field-base" 
-                        placeholder="Add new score to update handicap"
-                        required
-                    >
-                </div>
-                <div class="flex">
-                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">
-                        Save score
-                    </button>   
-                </div>
-            </form>
-        </Modal>
-
-        <!-- MANAGE ROUNDS MODAL -->
-        <Modal 
-            v-show="recentRoundsModal" 
-            @close_modal="closeModal" 
-            :title="golferFullName"
-        >   
-            <div class="flex items-center gap-3"></div>
-            <div 
-                class="flex items-center justify-between gap-3 px-2 py-1 my-1 border rounded"
-                :key="round.id" 
-                v-for="round in golfersRecentRounds"
-            >   
-                <div>
-                    <v-icon 
-                        name="gi-golf-tee" 
-                        fill="#046C4E"
-                        scale="1.2" 
-                    />
-                    {{ _remove_decimals(round.score) }}
-                </div>
-                
-                {{ _format_date(round.created_at) }}
-            </div>
-            <button @click="reloadTable()">get golfers</button>
-        </Modal>
-        
+            :golferId="selectedRow.id"
+            @close_modal="closeModal"
+        />
     </div>
 
 </template>
 <script>
     import Modal from '../ui/Modal.vue';
+    import Menu from '../ui/Menu.vue';
+    import MangeHandicap from './MangeHandicap.vue';
     import { format_date, remove_decimals } from '../../utilities'
     export default {
         components: {
-            Modal
+            Modal,
+            Menu,
+            MangeHandicap
         },
         data() {
             return {
@@ -267,12 +224,9 @@
                     email: '',
                     phone: ''
                 },
-                newScore: null,
-
                 deleteModal: false,
                 editModal: false,
-                addScoreModal: false,
-                recentRoundsModal: false,
+                manageHandicapModal: false,
                 newGolferModal: false,
             }
         },
@@ -282,10 +236,6 @@
                     this.setDataTableLogic()
                     this.getGolfers()
                 }
-            },
-            recentRoundsModal: function(isOpen) {
-                if(isOpen) return this.getRounds()
-                return this.golfersRecentRounds = []
             }
         },
         computed: {
@@ -337,11 +287,8 @@
                         case 'edit_golfer':
                             _this.editModal = !_this.editModal
                             break
-                        case 'add_score':
-                            _this.addScoreModal = !_this.addScoreModal
-                            break
                         case 'handicap_round_data':
-                            _this.recentRoundsModal = !_this.recentRoundsModal
+                            _this.manageHandicapModal = !_this.manageHandicapModal
                             break
                         default:
                             break;
@@ -392,29 +339,12 @@
                     console.error(err);
                 }
             },
-            async getRounds() {
-                try {
-                    const res = await axios.get(`/golfers/${this.selectedRow.id}/latest`)
-                    if(res.status===200) {
-                        console.log(res)
-                        this.golfersRecentRounds = res.data.latest_rounds
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            },
             closeModal() {
                 this.deleteModal = false
                 this.editModal = false
-                this.addScoreModal = false
-                this.recentRoundsModal = false
+                this.manageHandicapModal = false
                 this.newGolferModal = false
                 this.selectedRow = {}
-                this.newScore = null
-            },
-            limitTwo() {
-                var x = this.newScore.replace(/\D/g, '').match(/^[1-9][0-9]?$|^150$/)
-                this.newScore = x
             },
             _format_date: function(date) {
                 return format_date(date)
@@ -478,19 +408,11 @@
                         className: 'text-left',
                         sortable: false
                     },
-                    // {
-                    //     sortable: false,
-                    //     render: function(data, type, row) {
-                    //         return `<div data-action="add_score" class="cursor-pointer tablerow_clickevent_target">
-                    //                     <svg id="add_score" class="ov-icon" aria-hidden="true" width="24.96" height="24.96" viewBox="0.48 0.48 23.04 23.04" fill="#222F3D" style="font-size: 1.56em;"><path fill="none" d="M0 0h24v24H0V0z"></path><circle cx="19.5" cy="19.5" r="1.5"></circle><path d="M17 5.92L9 2v18H7v-1.73c-1.79.35-3 .99-3 1.73 0 1.1 2.69 2 6 2s6-.9 6-2c0-.99-2.16-1.81-5-1.97V8.98l6-3.06z"></path></svg>
-                    //                 </div>`;
-                    //     }
-                    // },
                     {
                         sortable: false,
                         render: function(data, type, row) {
                             return `<div data-action="edit_golfer" class="cursor-pointer tablerow_clickevent_target">
-                                        <svg id="edit_golfer" class="ov-icon" aria-hidden="true" width="24.96" height="24.96" viewBox="-48.96 -80.96 673.92 673.92" fill="#1E429F" style="font-size: 1.56em;"><path d="M402.3 344.9l32-32c5-5 13.7-1.5 13.7 5.7V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h273.5c7.1 0 10.7 8.6 5.7 13.7l-32 32c-1.5 1.5-3.5 2.3-5.7 2.3H48v352h352V350.5c0-2.1.8-4.1 2.3-5.6zm156.6-201.8L296.3 405.7l-90.4 10c-26.2 2.9-48.5-19.2-45.6-45.6l10-90.4L432.9 17.1c22.9-22.9 59.9-22.9 82.7 0l43.2 43.2c22.9 22.9 22.9 60 .1 82.8zM460.1 174L402 115.9 216.2 301.8l-7.3 65.3 65.3-7.3L460.1 174zm64.8-79.7l-43.2-43.2c-4.1-4.1-10.8-4.1-14.8 0L436 82l58.1 58.1 30.9-30.9c4-4.2 4-10.8-.1-14.9z"></path></svg>
+                                        <svg id="edit_golfer" class="ov-icon" aria-hidden="true" width="24.96" height="24.96" viewBox="-48.96 -80.96 673.92 673.92" fill="#222F3D" style="font-size: 1.56em;"><path d="M402.3 344.9l32-32c5-5 13.7-1.5 13.7 5.7V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h273.5c7.1 0 10.7 8.6 5.7 13.7l-32 32c-1.5 1.5-3.5 2.3-5.7 2.3H48v352h352V350.5c0-2.1.8-4.1 2.3-5.6zm156.6-201.8L296.3 405.7l-90.4 10c-26.2 2.9-48.5-19.2-45.6-45.6l10-90.4L432.9 17.1c22.9-22.9 59.9-22.9 82.7 0l43.2 43.2c22.9 22.9 22.9 60 .1 82.8zM460.1 174L402 115.9 216.2 301.8l-7.3 65.3 65.3-7.3L460.1 174zm64.8-79.7l-43.2-43.2c-4.1-4.1-10.8-4.1-14.8 0L436 82l58.1 58.1 30.9-30.9c4-4.2 4-10.8-.1-14.9z"></path></svg>
                                     </div>`;
                         }
                     },
@@ -518,11 +440,11 @@
         transition: 100ms all ease-in-out;
     }
 
-    /* #dt_players_list tr:hover svg#add_score {
+    /* #dt_players_list tr:hover svg#manage_handicap {
         fill: #000;
         transition: 100ms all ease-in-out;
     } */
-    #dt_players_list tr svg#add_score:hover {
+    #dt_players_list tr svg#manage_handicap:hover {
         transform: scale(1.2);
         transition: 100ms all ease-in-out;
     }
