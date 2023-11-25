@@ -8,21 +8,20 @@ trait HandicapTrait
 {
 
     /**
-     * @param int $golfer_id
+     * @param int $id
      *
      * @return array
      */
-    public function latest_rounds(Int $golfer_id): array
+    public function latest_rounds(Int $id): array
     {
         $latest20 = DB::table('golfers')
-        ->leftJoin('rounds', 'golfers.golfer_id', '=', 'rounds.golfer_id')
+        ->join('rounds', 'golfers.id', '=', 'rounds.golfer_id')
         ->orderBy('rounds.created_at', 'desc')
-        ->where('golfers.golfer_id', $golfer_id)
+        ->where('golfers.id', $id)
         ->limit('20')
-        ->get()
-        ->toArray();
+        ->get();
 
-        return collect($latest20)->sortBy('score')->take(8)->toArray();
+        return collect($latest20)->sortBy('score')->take(8)->values()->toArray();
     }
 
 
@@ -33,6 +32,7 @@ trait HandicapTrait
      */
     public function calc_handicap(Array $rounds): float
     {   
+        if(count($rounds)===0) return 0.00;
         $score_diff_sum = 0;
         foreach ($rounds as $round) {
             if($round->score) {
@@ -43,5 +43,35 @@ trait HandicapTrait
         }
         $handicap = round($score_diff_sum/count($rounds),3);
         return $handicap;
+    }
+
+
+    /**
+     * @param int $id
+     *
+     */
+    public function update_golfer_handicap(Int $id)
+    {   
+        $golfer = Golfer::where('id', $id)->first();
+
+        // calc new handicap
+        $latest_rounds = $this->latest_rounds($id);
+        $new_handicap = $this->calc_handicap($latest_rounds);
+
+        $golfer->handicap = $new_handicap;
+        $golfer->save();
+    }
+
+    /**
+     * @param int $id
+     *
+     * @return int
+     */
+    public function total_rounds(Int $id): int
+    {
+        $count = DB::table('rounds')
+        ->where('golfer_id', $id)
+        ->count();
+        return $count ?? 0;
     }
 }

@@ -9,7 +9,7 @@ class RoundSeeder extends Seeder
 {
     public function run(): void
     {
-        $path = storage_path()."/round_102723.csv";
+        $path = storage_path()."/rounds_copy.csv";
         if (($handle = fopen($path, 'r')) !== false) {
             fgetcsv($handle);
             while (($row = fgetcsv($handle, 1000, ',')) !== false) {
@@ -17,17 +17,13 @@ class RoundSeeder extends Seeder
                 foreach ($row as $column) {
                     $data[] = $column;
                 }
-
-                // if($data[1]==297) \Log::info($data);
-
-                if($data[13]==='Robert A. Black') {
-                    DB::table('rounds')->insert([
-                        'golfer_id' => $data[1],
-                        'score' => intval($data[18])/2,
-                        'course_name' => $data[13],
-                        'created_at' => \Carbon\Carbon::parse($data[5])->format('Y/m/d H:i:s')
-                    ]);
-                }
+                
+                DB::table('rounds')->insert([
+                    'golfer_id' => $data[1],
+                    'score' => intval($data[2]),
+                    'course_name' => $data[3],
+                    'created_at' => $data[4]
+                ]);
                 
             }
             fclose($handle);

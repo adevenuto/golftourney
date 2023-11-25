@@ -9,7 +9,7 @@ class GolferSeeder extends Seeder
 {   
     public function run(): void
     {
-        $path = storage_path()."/golfer_102723.csv";
+        $path = storage_path()."/golfers_copy.csv";
         if (($handle = fopen($path, 'r')) !== false) {
             fgetcsv($handle);
             while (($row = fgetcsv($handle, 1000, ',')) !== false) {
@@ -18,12 +18,12 @@ class GolferSeeder extends Seeder
                     $data[] = $column;
                     
                 }
+                
                 DB::table('golfers')->insert([
-                    'golfer_id' => $data[0],
-                    'first_name' => $data[2],
-                    'last_name' => $data[3],
-                    'email' => strtolower($data[2].$data[3].'@noreply.com'),
-                    'created_at' => \Carbon\Carbon::parse($data[5])->format('Y/m/d H:i:s'),
+                    'first_name' => $data[1],
+                    'last_name' => $data[2],
+                    'email' => strtolower(substr($data[1], 0, 1).$data[2].'@noreply.com'),
+                    'created_at' => $data[6],
                 ]);
             }
             fclose($handle);
