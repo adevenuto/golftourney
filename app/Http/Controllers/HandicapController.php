@@ -48,12 +48,16 @@ class HandicapController extends Controller
      * 
      * @return Response
      */
-    public function latest(Int $id)
+    public function rounds(Int $id)
     {   
         try {
             $golfer = Golfer::find($id);
             $latest_rounds = $this->latest_rounds($golfer->id);
-            return response()->json(['latest_rounds' => $latest_rounds], 200);
+            $total_rounds = $this->total_rounds($golfer->id);
+            return response()->json(['rounds' => [
+                'latest' => $latest_rounds,
+                'total' => $total_rounds
+            ]], 200);
         } catch (\exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }

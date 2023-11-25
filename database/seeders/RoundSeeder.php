@@ -17,7 +17,7 @@ class RoundSeeder extends Seeder
                 foreach ($row as $column) {
                     $data[] = $column;
                 }
-
+                
                 DB::table('rounds')->insert([
                     'golfer_id' => $data[1],
                     'score' => intval($data[2]),

@@ -124,4 +124,19 @@ class GolfersController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return Response
+     */
+    public function golfer($id)
+    {
+        try {
+            $golfer = Golfer::find($id);
+            return response()->json(['golfer' => $golfer], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

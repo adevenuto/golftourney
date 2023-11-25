@@ -8,14 +8,16 @@ import './bootstrap';
 import { createApp } from 'vue';
 
 import { OhVueIcon, addIcons } from "oh-vue-icons";
-import { IoCloseOutline, CoTrash, IoWarning, GiGolfTee, HiPlusSm, HiSearch } from "oh-vue-icons/icons"
-addIcons(IoCloseOutline, CoTrash, IoWarning, GiGolfTee, HiPlusSm, HiSearch);
+import { IoCloseOutline, RiDeleteBin2Line, IoWarning, GiGolfTee, HiPlusSm, HiSearch, FaRegularEdit } from "oh-vue-icons/icons"
+addIcons(IoCloseOutline, RiDeleteBin2Line, IoWarning, GiGolfTee, HiPlusSm, HiSearch, FaRegularEdit);
 
 import GolfersList from './components/golfers/GolfersList.vue';
+import ManageRounds from './components/rounds/ManageRounds.vue';
 
 const app = createApp({});
 
 app.component('golfers-list', GolfersList);
+app.component('manage-rounds', ManageRounds);
 app.component("v-icon", OhVueIcon);
 
 app.directive('phone-format', {
