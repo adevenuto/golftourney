@@ -1,4 +1,4 @@
-<div class="flex items-center justify-between p-6">
+<div class="flex items-center justify-between p-6 shadow-md">
     <a href={{ url('/') }} class="text-2xl">Black League</a>
     <ul class="flex gap-4">
         @guest
