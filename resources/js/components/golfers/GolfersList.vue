@@ -2,7 +2,7 @@
     
     <div class="w-3/4 mt-10 sm:mx-auto">
         <p class="mt-10 text-5xl">Golfers</p>
-        <Menu></Menu>
+        <!-- <Menu></Menu> -->
         <!-- SEARCH/CLEAR | ADD GOLFER -->
         <div class="flex justify-between my-10">
             <div class="flex">
@@ -196,11 +196,11 @@
 </template>
 <script>
     import Modal from '../ui/Modal.vue';
-    import Menu from '../ui/Menu.vue';
+    // import Menu from '../ui/Menu.vue';
     export default {
         components: {
             Modal,
-            Menu
+            // Menu
         },
         data() {
             return {
@@ -252,7 +252,6 @@
                 try {
                     const res = await axios.delete(`/golfers/${this.selectedRow.id}`)
                     if(res.status===200) {
-                        console.log(res)
                         this.closeModal()
                         this.getGolfers()
                     }
@@ -294,18 +293,6 @@
                 try {
                     const res = await axios.post(`/golfers/${this.selectedRow.id}/edit`, this.selectedRow)
                     if(res.status===200) {
-                        console.log(res)
-                        this.closeModal()
-                        this.getGolfers()
-                    }
-                } catch (err) {
-                    console.error(err);
-                }
-            },
-            async addScore() {
-                try {
-                    const res = await axios.post(`/golfers/${this.selectedRow.id}/add/score/${this.newScore}`)
-                    if(res.status===200) {
                         this.closeModal()
                         this.getGolfers()
                     }
@@ -317,7 +304,6 @@
                 try {
                     const res = await axios.post('/create/golfer', this.newGolfer)
                     if(res.status===200) {
-                        console.log(res)
                         this.closeModal()
                         this.getGolfers()
                     }
@@ -330,6 +316,7 @@
                 this.editModal = false
                 this.newGolferModal = false
                 this.selectedRow = {}
+                this.newGolfer = {}
             }
         },
         mounted() {

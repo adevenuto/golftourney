@@ -2,9 +2,7 @@
 
 namespace App\Traits;
 use App\Models\Golfer;
-use Faker\Core\Number;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Expr\Cast\Int_;
 
 trait HandicapTrait 
 {
@@ -45,6 +43,23 @@ trait HandicapTrait
         }
         $handicap = round($score_diff_sum/count($rounds),3);
         return $handicap;
+    }
+
+
+    /**
+     * @param int $id
+     *
+     */
+    public function update_golfer_handicap(Int $id)
+    {   
+        $golfer = Golfer::where('id', $id)->first();
+
+        // calc new handicap
+        $latest_rounds = $this->latest_rounds($id);
+        $new_handicap = $this->calc_handicap($latest_rounds);
+
+        $golfer->handicap = $new_handicap;
+        $golfer->save();
     }
 
     /**

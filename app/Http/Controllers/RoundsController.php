@@ -6,7 +6,8 @@ use App\Models\Round;
 use App\Models\Golfer;
 use Illuminate\Http\Request;
 use App\Traits\HandicapTrait;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
+use \Illuminate\Contracts\View\View;
 
 class RoundsController extends Controller
 {   
@@ -23,42 +24,78 @@ class RoundsController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Return golfers latest rounds
+     * @param int $id
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function index(Int $id): JsonResponse
+    {   
+        try {
+            $golfer = Golfer::find($id);
+            $latest_rounds = $this->latest_rounds($golfer->id);
+            $total_rounds = $this->total_rounds($golfer->id);
+            return response()->json(['rounds' => [
+                'latest' => $latest_rounds,
+                'total' => $total_rounds
+            ]], 200);
+        } catch (\exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Display the view.
+     * 
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function create(): View
     {
         return view('rounds.index');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a new golfer round in storage.
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        //
+        try {
+            $round = new Round();
+            $round->golfer_id = intval($request->golfer_id);
+            $round->score = intval($request->score);
+            $round->course_name = 'Robert A. Black';
+            $round->created_at = $request->created_at;
+            $round->save();
+
+            // calc new handicap
+            $this->update_golfer_handicap($request->golfer_id);
+
+            return response()->json(['success' => 'Round was successfully created'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Update round in storage.
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(Request $request)
+    public function edit(Request $request): JsonResponse
     {
         try {
             $round = Round::find($request->id);
-            $golfer = Golfer::where('id', $request->golfer_id)->first();
 
             $round->score = intval($request->score);
             $round->created_at = $request->created_at;
             $round->save();
 
             // calc new handicap
-            $latest_rounds = $this->latest_rounds($golfer->id);
-            $new_handicap = $this->calc_handicap($latest_rounds);
+            $this->update_golfer_handicap($request->golfer_id);
 
-            $golfer->handicap = $new_handicap;
-            $golfer->save();
-
-            // return response()->json(['success' => 'Round was successfully updated'], 200);
+            return response()->json(['success' => 'Round was successfully updated'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -67,23 +104,18 @@ class RoundsController extends Controller
     /**
      * Delete a resource in storage.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function delete($id)
+    public function delete($id): JsonResponse
     {   
         
         try {
             $round = Round::find($id);
-            $golfer = Golfer::where('id', $round->golfer_id)->first();
-            
+            $golfer_id = $round->golfer_id;
             $round->delete();
 
             // calc new handicap
-            $latest_rounds = $this->latest_rounds($golfer->id);
-            $new_handicap = $this->calc_handicap($latest_rounds);
-
-            $golfer->handicap = $new_handicap;
-            $golfer->save();
+            $this->update_golfer_handicap($golfer_id);
 
             return response()->json(['success' => 'Round was successfully deleted'], 200);
         } catch (\Exception $e) {

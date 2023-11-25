@@ -29,7 +29,8 @@
         <!-- Recent calculated rounds list -->
         <div class="mt-12">
             <h2 class="text-4xl">Recent rounds</h2>
-            <p class="mt-1 text-sm leading-tight">These are the most recent best {{ roundsLatestLength }} of {{ roundsTotal }} rounds. <br> These are the rounds used to calculate {{ golferFullName }}'s handicap of {{ golfer.handicap }}</p>
+            <p class="mt-1 text-sm leading-tight">
+                <span class="text-sm text-gray-400">These are the most</span> recent best {{ roundsLatestLength }} of {{ roundsTotal }} rounds. <br> These are the rounds used to calculate {{ golferFullName }}'s handicap of {{ golfer.handicap }}</p>
             <div class="grid grid-cols-1 gap-2.5 mt-6">
                 <div 
                     class="flex items-center justify-between px-2 py-1.5 border rounded"
@@ -103,6 +104,7 @@
         <Modal 
             v-show="editModal" 
             @close_modal="closeModal" 
+            :title="newOrEditRoundTitle"
         >
             <form @submit.prevent="updateRound">
                 <div class="flex flex-col sm:gap-3 sm:flex-row">
@@ -141,39 +143,46 @@
         </Modal>
 
         <!-- New round modal -->
-        <!-- <Modal 
+        <Modal 
             v-show="newModal" 
-            @close_modal="closeModal" 
+            @close_modal="closeModal"
+            :title="newOrEditRoundTitle" 
         >
-            <form @submit.prevent="addNewRound">
+            <form @submit.prevent="storeRound">
                 <div class="flex flex-col sm:gap-3 sm:flex-row">
                     <div class="flex-1 my-2">
-                        <label for="first_name" class="block mb-1 text-xs">First name</label>
+                        <label for="score" class="block mb-1 text-xs">Score</label>
                         <input 
+                            @input="_limitNumber"
                             type="text" 
-                            id="first_name" 
+                            id="score" 
                             class="field-base" 
-                            
+                            v-model="newOrEditRound.score"
                             required
                         >
                     </div>
                     <div class="flex-1 my-2">
-                        <label for="last_name" class="block mb-1 text-xs">Last name</label>
-                        <input 
-                            type="text" 
-                            id="last_name" 
-                            class="field-base" 
-                            
-                            required
-                        >
+                        <label class="block mb-1 text-xs">Date</label>
+                        <VueDatePicker 
+                            :enable-time-picker="false"
+                            :auto-apply="true"
+                            v-model="newOrEditRound.created_at"
+                            input-class-name="field-base !bg-gray-50 !py-2"
+                            :required="true"
+                            format="yyyy-MM-dd"
+                        ></VueDatePicker>
                     </div>
                 </div>
                 <div class="flex">
-                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">Save changes</button>   
+                    <button 
+                        class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600"
+                    >
+                        Add round
+                    </button>   
                 </div>
                 
             </form>
-        </Modal> -->
+        </Modal>
     </div>
 
 </template>
@@ -214,11 +223,11 @@ export default {
             return this.rounds.total
         },
         selectedRoundTitle: function() {
-            return `${this.selectedRound.score} <span class="text-sm text-gray-400">/ ${this._format_date(this.selectedRound.created_at)}</span>`
+            return `${this.selectedRound.score?this.selectedRound.score:''} <span class="text-sm text-gray-400">/ ${this._format_date(this.selectedRound.created_at)}</span>`
+        },
+        newOrEditRoundTitle: function() {
+            return `${this.newOrEditRound.score?this.newOrEditRound.score:''} <span class="text-sm text-gray-400">/ ${this._format_date(this.newOrEditRound.created_at)}</span>`
         }
-    },
-    watch: {
-        
     },
     methods: {
         closeModal() {
@@ -235,9 +244,7 @@ export default {
         async getGolferRounds() {
             try {
                 const res = await axios.get(`/golfers/${this.golferId}/rounds`)
-                if(res.status===200) {
-                    this.rounds = res.data.rounds
-                }
+                if(res.status===200) this.rounds = res.data.rounds
             } catch (err) {
                 console.error(err);
             }
@@ -245,9 +252,7 @@ export default {
         async getGolfer() {
             try {
                 const res = await axios.get(`/golfer/${this.golferId}`)
-                if(res.status===200) {
-                    this.golfer = res.data.golfer
-                }
+                if(res.status===200) this.golfer = res.data.golfer
             } catch (err) {
                 console.error(err);
             }
@@ -256,7 +261,6 @@ export default {
             try {
                 const res = await axios.delete(`/rounds/${this.selectedRound.id}`)
                 if(res.status===200) {
-                    console.log(res)
                     this.closeModal()
                     this.getGolfer(this.golferId)
                     this.getGolferRounds(this.golferId)
@@ -269,7 +273,19 @@ export default {
             try {
                 const res = await axios.post(`/rounds/edit`, this.newOrEditRound)
                 if(res.status===200) {
-                    console.log(res)
+                    this.closeModal()
+                    this.getGolfer(this.golferId)
+                    this.getGolferRounds(this.golferId)
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        },
+        async storeRound() {
+            try {
+                this.newOrEditRound.golfer_id = this.golferId
+                const res = await axios.post(`/rounds/store`, this.newOrEditRound)
+                if(res.status===200) {
                     this.closeModal()
                     this.getGolfer(this.golferId)
                     this.getGolferRounds(this.golferId)
@@ -283,7 +299,8 @@ export default {
         },
         _limitNumber() {
             var x = this.newOrEditRound.score.replace(/\D/g, '').match(/^(?:\d{1,2}|1[0-4]\d|150)$/)
-            this.newOrEditRound.score = x[0]
+            if(x===null) return this.newOrEditRound.score = null
+            return this.newOrEditRound.score = x[0]
         },
     },
     created() {

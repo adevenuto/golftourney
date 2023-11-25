@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\GolfersController;
-use App\Http\Controllers\HandicapController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoundsController;
 
@@ -39,10 +38,8 @@ Route::post('/create/golfer', [GolfersController::class, 'store']);
 Route::get('/golfer/{id}', [GolfersController::class, 'golfer']);
 
 
-Route::post('/golfers/{id}/add/score/{newScore}', [HandicapController::class, 'store']);
-Route::get('/golfers/{id}/rounds', [HandicapController::class, 'rounds']);
-
-
+Route::get('/golfers/{id}/rounds', [RoundsController::class, 'index']);
 Route::get('/rounds/{id}', [RoundsController::class, 'create']);
 Route::post('/rounds/edit', [RoundsController::class, 'edit']);
+Route::post('/rounds/store', [RoundsController::class, 'store']);
 Route::delete('/rounds/{id}', [RoundsController::class, 'delete']);

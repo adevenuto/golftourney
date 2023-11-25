@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Golfer;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\View\View;
 
 class GolfersController extends Controller
 {
@@ -19,11 +21,11 @@ class GolfersController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     * 
-     * @return Response
+     * Get golfer and return it as JSON.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         try {
             $golfers = DB::table('golfers')->get();
@@ -33,17 +35,25 @@ class GolfersController extends Controller
         }
     }
     
-    public function create()
+    /**
+     * Display the view.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function create(): View
     {
         return view('golfers.index');
     }
 
     /**
-     * Update existing golfer.
+     * Update golfer and return JSON response.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
+     * 
+     * @param int $id
+     * 
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {   
         try {
             $rules = [
@@ -78,11 +88,11 @@ class GolfersController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store golfer and return JSON response.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {   
         try {
             $rules = [
@@ -111,11 +121,13 @@ class GolfersController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Delete golfer from storage.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
+     * 
+     * @param int $id
      */
-    public function delete($id)
+    public function delete($id): JsonResponse
     {   
         try {
             DB::table('golfers')->where('id', $id)->delete();
@@ -126,11 +138,13 @@ class GolfersController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Get golfer by id.
      *
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
+     * 
+     * @param int $id
      */
-    public function golfer($id)
+    public function golfer($id): JsonResponse
     {
         try {
             $golfer = Golfer::find($id);
