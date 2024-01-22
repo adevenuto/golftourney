@@ -1,5 +1,18 @@
 <template>
     <div class="mx-3 mt-10 sm:w-3/4 xl:w-1/2 sm:mx-auto">
+        <!-- Back Button -->
+        <a 
+          class="inline-flex items-center px-3 py-1 mb-12 text-xs text-white bg-gray-500 rounded sm:text-base hover:bg-gray-600"
+          href="/golfers"
+        >   
+          <v-icon  
+            class="mr-1 -ml-1"
+            name="md-arrowback-round" 
+            fill="#fff"
+            scale="1.2" 
+          />
+          Go back
+        </a>
         <!-- Card -->
         <div class="flex p-3 border rounded shadow-sm">
             <div class="w-24 text-gray-400">
@@ -30,7 +43,7 @@
         <div class="mt-12">
             <h2 class="text-4xl">Recent rounds</h2>
             <p class="mt-1 text-sm leading-tight">
-                <span class="text-sm text-gray-400">These are the most</span> recent best {{ roundsLatestLength }} of {{ roundsTotal }} rounds. <br> These are the rounds used to calculate {{ golferFullName }}'s handicap of {{ golfer.handicap }}</p>
+                These are the most recent best {{ roundsLatestLength }} of {{ roundsTotal }} rounds, and the rounds used to calculate {{ golferFullName }}'s handicap ({{ golfer.handicap }})</p>
             <div class="grid grid-cols-1 gap-2.5 mt-6">
                 <div 
                     class="flex items-center justify-between px-2 py-1.5 border rounded"
@@ -76,13 +89,7 @@
                     scale="1.1" 
                     class="self-start cursor-pointer"
                 />
-                <span class="text-gray-400">You are about to delete </span> 
-                {{ golferFullName }}'s
-                <span class="text-gray-400">round of </span>
-                {{ selectedRound.score }}
-                <span class="text-gray-400">posted on </span>
-                {{ _format_date(selectedRound.created_at) }}
-                <span class="text-gray-400">. This may effect their calculated handicap. Are you sure?</span>
+                You are about to delete {{ golferFullName }}'s round of {{ selectedRound.score }} posted on {{ _format_date(selectedRound.created_at) }}. This may effect their calculated handicap. Are you sure?
             </div>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                 <div    
@@ -226,7 +233,8 @@ export default {
             return `${this.selectedRound.score?this.selectedRound.score:''} <span class="text-sm text-gray-400">/ ${this._format_date(this.selectedRound.created_at)}</span>`
         },
         newOrEditRoundTitle: function() {
-            return `${this.newOrEditRound.score?this.newOrEditRound.score:''} <span class="text-sm text-gray-400">/ ${this._format_date(this.newOrEditRound.created_at)}</span>`
+            if(this.newOrEditRound.score) return `${this.newOrEditRound.score} <span class="text-sm text-gray-400">/ ${this._format_date(this.newOrEditRound.created_at)}</span>`
+            return ''
         }
     },
     methods: {

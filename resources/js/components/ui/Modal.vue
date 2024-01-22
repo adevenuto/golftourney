@@ -5,9 +5,7 @@
                 <h1 class="text-xl" v-html="title"/>
                 <v-icon 
                     @click="closeModal" 
-                    animation="ring"
-                    speed="slow"
-                    hover
+                    
                     name="io-close-outline" 
                     scale="1.5" 
                     class="self-start cursor-pointer"

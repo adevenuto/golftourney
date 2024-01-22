@@ -28,7 +28,12 @@ class GolfersController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $golfers = DB::table('golfers')->get();
+          $golfers = DB::table('golfers as g')
+            ->leftJoin('rounds as r', 'g.id', '=', 'r.golfer_id')
+            ->select('g.*', DB::raw('count(r.id) as number_of_rounds'))
+            ->groupBy('g.id')
+            ->orderBy('number_of_rounds', 'desc')
+            ->get();
             return response()->json(['golfers' => $golfers], 200);
         } catch (\exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
