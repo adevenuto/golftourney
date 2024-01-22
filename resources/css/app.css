@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 
-
+body, html {
+  font-family: 'Ubuntu', sans-serif;
+}
 
 
 
