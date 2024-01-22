@@ -24,10 +24,8 @@
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3">
-              <div id="export">
-                
-              </div>
+            <div class="flex items-center space-x-2">
+              <div id="export"></div>
               <button 
                 class="flex items-center px-3 py-1 text-white bg-green-800 rounded hover:bg-green-900"
                 @click="newGolferModal = !newGolferModal"
