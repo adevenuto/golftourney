@@ -21,7 +21,7 @@ trait HandicapTrait
         ->limit('20')
         ->get();
 
-        return collect($latest20)->sortBy('score')->take(8)->values()->toArray();
+        return collect($latest20)->sortByDesc('created_at')->take(8)->values()->toArray();
     }
 
 

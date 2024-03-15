@@ -64,7 +64,7 @@ class GolfersController extends Controller
             $rules = [
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:golfers,email,'.$id,
+                // 'email' => 'required|email|unique:golfers,email,'.$id,
                 'handicap' => 'required|numeric|min:0',
             ];
     
@@ -79,8 +79,8 @@ class GolfersController extends Controller
                 return response()->json(['message' => 'Golfer not found'], 404);
             }
     
-            $golfer->first_name = $request->input('first_name');
-            $golfer->last_name = $request->input('last_name');
+            $golfer->first_name = strtolower($request->input('first_name'));
+            $golfer->last_name = strtolower($request->input('last_name'));
             $golfer->email = $request->input('email');
             $golfer->handicap = $request->input('handicap');
             $golfer->phone = $request->input('phone');
@@ -103,7 +103,7 @@ class GolfersController extends Controller
             $rules = [
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:golfers'
+                // 'email' => 'required|email|unique:golfers'
             ];
     
             $messages = [
@@ -113,8 +113,8 @@ class GolfersController extends Controller
             $this->validate($request, $rules, $messages);
     
             $golfer = new Golfer();
-            $golfer->first_name = $request->input('first_name');
-            $golfer->last_name = $request->input('last_name');
+            $golfer->first_name = strtolower($request->input('first_name'));
+            $golfer->last_name = strtolower($request->input('last_name'));
             $golfer->email = $request->input('email');
             $golfer->phone = $request->input('phone');
             $golfer->save();

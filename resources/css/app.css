@@ -45,9 +45,13 @@ body, html {
 
 .dataTables_scroll {
     display: inline-block;
-    overflow: auto;
+    overflow-x: auto;
     max-height: 32rem;
     width: 100%;
+}
+
+table>thead>tr>th:last-child {
+    background-image: none !important;
 }
 /* .dataTables_scrollHead {
     position: absolute !important;
