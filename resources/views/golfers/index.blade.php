@@ -18,7 +18,9 @@
 
     <div class="w-full">
         
-        <golfers-list></golfers-list>
+        <golfers-list 
+            role={{ Auth::user()->role }}
+        ></golfers-list>
 
     </div>
 

@@ -15,15 +15,17 @@
         </a>
         <!-- Card -->
         <div class="flex p-3 border rounded shadow-sm">
-            <div class="w-24 text-gray-400">
+            <div class="w-32 text-gray-400">
                 <p>Golfer</p>
                 <p>Handicap</p>
+                <p>Total Rounds</p>
             </div>
             <div class="mr-3">
-                <P>{{ golferFullName }}</P>
-                <p>{{ golfer.handicap }}</p>
+                <P class="capitalize">{{ golferFullName }}</P>
+                <p class="capitalize">{{ golfer.handicap }}</p>
+                <p>{{ roundsTotal }}</p>
             </div>
-            <div class="flex items-center justify-end flex-1">
+            <div v-if="role==='admin'" class="flex items-center justify-end flex-1">
                 <button 
                     class="flex items-center px-3 py-1 text-xs text-white bg-green-800 rounded sm:text-base hover:bg-green-900"
                     @click="newModal = true"
@@ -43,7 +45,8 @@
         <div class="mt-12">
             <h2 class="text-4xl">Recent rounds</h2>
             <p class="mt-1 text-sm leading-tight">
-                These are the most recent best {{ roundsLatestLength }} of {{ roundsTotal }} rounds, and the rounds used to calculate {{ golferFullName }}'s handicap ({{ golfer.handicap }})</p>
+                These are {{ golferFullName }}'s best <span class="font-bold">{{ roundsLatestLength }}</span> of the last <span class="font-bold">{{roundsTotal<20?roundsTotal:20}}</span> rounds, used to calculate a handicap of {{ golfer.handicap }}
+            </p>
             <div class="grid grid-cols-1 gap-2.5 mt-6">
                 <div 
                     class="flex items-center justify-between px-2 py-1.5 border rounded"
@@ -55,7 +58,7 @@
                         <span class="text-sm text-gray-400">/ {{ _format_date(round.created_at) }}</span>
                     </div>
                     
-                    <div id="round-list-item-right">
+                    <div v-if="role==='admin'" id="round-list-item-right">
                         <v-icon 
                             @click="editModalHandler(round)" 
                             name="fa-regular-edit" 
@@ -203,6 +206,9 @@ export default {
     components: {
         Modal,
         VueDatePicker
+    },
+    props: {
+        role: String
     },
     data() {
         return {

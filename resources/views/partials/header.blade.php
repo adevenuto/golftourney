@@ -14,7 +14,7 @@
                 </li>
             @endif
         @else
-            <li>
+            <li class="capitalize">
                 {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="pb-0.5 px-1.5 bg-green-800 text-white rounded text-sm">{{ Auth::user()->role }}</span>
             </li>
             <li>
