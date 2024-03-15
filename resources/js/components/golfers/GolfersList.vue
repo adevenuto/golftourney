@@ -334,6 +334,7 @@
                     { orderable: true, targets: [4,5] },
                     { orderable: false, targets: '_all' }
                 ],
+                order: [5, 'desc'],
                 buttons: [{
                     extend: 'pdfHtml5',
                     text: "PDF Export",
