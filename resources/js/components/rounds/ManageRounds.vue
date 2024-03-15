@@ -233,7 +233,7 @@ export default {
             return this.rounds.latest.length
         },
         roundsTotal: function() {
-            return this.rounds.total
+            return this.rounds.total 
         },
         selectedRoundTitle: function() {
             return `${this.selectedRound.score?this.selectedRound.score:''} <span class="text-sm text-gray-400">/ ${this._format_date(this.selectedRound.created_at)}</span>`
@@ -259,6 +259,7 @@ export default {
             try {
                 const res = await axios.get(`/golfers/${this.golferId}/rounds`)
                 if(res.status===200) this.rounds = res.data.rounds
+                console.log(this.rounds)
             } catch (err) {
                 console.error(err);
             }
