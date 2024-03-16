@@ -14,31 +14,35 @@
           Go back
         </a>
         <!-- Card -->
-        <div class="flex p-3 border rounded shadow-sm">
-            <div class="w-32 text-gray-400">
-                <p>Golfer</p>
-                <p>Handicap</p>
-                <p>Total Rounds</p>
+        <div class="flex flex-col p-3 border rounded shadow-sm md:justify-between md:flex-row">
+            <div class="flex mb-6 md:mb-0">
+                <div class="w-32 text-gray-400">
+                    <p>Golfer</p>
+                    <p>Handicap</p>
+                    <p>Total Rounds</p>
+                </div>
+
+                <div class="mr-3">
+                    <P class="capitalize">{{ golferFullName }}</P>
+                    <p class="capitalize">{{ golfer.handicap }}</p>
+                    <p>{{ roundsTotal }}</p>
+                </div>
             </div>
-            <div class="mr-3">
-                <P class="capitalize">{{ golferFullName }}</P>
-                <p class="capitalize">{{ golfer.handicap }}</p>
-                <p>{{ roundsTotal }}</p>
-            </div>
-            <div v-if="role==='admin'" class="flex items-center justify-end flex-1">
-                <button 
-                    class="flex items-center px-3 py-1 text-xs text-white bg-green-800 rounded sm:text-base hover:bg-green-900"
-                    @click="newModal = true"
-                >   
-                    <v-icon  
-                        class="mr-1 -ml-1"
-                        name="hi-plus-sm" 
-                        fill="#fff"
-                        scale="1.2" 
-                    />
-                    Enter a new round
-                </button>
-            </div>
+            
+
+            <button 
+                v-if="role==='admin'"
+                class="flex items-center self-start px-3 py-1 text-white bg-green-800 rounded md:self-end sm:text-base hover:bg-green-900"
+                @click="newModal = true"
+            >   
+                <v-icon  
+                    class="mr-1 -ml-1"
+                    name="hi-plus-sm" 
+                    fill="#fff"
+                    scale="1.2" 
+                />
+                Enter a new round
+            </button>
         </div>  
 
         <!-- Recent calculated rounds list -->
