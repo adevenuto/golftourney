@@ -29,7 +29,4 @@ app.directive('phone-format', {
     }
 })
 
-
-
-
 app.mount('#app');

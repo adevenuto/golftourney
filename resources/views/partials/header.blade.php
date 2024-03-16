@@ -16,7 +16,7 @@
         @else
             <div class="flex flex-col items-end">
                 
-                <li class="flex items-center gap-1 text-xs capitalize md:text-lg">
+                <li class="flex items-center gap-1 text-xs capitalize md:text-base">
                     {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="px-1 text-white bg-green-800 rounded">{{ Auth::user()->role }}</span>
                 </li>
                 <li>

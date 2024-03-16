@@ -27,13 +27,6 @@ body, html {
     opacity: 0;
 }
 
-/* .dataTables_scroll {
-    display: inline-block;
-    overflow-x: auto;
-    max-height: 32rem;
-    width: 100%;
-} */
-
 table>thead>tr>th:last-child {
     background-image: none !important;
 }
