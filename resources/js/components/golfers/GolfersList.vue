@@ -1,10 +1,10 @@
 <template>
     
-    <div class="w-3/4 mt-10 sm:mx-auto">
+    <div class="p-3 mt-10 sm:w-3/4 sm:mx-auto">
         <p class="mt-10 text-5xl">Golfers</p>
         <!-- SEARCH/CLEAR | ADD GOLFER -->
-        <div class="flex justify-between my-10">
-            <div class="flex">
+        <div class="flex flex-col justify-between mt-5 mb-10 lg:flex-row">
+            <div class="flex mb-6 lg:mb-0">
                 <div class="relative mr-2">
                     <input 
                         class="py-1 pr-3 border border-gray-500 rounded pl-7"
