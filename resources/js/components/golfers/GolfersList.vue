@@ -7,11 +7,10 @@
             <div class="flex mb-6 lg:mb-0">
                 <div class="relative mr-2">
                     <input 
-                        class="py-1 pr-3 border border-gray-500 rounded pl-7"
+                        class="w-40 py-1 pr-3 border border-gray-500 rounded pl-7"
                         type="text"
                         id="searchBox"
                         placeholder="Search">
-
                     <v-icon 
                         class="absolute left-1.5 top-2"
                         name="hi-search" 
@@ -40,7 +39,6 @@
                 Add a new golfer
               </button>
             </div>
-
         </div>
         
         <table id="dt_players_list" class="table text-sm table-striped hover row-border" cellspacing="0" width="100%"></table>
@@ -416,32 +414,3 @@
         }
     }
 </script>
-<style lang="css">
-    /* #dt_players_list tr:hover svg.handicapcell {
-        fill: #000;
-        transition: 100ms all ease-in-out;
-    } */
-    #dt_players_list tr  .handicapcell:hover {
-        transform: scale(1.07);
-        transition: 100ms all ease-in-out;
-    }
-
-
-    /* #dt_players_list tr:hover svg#edit_golfer{
-        fill: #3F83F8;
-        transition: 100ms fill ease-in-out;
-    } */
-    #dt_players_list tr svg#edit_golfer:hover {
-        transform: scale(1.2);
-        transition: 100ms all ease-in-out;
-    }
-
-    /* #dt_players_list tr:hover svg#delete_golfer path {
-        fill: #F05252;
-        transition: 100ms fill ease-in-out;
-    } */
-    #dt_players_list tr svg#delete_golfer:hover {
-        transform: scale(1.2);
-        transition: 100ms all ease-in-out;
-    }
-</style>
