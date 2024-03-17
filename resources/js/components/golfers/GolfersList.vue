@@ -1,6 +1,6 @@
 <template>
     
-    <div class="p-3 mt-10 sm:w-3/4 sm:mx-auto">
+    <div class="p-3 mt-10 lg:w-3/4 lg:mx-auto">
         <p class="mt-10 text-5xl">Golfers</p>
         <!-- SEARCH/CLEAR | ADD GOLFER -->
         <div class="flex flex-col justify-between mt-5 mb-10 lg:flex-row">
@@ -41,7 +41,7 @@
             </div>
         </div>
         
-        <table id="dt_players_list" class="table text-sm table-striped hover row-border" cellspacing="0" width="100%"></table>
+        <table id="dt_players_list" class="table text-sm table-striped hover row-border responsive diaplay" cellspacing="0" width="100%"></table>
 
         <!-- DELETE MODAL -->
         <Modal 
@@ -234,7 +234,7 @@
         methods: {
             reloadTable: function() {
                 this.table.clear().rows.add(this.golfersList).draw()
-                this.table.order([9,'desc']).search('').draw()
+                this.table.order([6,'desc']).search('').draw()
             },
             async getGolfers() {
                 try {
@@ -289,6 +289,7 @@
                 });
 
                 _this.table.buttons().container().appendTo( $('#export' ) );
+                _this.table.order(2, 'desc').draw();
             },
             async updateGolfer() {
                 try {
@@ -332,13 +333,12 @@
                     { orderable: true, targets: [4,5] },
                     { orderable: false, targets: '_all' }
                 ],
-                order: [5, 'desc'],
                 buttons: [{
                     extend: 'pdfHtml5',
                     text: "PDF Export",
                     title: 'Black League Handicaps',
                     exportOptions: {
-                        columns: [ 2,3,4,5 ],
+                        columns: [ 3,4,5,6 ],
                         modifier: { order: 'index' }
                     },
                     className: 'px-3 py-1 text-white bg-gray-500 rounded hover:bg-gray-600',
@@ -349,6 +349,12 @@
                 }],
                 data: _this.golfersList,
                 columns: [
+                    {
+                        className: 'dt-control',
+                        orderable: false,
+                        data: null,
+                        defaultContent: ''
+                    },
                     {
                         data: 'id',
                         visible: false,
@@ -370,6 +376,7 @@
                     {
                         data: 'handicap',
                         title: 'Handicap',
+                        type: String,
                         className: 'text-left',
                         render: function(data, type, row) {
                             return `<a href="/rounds/${row.id}" class="flex items-center justify-between w-20 p-1 bg-white border rounded shadow-sm cursor-pointer handicapcell">
@@ -381,6 +388,7 @@
                     {
                         data: 'number_of_rounds',
                         title: 'Rounds',
+                        type: String,
                         className: 'text-left',
                     },
                     {
@@ -395,6 +403,7 @@
                     },
                     {
                         visible: _this.role==='admin',
+                        defaultContent: '',
                         render: function(data, type, row) {
                             return `<div data-action="edit_golfer" class="cursor-pointer tablerow_clickevent_target">
                                         <svg id="edit_golfer" class="ov-icon" aria-hidden="true" width="24.96" height="24.96" viewBox="-48.96 -80.96 673.92 673.92" fill="#222F3D" style="font-size: 1.56em;"><path d="M402.3 344.9l32-32c5-5 13.7-1.5 13.7 5.7V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h273.5c7.1 0 10.7 8.6 5.7 13.7l-32 32c-1.5 1.5-3.5 2.3-5.7 2.3H48v352h352V350.5c0-2.1.8-4.1 2.3-5.6zm156.6-201.8L296.3 405.7l-90.4 10c-26.2 2.9-48.5-19.2-45.6-45.6l10-90.4L432.9 17.1c22.9-22.9 59.9-22.9 82.7 0l43.2 43.2c22.9 22.9 22.9 60 .1 82.8zM460.1 174L402 115.9 216.2 301.8l-7.3 65.3 65.3-7.3L460.1 174zm64.8-79.7l-43.2-43.2c-4.1-4.1-10.8-4.1-14.8 0L436 82l58.1 58.1 30.9-30.9c4-4.2 4-10.8-.1-14.9z"></path></svg>
@@ -403,6 +412,7 @@
                     },
                     {
                         visible: _this.role==='admin',
+                        defaultContent: '',
                         render: function(data, type, row) {
                             return `<div data-action="delete_golfer" class="cursor-pointer tablerow_clickevent_target">
                                         <svg id="delete_golfer" class="ov-icon" aria-hidden="true" width="24.96" height="24.96" viewBox="0 0 24 24" fill="#9B1C1C" style="font-size: 1.56em;"><path fill="none" d="M0 0h24v24H0z"></path><path d="M17 6h5v2h-2v13a1 1 0 01-1 1H5a1 1 0 01-1-1V8H2V6h5V3a1 1 0 011-1h8a1 1 0 011 1v3zm1 2H6v12h12V8zm-4.586 6l1.768 1.768-1.414 1.414L12 15.414l-1.768 1.768-1.414-1.414L10.586 14l-1.768-1.768 1.414-1.414L12 12.586l1.768-1.768 1.414 1.414L13.414 14zM9 4v2h6V4H9z"></path></svg>

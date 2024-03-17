@@ -34,3 +34,7 @@ table>thead>tr>th:last-child {
 #dt_players_list_filter, .dataTables_length {
     display: none;
 }
+
+.dt-search {
+    display: none;
+}
