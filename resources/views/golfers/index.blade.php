@@ -20,13 +20,9 @@
 @stop
 
 @section('content')
-
     <div class="w-full">
-        
         <golfers-list 
             role={{ Auth::user()->role }}
         ></golfers-list>
-
     </div>
-
 @endsection
