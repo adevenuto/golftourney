@@ -15,8 +15,8 @@
     <script type="text/javascript" charset="utf8" src="{{ asset('assets/js/datatables-buttons-html5.min.js') }}"></script>
 
 
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/3.0.0/js/responsive.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="{{ asset('assets/js/datatables-responsive1.min.js') }}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ asset('assets/js/datatables-responsive2.min.js') }}"></script>
 @stop
 
 @section('content')
