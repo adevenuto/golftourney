@@ -7,8 +7,6 @@ body, html {
   font-family: 'Ubuntu', sans-serif;
 }
 
-
-
 @layer components {
     .field-base {
       @apply w-full p-2 text-gray-900 border border-gray-300 rounded bg-gray-50 focus:ring-blue-500 focus:border-blue-500;
@@ -18,20 +16,6 @@ body, html {
       @apply px-2 py-1.5 text-sm text-center rounded cursor-pointer whitespace-nowrap;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .fade-enter-active,
 .fade-leave-active {
@@ -43,30 +27,14 @@ body, html {
     opacity: 0;
 }
 
-.dataTables_scroll {
-    display: inline-block;
-    overflow-x: auto;
-    max-height: 32rem;
-    width: 100%;
-}
-
 table>thead>tr>th:last-child {
     background-image: none !important;
 }
-/* .dataTables_scrollHead {
-    position: absolute !important;
-    background-color: #15803d;
-    color: #fff;
-    z-index: 1000;
-}
-
-.dataTables_scrollBody {
-    margin-top: 45px;
-} */
 
 #dt_players_list_filter, .dataTables_length {
     display: none;
 }
-/* #dt-players-list_filter, .dataTables_filter {
-    margin-bottom: 1.3rem;
-} */
+
+.dt-search {
+    display: none;
+}
