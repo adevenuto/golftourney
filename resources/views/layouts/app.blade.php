@@ -18,7 +18,7 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="text-gray-800">
+<body class="text-gray-700">
     <div id="app">
         @include('partials.header')
         <main class="py-4">

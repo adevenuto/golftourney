@@ -1,16 +1,22 @@
 <div class="flex items-center justify-between p-3 shadow-md">
-    <a href={{ url('/') }} class="text-base md:text-2xl">Black League</a>
-    <ul class="flex md:gap-4">
+    <div class="flex flex-col items-center">
+        
+            <img src="{{ asset('assets/images/cpdlogo.png') }}" alt="chicago park district logo" class="w-auto h-12 object-fit">
+        
+        <p class="text-base md:text-2xl">Black League</p>
+    </div>
+    
+    <ul class="flex gap-4">
         @guest
             @if (Route::has('login'))
                 <li>
-                    <a class="p-1 border rounded bg-slate-100 border-slate-300" href="{{ route('login') }}">{{ __('Login') }}</a>
+                    <a class="px-2 py-2 font-medium text-white bg-green-600 border-green-500 rounded hover:bg-green-500 hover:shadow" href="{{ route('login') }}">{{ __('Login') }}</a>
                 </li>
             @endif
 
             @if (Route::has('register'))
                 <li>
-                    <a class="p-1 border rounded bg-slate-100 border-slate-300" href="{{ route('register') }}">{{ __('Register') }}</a>
+                    <a class="px-2 py-2 font-medium text-white bg-green-600 border-green-500 rounded hover:bg-green-500 hover:shadow" href="{{ route('register') }}">{{ __('Register') }}</a>
                 </li>
             @endif
         @else

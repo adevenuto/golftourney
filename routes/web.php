@@ -19,6 +19,7 @@ use App\Http\Controllers\RoundsController;
 */
 
 Route::get('/', function () {
+    if (Auth::check())  return redirect('/golfers');
     return view('welcome');
 });
 
