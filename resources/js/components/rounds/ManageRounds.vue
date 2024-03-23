@@ -23,7 +23,7 @@
                 </div>
 
                 <div class="mr-3">
-                    <P class="capitalize">{{ golferFullName }}</P>
+                    <p class="capitalize">{{ golferFullName }}</p>
                     <p class="capitalize">{{ golfer.handicap }}</p>
                     <p>{{ roundsTotal }}</p>
                 </div>
@@ -188,9 +188,7 @@
                     </div>
                 </div>
                 <div class="flex">
-                    <button 
-                        class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600"
-                    >
+                    <button class="self-end mt-3 ml-auto text-white bg-blue-500 btn-base hover:bg-blue-600">
                         Add round
                     </button>   
                 </div>
@@ -263,7 +261,6 @@ export default {
             try {
                 const res = await axios.get(`/golfers/${this.golferId}/rounds`)
                 if(res.status===200) this.rounds = res.data.rounds
-                console.log(this.rounds)
             } catch (err) {
                 console.error(err);
             }
