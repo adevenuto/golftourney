@@ -30,7 +30,12 @@ class LeagueManagementTest extends TestCase
             'course_name' => 'Pine Valley Golf Club',
             'layout_data' => [
                 'hole_count' => 18,
-                'teeboxes' => [['name' => 'Blue', 'slope' => 130, 'courseRating' => 72.1]],
+                'teeboxes' => [[
+                    'name' => 'Blue',
+                    'slope' => 130,
+                    'courseRating' => 72.1,
+                    'holes' => $this->holesWithPar(array_fill(0, 18, 4)),
+                ]],
             ],
         ]);
 
@@ -40,7 +45,75 @@ class LeagueManagementTest extends TestCase
             ->assertJsonPath('courses.0.name', 'Pine Valley Golf Club')
             ->assertJsonPath('courses.0.holes', 18)
             ->assertJsonPath('courses.0.teeboxes.0.name', 'Blue')
-            ->assertJsonPath('courses.0.teeboxes.0.slope', 130);
+            ->assertJsonPath('courses.0.teeboxes.0.slope', 130)
+            // 72.1 sits near par 72, not 144 — left unchanged.
+            ->assertJsonPath('courses.0.teeboxes.0.rating', 72.1);
+    }
+
+    public function test_course_search_halves_doubled_nine_hole_ratings(): void
+    {
+        // Robert A. Black: a 9-hole course whose rating (63) was doubled by the
+        // source API. Par sums to 33, so 63 is closer to 2*par (66) than par —
+        // it must come back halved to the true 31.5.
+        Course::factory()->create([
+            'course_name' => 'Robert A. Black',
+            'layout_data' => [
+                'hole_count' => 9,
+                'teeboxes' => [[
+                    'name' => 'Blue',
+                    'slope' => 104,
+                    'courseRating' => 63,
+                    'holes' => $this->holesWithPar([5, 3, 4, 3, 4, 4, 3, 3, 4]),
+                ]],
+            ],
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->getJson(route('courses.search', ['q' => 'Robert']))
+            ->assertOk()
+            ->assertJsonPath('courses.0.holes', 9)
+            ->assertJsonPath('courses.0.teeboxes.0.rating', 31.5)
+            ->assertJsonPath('courses.0.teeboxes.0.slope', 104);
+    }
+
+    public function test_course_search_keeps_correct_nine_hole_ratings(): void
+    {
+        // An already-correct 9-hole rating (33.6 vs par 35) must NOT be halved —
+        // the par anchor guards against double-halving.
+        Course::factory()->create([
+            'course_name' => 'Little Miami Golf Center',
+            'layout_data' => [
+                'hole_count' => 9,
+                'teeboxes' => [[
+                    'name' => 'White',
+                    'slope' => 110,
+                    'courseRating' => 33.6,
+                    'holes' => $this->holesWithPar([4, 4, 3, 4, 4, 4, 3, 5, 4]),
+                ]],
+            ],
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->getJson(route('courses.search', ['q' => 'Little Miami']))
+            ->assertOk()
+            ->assertJsonPath('courses.0.teeboxes.0.rating', 33.6);
+    }
+
+    /**
+     * Build a layout_data "holes" map from a list of pars (stored as strings,
+     * matching the source API shape).
+     *
+     * @param  array<int, int>  $pars
+     * @return array<string, array{par: string}>
+     */
+    private function holesWithPar(array $pars): array
+    {
+        $holes = [];
+        foreach ($pars as $i => $par) {
+            $holes['hole-'.($i + 1)] = ['par' => (string) $par];
+        }
+
+        return $holes;
     }
 
     public function test_creating_a_league_makes_the_creator_admin_and_current(): void

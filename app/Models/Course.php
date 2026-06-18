@@ -58,4 +58,22 @@ class Course extends Model
     {
         return $this->layout_data['teeboxes'] ?? [];
     }
+
+    /**
+     * Normalize a stored course rating to the scale matching its par.
+     * The source API doubled 9-hole ratings onto the 18-hole scale; par is the
+     * anchor — whichever of {par, 2*par} the rating is closer to reveals its
+     * scale. Safe to call on already-correct ratings (no-op) and when par is
+     * unknown.
+     */
+    public static function normalizeRating(float $rating, int $par): float
+    {
+        if ($par <= 0) {
+            return $rating;
+        }
+
+        return abs($rating - 2 * $par) < abs($rating - $par)
+            ? $rating / 2
+            : $rating;
+    }
 }

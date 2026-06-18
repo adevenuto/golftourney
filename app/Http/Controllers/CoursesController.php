@@ -54,10 +54,19 @@ class CoursesController extends Controller
         $summary = [];
 
         foreach ($course->teeboxes() as $tee) {
+            // Sum the per-hole par (stored as strings) so we can normalize the
+            // rating off the par anchor — the source API doubled 9-hole ratings.
+            $par = 0;
+            foreach (is_array($tee['holes'] ?? null) ? $tee['holes'] : [] as $hole) {
+                $par += (int) ($hole['par'] ?? 0);
+            }
+
+            $rawRating = isset($tee['courseRating']) ? (float) $tee['courseRating'] : null;
+
             $summary[] = [
                 'name' => is_string($tee['name'] ?? null) ? $tee['name'] : 'Tees',
                 'slope' => isset($tee['slope']) ? (int) $tee['slope'] : null,
-                'rating' => isset($tee['courseRating']) ? (float) $tee['courseRating'] : null,
+                'rating' => $rawRating === null ? null : Course::normalizeRating($rawRating, $par),
             ];
         }
 

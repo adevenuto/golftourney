@@ -31,6 +31,10 @@ const currentTee = computed(
 );
 const courseHoles = computed(() => selectedCourse.value?.holes ?? null);
 
+// Rating/slope are driven by the chosen teebox when a catalog course is
+// selected; they're only hand-editable for manual entry.
+const locked = computed(() => !!selectedCourse.value);
+
 const round1 = (n) => Math.round(n * 10) / 10;
 
 function applyTee() {
@@ -192,12 +196,12 @@ function switchTo(id) {
                     <div class="grid grid-cols-2 gap-5 sm:grid-cols-4">
                         <div>
                             <InputLabel for="l_rating" value="Course rating" />
-                            <TextInput id="l_rating" v-model="form.course_rating" type="number" step="0.1" min="0" class="mt-1 block w-full tabular-nums" required />
+                            <TextInput id="l_rating" v-model="form.course_rating" type="number" step="0.1" min="0" :readonly="locked" :class="['mt-1 block w-full tabular-nums', locked ? 'cursor-not-allowed bg-parchment text-ink/60 focus:border-pine/20 focus:ring-0' : '']" required />
                             <InputError :message="form.errors.course_rating" class="mt-1" />
                         </div>
                         <div>
                             <InputLabel for="l_slope" value="Slope" />
-                            <TextInput id="l_slope" v-model="form.slope_rating" type="number" min="55" max="155" class="mt-1 block w-full tabular-nums" required />
+                            <TextInput id="l_slope" v-model="form.slope_rating" type="number" min="55" max="155" :readonly="locked" :class="['mt-1 block w-full tabular-nums', locked ? 'cursor-not-allowed bg-parchment text-ink/60 focus:border-pine/20 focus:ring-0' : '']" required />
                             <InputError :message="form.errors.slope_rating" class="mt-1" />
                         </div>
                         <div>
@@ -211,6 +215,10 @@ function switchTo(id) {
                             <InputError :message="form.errors.counting_rounds" class="mt-1" />
                         </div>
                     </div>
+
+                    <p v-if="locked" class="-mt-2 text-xs text-ink/50">
+                        Rating &amp; slope come from the selected teebox. Clear the course to enter them manually.
+                    </p>
 
                     <div class="flex justify-end">
                         <button
