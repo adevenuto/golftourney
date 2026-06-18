@@ -7,8 +7,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
-import PageInfo from '@/Components/Table/PageInfo.vue';
-import TablePager from '@/Components/Table/TablePager.vue';
+import TableFooter from '@/Components/Table/TableFooter.vue';
 import { useDataTable } from '@/composables/useDataTable';
 
 const props = defineProps({
@@ -297,14 +296,14 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                 </div>
             </div>
 
-            <!-- Footer: page info (left) + pager (right) -->
-            <div
+            <!-- Sticky footer: page info (left) + pager (right) -->
+            <TableFooter
                 v-if="total > 0"
-                class="mt-4 flex flex-wrap items-center justify-between gap-3"
-            >
-                <PageInfo :from="range.from" :to="range.to" :total="range.total" />
-                <TablePager :page="currentPage" :page-count="pageCount" @update:page="setPage" />
-            </div>
+                :range="range"
+                :page="currentPage"
+                :page-count="pageCount"
+                @update:page="setPage"
+            />
         </div>
 
         <!-- Toast -->
