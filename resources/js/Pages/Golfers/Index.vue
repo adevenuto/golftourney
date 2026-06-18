@@ -519,7 +519,7 @@ function toggleExpand(id) {
                         <TextInput id="e_phone" v-model="editForm.phone" type="text" class="mt-1 block w-full" />
                         <InputError :message="editForm.errors.phone" class="mt-1" />
                     </div>
-                    <div class="sm:col-span-2">
+                    <div>
                         <InputLabel for="e_email" value="Email" />
                         <TextInput id="e_email" v-model="editForm.email" type="email" class="mt-1 block w-full" />
                         <InputError :message="editForm.errors.email" class="mt-1" />
