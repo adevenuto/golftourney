@@ -1,20 +1,33 @@
 <script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
 <template>
     <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
+        class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-pine px-4 py-10 font-sans text-ink"
     >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
+        <!-- atmosphere (matches the landing page) -->
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+            <div
+                class="absolute inset-0"
+                style="background: radial-gradient(120% 80% at 80% 0%, rgba(176,141,87,0.16), transparent 55%), radial-gradient(90% 70% at 0% 100%, rgba(13,46,32,0.9), transparent 60%);"
+            ></div>
+            <div class="absolute -right-40 -top-40 h-[26rem] w-[26rem] rounded-full border border-brass/15"></div>
+            <div class="absolute -bottom-44 -left-44 h-[30rem] w-[30rem] rounded-full border border-cream/5"></div>
         </div>
 
+        <Link
+            href="/"
+            class="relative z-10 flex items-center gap-2.5 text-cream transition hover:opacity-90"
+        >
+            <span class="flex h-8 w-8 items-center justify-center rounded-full border border-brass/60">
+                <span class="h-3 w-3 rounded-full bg-brass"></span>
+            </span>
+            <span class="font-display text-2xl font-semibold tracking-tight">GolfTourney</span>
+        </Link>
+
         <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
+            class="relative z-10 mt-6 w-full overflow-hidden rounded-2xl border border-parchment-dark bg-cream px-6 py-8 shadow-2xl shadow-pine-deep/40 sm:max-w-md sm:px-8"
         >
             <slot />
         </div>
