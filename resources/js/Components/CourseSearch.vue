@@ -1,20 +1,31 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const emit = defineEmits(['select']);
 
 const MIN_CHARS = 3;
 const DEBOUNCE_MS = 300;
+const MAX_DROPDOWN = 320; // matches max-h-80
 
 const query = ref('');
 const results = ref([]);
 const open = ref(false);
 const loading = ref(false);
 const activeIndex = ref(-1);
+const dropUp = ref(false);
 const root = ref(null);
 
 let debounceTimer = null;
 let controller = null;
+
+// Flip the dropdown above the input when there isn't room below.
+function updatePlacement() {
+    const el = root.value;
+    if (! el) return;
+    const rect = el.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    dropUp.value = spaceBelow < MAX_DROPDOWN && rect.top > spaceBelow;
+}
 
 watch(query, (value) => {
     clearTimeout(debounceTimer);
@@ -46,6 +57,7 @@ async function runSearch(term) {
         const data = await res.json();
         results.value = data.courses ?? [];
         open.value = true;
+        nextTick(updatePlacement);
     } catch (error) {
         if (error.name !== 'AbortError') results.value = [];
     } finally {
@@ -68,7 +80,10 @@ function clearAll() {
 }
 
 function onFocus() {
-    if (results.value.length > 0) open.value = true;
+    if (results.value.length > 0) {
+        open.value = true;
+        nextTick(updatePlacement);
+    }
 }
 
 function onKeydown(event) {
@@ -91,9 +106,19 @@ function onDocumentClick(event) {
     if (root.value && !root.value.contains(event.target)) open.value = false;
 }
 
-onMounted(() => document.addEventListener('click', onDocumentClick));
+function onReposition() {
+    if (open.value) updatePlacement();
+}
+
+onMounted(() => {
+    document.addEventListener('click', onDocumentClick);
+    window.addEventListener('resize', onReposition);
+    window.addEventListener('scroll', onReposition, true);
+});
 onBeforeUnmount(() => {
     document.removeEventListener('click', onDocumentClick);
+    window.removeEventListener('resize', onReposition);
+    window.removeEventListener('scroll', onReposition, true);
     clearTimeout(debounceTimer);
     controller?.abort();
 });
@@ -148,7 +173,8 @@ onBeforeUnmount(() => {
         <!-- results -->
         <ul
             v-if="open"
-            class="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-xl border border-parchment-dark bg-cream py-1 shadow-xl"
+            class="absolute left-0 right-0 z-30 max-h-80 overflow-auto rounded-xl border border-parchment-dark bg-cream py-1 shadow-xl"
+            :class="dropUp ? 'bottom-full mb-1' : 'top-full mt-1'"
         >
             <li
                 v-for="(course, i) in results"
