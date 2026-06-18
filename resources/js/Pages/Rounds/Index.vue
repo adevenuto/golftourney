@@ -12,6 +12,11 @@ import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
 import PageInfo from '@/Components/Table/PageInfo.vue';
 import TablePager from '@/Components/Table/TablePager.vue';
 import { useDataTable } from '@/composables/useDataTable';
+import {
+    formatDate as displayDate,
+    toDateInput as toInputDate,
+    todayDate as today,
+} from '@/utils/date';
 
 const props = defineProps({
     golfer: { type: Object, required: true },
@@ -59,23 +64,6 @@ function toggleCounts() {
     countsFirst.value = !countsFirst.value;
     setPage(1);
 }
-
-// A round's date is a calendar day — handle it as a plain date string so it
-// never shifts across timezones (stored UTC midnight must not display as the
-// previous day for viewers behind UTC).
-const today = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-const toInputDate = (iso) => (iso ? String(iso).slice(0, 10) : '');
-const displayDate = (iso) => {
-    const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
 
 /* ---------- flash toast ---------- */
 const toast = ref('');
