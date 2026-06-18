@@ -28,11 +28,37 @@ const fullName = computed(
 const countingSet = computed(() => new Set(props.countingRoundIds));
 const counts = (id) => countingSet.value.has(id);
 
-const { perPage, perPageOptions, page: currentPage, pageCount, paginated, total, range, setPage } =
-    useDataTable(() => props.rounds, {
-        sortAccessors: { created_at: (r) => new Date(r.created_at).getTime() },
-        initialSort: { key: 'created_at', dir: 'desc' },
+/* ---------- sort toggles + pagination ---------- */
+const dateDir = ref('desc');
+const countsFirst = ref(false);
+
+const orderedRounds = computed(() => {
+    const dir = dateDir.value === 'asc' ? 1 : -1;
+    return [...props.rounds].sort((a, b) => {
+        if (countsFirst.value) {
+            const ac = countingSet.value.has(a.id) ? 1 : 0;
+            const bc = countingSet.value.has(b.id) ? 1 : 0;
+            if (ac !== bc) return bc - ac; // counting rounds first
+        }
+        return (
+            (new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()) *
+            dir
+        );
     });
+});
+
+const { perPage, perPageOptions, page: currentPage, pageCount, paginated, total, range, setPage } =
+    useDataTable(() => orderedRounds.value, { initialPerPage: 25 });
+
+function toggleDate() {
+    dateDir.value = dateDir.value === 'desc' ? 'asc' : 'desc';
+    setPage(1);
+}
+function toggleCounts() {
+    countsFirst.value = !countsFirst.value;
+    setPage(1);
+}
 
 const today = () => new Date().toISOString().slice(0, 10);
 const toInputDate = (iso) => (iso ? String(iso).slice(0, 10) : '');
@@ -170,8 +196,37 @@ function submitDelete() {
                 </button>
             </div>
 
-            <div v-if="total > 0" class="mb-4">
+            <div
+                v-if="total > 0"
+                class="mb-4 flex flex-wrap items-center justify-between gap-3"
+            >
                 <PerPageSelect v-model="perPage" :options="perPageOptions" />
+
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-ink/50">Sort</span>
+                    <button
+                        type="button"
+                        @click="toggleDate"
+                        class="inline-flex items-center gap-1 rounded-full border border-pine/20 px-3 py-1.5 font-medium text-pine transition hover:border-brass"
+                    >
+                        Date
+                        <span class="text-brass-dark">{{ dateDir === 'desc' ? '↓' : '↑' }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="toggleCounts"
+                        :aria-pressed="countsFirst"
+                        class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition"
+                        :class="
+                            countsFirst
+                                ? 'border-pine bg-pine text-cream'
+                                : 'border-pine/20 text-pine hover:border-brass'
+                        "
+                    >
+                        <span :class="countsFirst ? 'text-brass-light' : 'text-brass'">●</span>
+                        Counts first
+                    </button>
+                </div>
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm">
