@@ -3,11 +3,13 @@ import { ref, computed } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
 
 const user = computed(() => usePage().props.auth.user);
+const leagues = computed(() => user.value?.leagues ?? []);
+const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 
 const navLinks = [
     { label: 'Dashboard', route: 'dashboard' },
@@ -15,6 +17,12 @@ const navLinks = [
 ];
 
 const isActive = (name) => route().current(name);
+
+function switchLeague(id) {
+    if (id !== currentLeagueId.value) {
+        router.post(route('leagues.switch', id), {}, { preserveScroll: true });
+    }
+}
 </script>
 
 <template>
@@ -62,8 +70,38 @@ const isActive = (name) => route().current(name);
                         </div>
                     </div>
 
-                    <!-- User menu -->
-                    <div class="hidden sm:flex sm:items-center">
+                    <!-- Right: league switcher + user menu -->
+                    <div class="hidden sm:flex sm:items-center sm:gap-3">
+                        <Dropdown v-if="leagues.length > 1" align="right" width="56">
+                            <template #trigger>
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium text-cream/90 transition hover:border-brass/60 hover:text-cream"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-brass"></span>
+                                    {{ user.current_league?.name ?? 'No league' }}
+                                    <svg class="h-4 w-4 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </template>
+                            <template #content>
+                                <p class="px-4 pb-1 pt-2 text-xs uppercase tracking-wider text-ink/40">Switch league</p>
+                                <button
+                                    v-for="l in leagues"
+                                    :key="l.id"
+                                    type="button"
+                                    @click="switchLeague(l.id)"
+                                    class="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm text-ink transition hover:bg-parchment"
+                                >
+                                    <span class="truncate">{{ l.name }}</span>
+                                    <span v-if="l.id === currentLeagueId" class="text-brass">●</span>
+                                </button>
+                                <div class="my-1 border-t border-parchment-dark"></div>
+                                <DropdownLink :href="route('dashboard')">Manage leagues</DropdownLink>
+                            </template>
+                        </Dropdown>
+
                         <Dropdown align="right" width="48">
                             <template #trigger>
                                 <button

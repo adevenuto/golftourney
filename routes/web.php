@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\CoursesController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GolfersController;
+use App\Http\Controllers\LeaguesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoundsController;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +21,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
+Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard');
 
@@ -32,6 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Leagues & course catalog (any member can create/switch leagues).
+    Route::get('/courses/search', [CoursesController::class, 'search'])->name('courses.search');
+    Route::post('/leagues', [LeaguesController::class, 'store'])->name('leagues.store');
+    Route::post('/leagues/{league}/switch', [LeaguesController::class, 'switch'])->name('leagues.switch');
 
     // Admin-only write & delete actions.
     Route::middleware('admin')->group(function () {

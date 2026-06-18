@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -46,6 +47,12 @@ class HandleInertiaRequests extends Middleware
                         'id' => $league->id,
                         'name' => $league->name,
                     ] : null,
+                    // The user's leagues, for the nav switcher.
+                    'leagues' => DB::table('league_user as lu')
+                        ->join('leagues as l', 'l.id', '=', 'lu.league_id')
+                        ->where('lu.user_id', $user->id)
+                        ->orderBy('l.name')
+                        ->get(['l.id', 'l.name']),
                 ] : null,
             ],
             'flash' => [
