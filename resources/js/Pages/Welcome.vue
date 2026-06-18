@@ -9,7 +9,7 @@ defineProps({
 const features = [
     {
         title: 'Live handicaps',
-        body: 'Every handicap is computed from the best 8 of a golfer’s last 20 rounds — always current.',
+        body: 'Every handicap is computed from each golfer’s best recent rounds — always current.',
         icon: 'M5 13l4 4L19 7',
     },
     {
@@ -19,14 +19,14 @@ const features = [
     },
     {
         title: 'The full roster',
-        body: 'Search, sort, and export the league’s handicap sheet to a clean PDF whenever you need it.',
+        body: 'Search, sort, and export your league’s handicap sheet to a clean PDF whenever you need it.',
         icon: 'M3 7h18M3 12h18M3 17h18',
     },
 ];
 </script>
 
 <template>
-    <Head title="The Black League" />
+    <Head title="GolfTourney" />
 
     <div class="min-h-screen bg-pine font-sans text-cream">
         <!-- Hero -->
@@ -53,7 +53,7 @@ const features = [
                             <span class="h-2.5 w-2.5 rounded-full bg-brass"></span>
                         </span>
                         <span class="font-display text-xl font-semibold tracking-tight text-cream">
-                            The Black League
+                            GolfTourney
                         </span>
                     </div>
 
@@ -78,14 +78,14 @@ const features = [
             <!-- Headline -->
             <div class="mx-auto max-w-7xl px-6 pb-28 pt-20 sm:pt-28 lg:px-8 lg:pb-40">
                 <p class="text-xs uppercase tracking-[0.35em] text-brass-light">
-                    Robert A. Black Golf Course · Chicago
+                    Multi-league handicap tracking
                 </p>
                 <h1 class="mt-5 max-w-3xl font-display text-5xl font-semibold leading-[1.05] sm:text-6xl lg:text-7xl">
-                    Where the league keeps score.
+                    Where every league keeps score.
                 </h1>
                 <p class="mt-6 max-w-xl text-lg leading-relaxed text-cream/70">
-                    Handicaps, rounds, and the full roster — kept honest and
-                    always up to date for the members of The Black League.
+                    Create a league, track handicaps, log rounds, and keep an
+                    honest roster — all in one place.
                 </p>
 
                 <div v-if="canLogin" class="mt-10 flex flex-wrap items-center gap-4">
@@ -94,7 +94,7 @@ const features = [
                         :href="route('register')"
                         class="inline-flex items-center gap-2 rounded-full bg-brass px-7 py-3.5 text-sm font-semibold text-pine-deep shadow-lg shadow-pine-deep/40 transition hover:bg-brass-light"
                     >
-                        Join the league
+                        Join a league
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
@@ -137,8 +137,8 @@ const features = [
         <!-- Footer -->
         <footer class="bg-pine-deep">
             <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-cream/50 sm:flex-row lg:px-8">
-                <p class="font-display text-cream/70">The Black League</p>
-                <p>Robert A. Black Golf Course · Chicago Park District</p>
+                <p class="font-display text-cream/70">GolfTourney</p>
+                <p>Golf league handicaps, made simple.</p>
             </div>
         </footer>
     </div>
