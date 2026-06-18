@@ -20,7 +20,6 @@ class UpdateRoundRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required|integer|exists:rounds,id',
             'score' => 'required|integer|min:1|max:150',
             'created_at' => 'required|date',
         ];

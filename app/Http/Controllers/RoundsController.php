@@ -7,8 +7,9 @@ use App\Http\Requests\UpdateRoundRequest;
 use App\Models\Golfer;
 use App\Models\Round;
 use App\Services\HandicapService;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RoundsController extends Controller
 {
@@ -18,31 +19,22 @@ class RoundsController extends Controller
     }
 
     /**
-     * Return a golfer's counting rounds and total round count.
+     * Show a golfer's rounds.
      */
-    public function index(Golfer $golfer): JsonResponse
+    public function index(Golfer $golfer): Response
     {
-        return response()->json(['rounds' => [
-            'latest' => $this->handicaps->countingRounds($golfer),
-            'total' => $golfer->rounds()->count(),
-        ]]);
+        return Inertia::render('Rounds/Index', [
+            'golfer' => $golfer,
+            'rounds' => $golfer->rounds()->orderByDesc('created_at')->get(),
+            'countingRoundIds' => $this->handicaps->countingRounds($golfer)->pluck('id'),
+        ]);
     }
 
     /**
-     * Display the view.
+     * Store a new round for the golfer.
      */
-    public function create(): View
+    public function store(StoreRoundRequest $request, Golfer $golfer): RedirectResponse
     {
-        return view('rounds.index');
-    }
-
-    /**
-     * Store a new golfer round in storage.
-     */
-    public function store(StoreRoundRequest $request): JsonResponse
-    {
-        $golfer = Golfer::findOrFail($request->integer('golfer_id'));
-
         $golfer->rounds()->create([
             'score' => $request->integer('score'),
             'course_name' => 'Robert A. Black',
@@ -51,37 +43,34 @@ class RoundsController extends Controller
 
         $this->handicaps->recalculateFor($golfer);
 
-        return response()->json(['success' => 'Round was successfully created'], 201);
+        return back()->with('success', 'Round added.');
     }
 
     /**
-     * Update a round in storage.
+     * Update a round.
      */
-    public function edit(UpdateRoundRequest $request): JsonResponse
+    public function update(UpdateRoundRequest $request, Round $round): RedirectResponse
     {
-        $round = Round::findOrFail($request->integer('id'));
-
         $round->update([
             'score' => $request->integer('score'),
             'created_at' => $request->date('created_at'),
         ]);
 
-        // Recalculate using the round's own golfer, not request input.
         $this->handicaps->recalculateFor(Golfer::findOrFail($round->golfer_id));
 
-        return response()->json(['success' => 'Round was successfully updated']);
+        return back()->with('success', 'Round updated.');
     }
 
     /**
-     * Delete a round from storage.
+     * Delete a round.
      */
-    public function delete(Round $round): JsonResponse
+    public function destroy(Round $round): RedirectResponse
     {
         $golfer = Golfer::findOrFail($round->golfer_id);
         $round->delete();
 
         $this->handicaps->recalculateFor($golfer);
 
-        return response()->json(['success' => 'Round was successfully deleted']);
+        return back()->with('success', 'Round removed.');
     }
 }

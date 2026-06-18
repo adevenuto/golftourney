@@ -33,8 +33,8 @@ class AuthorizationTest extends TestCase
             ['post', '/golfers'],
             ['put', '/golfers/1'],
             ['delete', '/golfers/1'],
-            ['post', '/rounds/store'],
-            ['post', '/rounds/edit'],
+            ['post', '/golfers/1/rounds'],
+            ['put', '/rounds/1'],
             ['delete', '/rounds/1'],
         ];
     }

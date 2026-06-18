@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -232,8 +232,8 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                                     <span class="font-medium capitalize text-ink">{{ fullName(g) }}</span>
                                 </td>
                                 <td class="px-5 py-3.5">
-                                    <a
-                                        :href="`/rounds/${g.id}`"
+                                    <Link
+                                        :href="route('golfers.rounds', g.id)"
                                         class="inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/10 px-3 py-1 font-display text-sm font-semibold tabular-nums text-pine transition hover:border-brass hover:bg-brass/20"
                                         title="View rounds"
                                     >
@@ -241,7 +241,7 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                                         <svg class="h-3.5 w-3.5 text-brass-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                                         </svg>
-                                    </a>
+                                    </Link>
                                 </td>
                                 <td class="px-5 py-3.5 tabular-nums text-ink/80">{{ g.number_of_rounds }}</td>
                                 <td class="px-5 py-3.5 text-ink/70">{{ g.email || '—' }}</td>

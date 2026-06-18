@@ -121,17 +121,22 @@ Sub-steps are committed incrementally:
   - Themed the app shell (country-club aesthetic: pine/parchment/brass, Fraunces display font) in `AuthenticatedLayout`; post-login now lands on Golfers.
   - Verified: 49 tests green (Inertia assertions), PHPStan/Pint clean, build OK, runtime check (admin login → `/golfers` renders with real data).
 
-1. **Wire Inertia** (from Breeze preset): root template, `app.js` Inertia setup, Vite plugin. ✅ (4.1)
-2. **Convert controllers** to return `Inertia::render('Golfers/Index', [...])` with props
-   (golfers + round counts + the *server-resolved* permissions). Remove the JSON endpoints + axios calls.
-3. **Rebuild pages as `<script setup>` Vue components**
-   - `Golfers/Index` — replace DataTables with a Vue-native table (TanStack Table or a small composable: client-side sort/search/paginate; server-side later if the roster grows).
-   - `Golfers/Rounds` (a.k.a. ManageRounds) — Inertia page; drop `window.location` path parsing in favor of route params.
-   - Reusable `Modal`, table, and form components; keep `@vuepic/vue-datepicker` (still maintained) or evaluate a lighter native date input.
-4. **Kill jQuery**: delete `public/assets/js/jquery*.js`, all `datatables-*` files, and the `pagespecific-header-items` script block in `golfers/index.blade.php`.
-5. **PDF export** (currently a DataTables button): re-implement server-side (e.g. `barryvdh/laravel-dompdf`) — more reliable and removes the last DataTables dependency.
+- **4.3 — Rounds page → Inertia; jQuery fully removed ✅**
+  - Nested RESTful routes (`golfers.rounds`, `rounds.store/update/destroy`) via route-model binding; controller returns `Inertia::render('Rounds/Index', …)` with golfer + rounds + counting-round ids. Removed legacy `/golfer/{id}` JSON, `/rounds/{id}` blade, `/rounds/store|edit`.
+  - Built `Rounds/Index.vue`: golfer hero (handicap/total), round history with "counts toward handicap" markers, admin add/edit/delete via `useForm` + `@vuepic/vue-datepicker`. Golfers handicap chip now an Inertia `<Link>`.
+  - **Deleted all jQuery/DataTables** (`public/assets/js`+`css`, 2.4M), old Vue components (`ManageRounds`, old `Modal`), `utilities.js`, and legacy blades (`layouts/app`, `partials/header`, rounds blade). Only `app.blade.php` remains.
+  - Fixed a latent case bug: `components/` → `Components/` (matched imports; would have failed on case-sensitive Linux/CI).
+  - Verified: 49 tests green, PHPStan/Pint clean, build OK, runtime check (admin → `/golfers/1/rounds` renders).
 
-**Deliverable:** no jQuery, no DataTables, SPA navigation, server-owned auth in the UI.
+Remaining items:
+
+1. **Wire Inertia** ✅ (4.1)
+2. **Convert controllers** to `Inertia::render` + redirects; JSON/axios endpoints removed. ✅ (4.2/4.3)
+3. **Rebuild pages as `<script setup>` components** — Golfers + Rounds done. ✅ (4.2/4.3)
+4. **Kill jQuery / DataTables** ✅ (4.3)
+5. **PDF export** (old DataTables button) — **not yet** re-implemented; do server-side (e.g. `barryvdh/laravel-dompdf`) if still wanted.
+
+**Deliverable:** no jQuery, no DataTables, SPA navigation, server-owned auth in the UI. ✅ (PDF export pending)
 
 ---
 

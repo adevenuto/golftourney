@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGolferRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\Golfer;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,13 +68,5 @@ class GolfersController extends Controller
         $golfer->delete();
 
         return back()->with('success', 'Golfer removed.');
-    }
-
-    /**
-     * Return a single golfer as JSON (used by the legacy rounds page until 4.3).
-     */
-    public function golfer(Golfer $golfer): JsonResponse
-    {
-        return response()->json(['golfer' => $golfer]);
     }
 }

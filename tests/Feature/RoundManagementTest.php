@@ -6,6 +6,7 @@ use App\Models\Golfer;
 use App\Models\Round;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class RoundManagementTest extends TestCase
@@ -22,28 +23,25 @@ class RoundManagementTest extends TestCase
         $golfer = Golfer::factory()->create(['handicap' => 0]);
 
         $this->actingAs($this->admin())
-            ->postJson('/rounds/store', [
-                'golfer_id' => $golfer->id,
+            ->post(route('rounds.store', $golfer), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
             ])
-            ->assertCreated();
+            ->assertRedirect();
 
         $this->assertDatabaseHas('rounds', ['golfer_id' => $golfer->id, 'score' => 40]);
         // (40 - 31.5) * 113 / 104 = 9.24
         $this->assertEquals(9.24, $golfer->fresh()->handicap);
     }
 
-    public function test_creating_a_round_requires_a_valid_golfer(): void
+    public function test_storing_a_round_for_a_missing_golfer_404s(): void
     {
         $this->actingAs($this->admin())
-            ->postJson('/rounds/store', [
-                'golfer_id' => 99999,
+            ->post(route('rounds.store', 99999), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
             ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['golfer_id']);
+            ->assertNotFound();
     }
 
     public function test_score_is_bounded(): void
@@ -51,8 +49,7 @@ class RoundManagementTest extends TestCase
         $golfer = Golfer::factory()->create();
 
         $this->actingAs($this->admin())
-            ->postJson('/rounds/store', [
-                'golfer_id' => $golfer->id,
+            ->postJson(route('rounds.store', $golfer), [
                 'score' => 999,
                 'created_at' => now()->toDateString(),
             ])
@@ -66,12 +63,11 @@ class RoundManagementTest extends TestCase
         $round = Round::factory()->for($golfer)->create(['score' => 60, 'created_at' => now()]);
 
         $this->actingAs($this->admin())
-            ->postJson('/rounds/edit', [
-                'id' => $round->id,
+            ->put(route('rounds.update', $round), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
             ])
-            ->assertOk();
+            ->assertRedirect();
 
         $this->assertDatabaseHas('rounds', ['id' => $round->id, 'score' => 40]);
         $this->assertEquals(9.24, $golfer->fresh()->handicap);
@@ -83,23 +79,26 @@ class RoundManagementTest extends TestCase
         $round = Round::factory()->for($golfer)->create(['score' => 40]);
 
         $this->actingAs($this->admin())
-            ->deleteJson("/rounds/{$round->id}")
-            ->assertOk();
+            ->delete(route('rounds.destroy', $round))
+            ->assertRedirect();
 
         $this->assertDatabaseMissing('rounds', ['id' => $round->id]);
         // No rounds left -> handicap resets to 0.
         $this->assertEquals(0, $golfer->fresh()->handicap);
     }
 
-    public function test_index_returns_counting_rounds_and_total(): void
+    public function test_index_renders_inertia_with_rounds_and_counting_ids(): void
     {
         $golfer = Golfer::factory()->create();
         Round::factory()->count(5)->for($golfer)->create();
 
         $this->actingAs($this->admin())
-            ->getJson("/golfers/{$golfer->id}/rounds")
-            ->assertOk()
-            ->assertJsonPath('rounds.total', 5)
-            ->assertJsonStructure(['rounds' => ['latest', 'total']]);
+            ->get(route('golfers.rounds', $golfer))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Rounds/Index')
+                ->where('golfer.id', $golfer->id)
+                ->has('rounds', 5)
+                ->has('countingRoundIds')
+            );
     }
 }

@@ -20,7 +20,6 @@ class StoreRoundRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'golfer_id' => 'required|integer|exists:golfers,id',
             'score' => 'required|integer|min:1|max:150',
             'created_at' => 'required|date',
         ];

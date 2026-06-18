@@ -26,13 +26,9 @@ Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    // Golfers (Inertia).
+    // Golfers & rounds (Inertia).
     Route::get('/golfers', [GolfersController::class, 'index'])->name('golfers.index');
-
-    // Rounds — legacy JSON endpoints; Inertia page lands in 4.3.
-    Route::get('/golfer/{golfer}', [GolfersController::class, 'golfer']);
-    Route::get('/golfers/{golfer}/rounds', [RoundsController::class, 'index']);
-    Route::get('/rounds/{id}', [RoundsController::class, 'create']);
+    Route::get('/golfers/{golfer}/rounds', [RoundsController::class, 'index'])->name('golfers.rounds');
 
     // Profile (Breeze).
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -45,9 +41,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/golfers/{golfer}', [GolfersController::class, 'update'])->name('golfers.update');
         Route::delete('/golfers/{golfer}', [GolfersController::class, 'destroy'])->name('golfers.destroy');
 
-        Route::post('/rounds/edit', [RoundsController::class, 'edit']);
-        Route::post('/rounds/store', [RoundsController::class, 'store']);
-        Route::delete('/rounds/{round}', [RoundsController::class, 'delete']);
+        Route::post('/golfers/{golfer}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
+        Route::put('/rounds/{round}', [RoundsController::class, 'update'])->name('rounds.update');
+        Route::delete('/rounds/{round}', [RoundsController::class, 'destroy'])->name('rounds.destroy');
     });
 });
 
