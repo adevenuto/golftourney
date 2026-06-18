@@ -22,7 +22,6 @@ class UpdateGolferRequest extends FormRequest
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'handicap' => 'required|numeric|min:0',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
         ];

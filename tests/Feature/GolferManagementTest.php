@@ -51,7 +51,6 @@ class GolferManagementTest extends TestCase
             ->put(route('golfers.update', $golfer), [
                 'first_name' => 'Jane',
                 'last_name' => 'Doe',
-                'handicap' => 12.5,
                 'email' => 'jane@example.com',
             ])
             ->assertRedirect();

@@ -55,7 +55,6 @@ class GolfersController extends Controller
             'first_name' => strtolower($request->input('first_name')),
             'last_name' => strtolower($request->input('last_name')),
             'email' => $request->input('email'),
-            'handicap' => $request->input('handicap'),
             'phone' => $request->input('phone'),
         ]);
 

@@ -96,7 +96,6 @@ const editing = ref(null);
 const editForm = useForm({
     first_name: '',
     last_name: '',
-    handicap: '',
     email: '',
     phone: '',
 });
@@ -105,7 +104,6 @@ function openEdit(golfer) {
     editForm.clearErrors();
     editForm.first_name = golfer.first_name;
     editForm.last_name = golfer.last_name;
-    editForm.handicap = golfer.handicap;
     editForm.email = golfer.email ?? '';
     editForm.phone = golfer.phone ?? '';
     showEdit.value = true;
@@ -365,11 +363,6 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                         <InputLabel for="e_last" value="Last name" />
                         <TextInput id="e_last" v-model="editForm.last_name" type="text" class="mt-1 block w-full capitalize" required />
                         <InputError :message="editForm.errors.last_name" class="mt-1" />
-                    </div>
-                    <div>
-                        <InputLabel for="e_handicap" value="Handicap" />
-                        <TextInput id="e_handicap" v-model="editForm.handicap" type="number" step="0.01" min="0" class="mt-1 block w-full tabular-nums" required />
-                        <InputError :message="editForm.errors.handicap" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_phone" value="Phone" />
