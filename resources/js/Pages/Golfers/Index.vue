@@ -48,6 +48,15 @@ const {
     initialSort: { key: 'last_name', dir: 'asc' },
 });
 
+// Export honours the current sort + search.
+const exportUrl = computed(() =>
+    route('golfers.export', {
+        sort: sortKey.value,
+        dir: sortDir.value,
+        search: search.value || undefined,
+    }),
+);
+
 /* ---------- flash toast ---------- */
 const toast = ref('');
 let toastTimer;
@@ -171,7 +180,7 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                     </div>
 
                     <a
-                        :href="route('golfers.export')"
+                        :href="exportUrl"
                         class="inline-flex items-center gap-2 rounded-full border border-pine/20 bg-cream px-4 py-2.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

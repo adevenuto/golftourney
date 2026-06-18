@@ -26,7 +26,12 @@
     <div class="header">
         <p class="eyebrow">The Black League</p>
         <h1>Handicaps</h1>
-        <p class="meta">{{ $golfers->count() }} golfers &middot; Generated {{ $generatedAt->format('F j, Y') }}</p>
+        <p class="meta">
+            {{ $golfers->count() }} golfers &middot; Generated {{ $generatedAt->format('F j, Y') }}
+            @if (!empty($search))
+                &middot; Matching &ldquo;{{ $search }}&rdquo;
+            @endif
+        </p>
     </div>
 
     <table>

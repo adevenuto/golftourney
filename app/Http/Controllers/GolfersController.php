@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateGolferRequest;
 use App\Models\Golfer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -33,19 +34,40 @@ class GolfersController extends Controller
     }
 
     /**
-     * Download the roster handicaps as a PDF.
+     * Download the roster handicaps as a PDF, honouring the current
+     * sort/search applied in the UI (passed as query params).
      */
-    public function exportPdf(): SymfonyResponse
+    public function exportPdf(Request $request): SymfonyResponse
     {
-        $golfers = Golfer::query()
-            ->withCount(['rounds as number_of_rounds'])
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
+        $allowedSorts = ['last_name', 'handicap', 'number_of_rounds'];
+        $sort = in_array($request->query('sort'), $allowedSorts, true)
+            ? $request->query('sort')
+            : 'last_name';
+        $direction = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+        $search = trim((string) $request->query('search', ''));
+
+        $query = Golfer::query()->withCount(['rounds as number_of_rounds']);
+
+        // Match every token against any of the searchable fields (mirrors the UI).
+        foreach (array_filter(preg_split('/\s+/', $search)) as $token) {
+            $query->where(function ($q) use ($token) {
+                $like = '%'.$token.'%';
+                $q->where('first_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('phone', 'like', $like);
+            });
+        }
+
+        $query->orderBy($sort, $direction);
+        if ($sort === 'last_name') {
+            $query->orderBy('first_name', $direction);
+        }
 
         return Pdf::loadView('pdf.golfers', [
-            'golfers' => $golfers,
+            'golfers' => $query->get(),
             'generatedAt' => now(),
+            'search' => $search,
         ])->download('black-league-handicaps.pdf');
     }
 

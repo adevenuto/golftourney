@@ -33,13 +33,17 @@ export function useDataTable(source, options = {}) {
     const filtered = computed(() => {
         const term = search.value.trim().toLowerCase();
         if (!term || searchFields.length === 0) return rows.value;
-        return rows.value.filter((row) =>
-            searchFields.some((field) =>
-                String(row[field] ?? '')
-                    .toLowerCase()
-                    .includes(term),
-            ),
-        );
+
+        // Match every whitespace-separated token against the row's combined
+        // searchable text, so "John Milne" (first + last) matches.
+        const tokens = term.split(/\s+/);
+        return rows.value.filter((row) => {
+            const haystack = searchFields
+                .map((field) => String(row[field] ?? ''))
+                .join(' ')
+                .toLowerCase();
+            return tokens.every((token) => haystack.includes(token));
+        });
     });
 
     const sorted = computed(() => {

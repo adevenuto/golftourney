@@ -80,7 +80,7 @@ class GolferManagementTest extends TestCase
         Golfer::factory()->count(2)->create();
 
         $this->actingAs(User::factory()->create()) // a player, not an admin
-            ->get(route('golfers.export'))
+            ->get(route('golfers.export', ['sort' => 'number_of_rounds', 'dir' => 'desc', 'search' => 'a']))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
     }
