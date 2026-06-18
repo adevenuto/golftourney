@@ -67,7 +67,7 @@ class RoundsController extends Controller
         ]);
 
         // Recalculate using the round's own golfer, not request input.
-        $this->handicaps->recalculateFor($round->golfer);
+        $this->handicaps->recalculateFor(Golfer::findOrFail($round->golfer_id));
 
         return response()->json(['success' => 'Round was successfully updated']);
     }
@@ -77,7 +77,7 @@ class RoundsController extends Controller
      */
     public function delete(Round $round): JsonResponse
     {
-        $golfer = $round->golfer;
+        $golfer = Golfer::findOrFail($round->golfer_id);
         $round->delete();
 
         $this->handicaps->recalculateFor($golfer);

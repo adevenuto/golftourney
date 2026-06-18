@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Golfer;
+use App\Models\Round;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Round>
+ * @extends Factory<Round>
  */
 class RoundFactory extends Factory
 {

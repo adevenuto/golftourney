@@ -13,7 +13,7 @@ class Round extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'golfer_id',
@@ -34,6 +34,8 @@ class Round extends Model
 
     /**
      * The golfer who posted this round.
+     *
+     * @return BelongsTo<Golfer, $this>
      */
     public function golfer(): BelongsTo
     {

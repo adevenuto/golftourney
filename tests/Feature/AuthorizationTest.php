@@ -6,6 +6,7 @@ use App\Models\Golfer;
 use App\Models\Round;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -38,17 +39,13 @@ class AuthorizationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider adminRoutes
-     */
+    #[DataProvider('adminRoutes')]
     public function test_guests_cannot_access_admin_routes(string $method, string $uri): void
     {
         $this->{"{$method}Json"}($uri)->assertUnauthorized(); // 401
     }
 
-    /**
-     * @dataProvider adminRoutes
-     */
+    #[DataProvider('adminRoutes')]
     public function test_non_admins_cannot_access_admin_routes(string $method, string $uri): void
     {
         $player = User::factory()->create(); // defaults to the player role

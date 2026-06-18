@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Golfer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Golfer>
+ * @extends Factory<Golfer>
  */
 class GolferFactory extends Factory
 {

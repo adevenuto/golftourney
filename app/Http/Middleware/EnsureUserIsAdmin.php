@@ -12,7 +12,7 @@ class EnsureUserIsAdmin
     /**
      * Ensure the authenticated user has the admin role.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {

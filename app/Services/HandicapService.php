@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Golfer;
+use App\Models\Round;
 use Illuminate\Support\Collection;
 
 /**
@@ -31,7 +32,7 @@ class HandicapService
     /**
      * The best scoring rounds (lowest scores) from a golfer's recent rounds.
      *
-     * @return \Illuminate\Support\Collection<int, \App\Models\Round>
+     * @return Collection<int, Round>
      */
     public function countingRounds(Golfer $golfer): Collection
     {
@@ -56,7 +57,7 @@ class HandicapService
     /**
      * Average the differentials of the given rounds into a handicap.
      *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Round>  $rounds
+     * @param  Collection<int, Round>  $rounds
      */
     public function calculate(Collection $rounds): float
     {

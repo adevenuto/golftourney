@@ -13,7 +13,7 @@ class Golfer extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'first_name',
@@ -44,6 +44,8 @@ class Golfer extends Model
 
     /**
      * The rounds posted by this golfer.
+     *
+     * @return HasMany<Round, $this>
      */
     public function rounds(): HasMany
     {

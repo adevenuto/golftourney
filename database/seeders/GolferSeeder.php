@@ -6,19 +6,19 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class GolferSeeder extends Seeder
-{   
+{
     public function run(): void
     {
-        $path = storage_path()."/golfers_copy.csv";
+        $path = storage_path().'/golfers_copy.csv';
         if (($handle = fopen($path, 'r')) !== false) {
             fgetcsv($handle);
             while (($row = fgetcsv($handle, 1000, ',')) !== false) {
                 $data = [];
                 foreach ($row as $column) {
                     $data[] = $column;
-                    
+
                 }
-                
+
                 DB::table('golfers')->insert([
                     'first_name' => $data[1],
                     'last_name' => $data[2],

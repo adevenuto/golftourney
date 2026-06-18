@@ -4,6 +4,10 @@
 > functionality. Decisions locked in: **adopt Inertia.js**, **drop jQuery/DataTables**,
 > **upgrade all dependencies to latest**.
 
+## Frontend-design skill
+
+The `frontend-design:frontend-design` skill is available in this environment and **will be activated for every UI task**.
+
 ---
 
 ## 0. Current State (baseline)
@@ -86,12 +90,14 @@ Goal: a clean, testable domain layer. Still framework-version-agnostic, so safe 
 
 Goal: get to latest. Do this **after** tests exist so regressions are caught.
 
-1. **PHP/Laravel**: 10 → 11 → 12 (incremental, using Laravel Shift or manual upgrade guide). Run the suite at each step.
-2. **Auth**: migrate `laravel/ui` scaffold → **Laravel Breeze (Inertia + Vue preset)**, which also seeds the Inertia setup for Phase 4. Decide whether to keep Sanctum (only needed if a real API/mobile client is added later — likely drop).
-3. **Frontend deps**: Vite 6, Tailwind 4, Vue latest. Remove unused (`boxicons`, `tippy.js`, `oh-vue-icons` if replaced).
-4. **Tooling**: add Pint (config), Larastan/PHPStan, and a GitHub Actions CI running tests + static analysis. Dependabot.
+1. **PHP/Laravel** → jumped straight to **Laravel 13.16** (latest; PHP `^8.3`, already on 8.3.15) rather than 12. Composer deps bumped: sanctum 4, tinker 3, phpunit 12, collision 8. Kept the classic skeleton (`Http/Kernel.php`) — supported on L13, not required to migrate. Only breaking change in our code: PHPUnit 12 dropped `@dataProvider` doc-comments → converted to `#[DataProvider]` attributes. **`composer audit` now reports zero advisories.**
+2. **Auth / Breeze + Inertia** — **deferred to Phase 4** (it's the frontend overhaul; bundling it with the framework upgrade makes both harder to debug, and Breeze brings its own coherent Vite/Tailwind/Vue setup).
+3. **Frontend deps** (Vite 6, Tailwind 4, Vue latest) — **deferred to Phase 4**, installed together with Breeze so the build is configured once. npm-side dependabot alerts get cleared then.
+4. **Tooling** ✅ — added `pint.json` (Laravel preset, whole codebase formatted to baseline), Larastan + `phpstan.neon` (level 5, clean), and GitHub Actions CI (`.github/workflows/ci.yml`) running Pint check + PHPStan + tests. Dependabot config can be added when convenient.
 
-**Deliverable:** latest stack, green CI.
+**Done in Phase 3:** Laravel 13.16 / PHP 8.3, zero composer vulns, Pint + PHPStan(level 5) clean, CI workflow, 29 tests green.
+
+**Deliverable:** latest backend stack, green CI. ✅ (frontend deps ride with Phase 4)
 
 ---
 
