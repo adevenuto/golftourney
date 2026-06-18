@@ -28,13 +28,17 @@ class LeagueManagementTest extends TestCase
     {
         Course::factory()->create([
             'course_name' => 'Pine Valley Golf Club',
-            'layout_data' => ['teeboxes' => [['name' => 'Blue', 'slope' => 130, 'courseRating' => 72.1]]],
+            'layout_data' => [
+                'hole_count' => 18,
+                'teeboxes' => [['name' => 'Blue', 'slope' => 130, 'courseRating' => 72.1]],
+            ],
         ]);
 
         $this->actingAs(User::factory()->create())
             ->getJson(route('courses.search', ['q' => 'Pine']))
             ->assertOk()
             ->assertJsonPath('courses.0.name', 'Pine Valley Golf Club')
+            ->assertJsonPath('courses.0.holes', 18)
             ->assertJsonPath('courses.0.teeboxes.0.name', 'Blue')
             ->assertJsonPath('courses.0.teeboxes.0.slope', 130);
     }

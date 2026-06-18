@@ -36,6 +36,9 @@ class CoursesController extends Controller
                 'name' => $course->course_name,
                 'club' => $course->club_name,
                 'location' => trim(($course->state ?? '').' '.($course->postal_code ?? '')) ?: null,
+                'holes' => is_array($course->layout_data) && isset($course->layout_data['hole_count'])
+                    ? (int) $course->layout_data['hole_count']
+                    : null,
                 'teeboxes' => $this->teeboxSummary($course),
             ])->all(),
         ]);

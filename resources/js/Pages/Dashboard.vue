@@ -29,6 +29,7 @@ const currentTee = computed(
         selectedCourse.value?.teeboxes?.find((t) => t.name === form.teebox) ??
         null,
 );
+const courseHoles = computed(() => selectedCourse.value?.holes ?? null);
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -36,11 +37,19 @@ function applyTee() {
     const tee = currentTee.value;
     if (!tee) return;
     form.slope_rating = tee.slope ?? '';
-    // 9-hole rating is roughly half the 18-hole rating; editable afterwards.
-    form.course_rating =
-        tee.rating != null
-            ? round1(holes.value === 9 ? tee.rating / 2 : tee.rating)
-            : '';
+
+    if (tee.rating == null) {
+        form.course_rating = '';
+        return;
+    }
+
+    // The teebox rating is for the course's own hole count; only convert when
+    // the league plays a different number of holes than the course.
+    let rating = tee.rating;
+    if (courseHoles.value && courseHoles.value !== holes.value) {
+        rating = holes.value === 9 ? rating / 2 : rating * 2;
+    }
+    form.course_rating = round1(rating);
 }
 watch(holes, applyTee);
 
@@ -48,6 +57,12 @@ function onCourseSelect(course) {
     selectedCourse.value = course;
     form.course_id = course?.id ?? null;
     form.teebox = course?.teeboxes?.[0]?.name ?? null;
+
+    // Auto-select 9/18 from the course's layout data.
+    if (course?.holes === 9 || course?.holes === 18) {
+        holes.value = course.holes;
+    }
+
     if (form.teebox) {
         applyTee();
     } else {

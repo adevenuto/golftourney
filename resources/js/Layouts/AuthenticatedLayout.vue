@@ -26,10 +26,10 @@ function switchLeague(id) {
 </script>
 
 <template>
-    <div class="min-h-screen bg-parchment font-sans text-ink">
+    <div class="min-h-screen font-sans bg-parchment text-ink">
         <nav class="bg-pine text-cream shadow-[0_1px_0_0_theme(colors.brass.dark)]">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 justify-between">
+            <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
                     <div class="flex">
                         <!-- Brand -->
                         <Link
@@ -39,10 +39,10 @@ function switchLeague(id) {
                             <img
                                 src="/img/logo-emblem.svg"
                                 alt="GolfTourney"
-                                class="h-10 w-auto"
+                                class="w-auto h-14"
                             />
                             <span
-                                class="font-display text-xl font-semibold tracking-tight text-cream"
+                                class="text-xl font-semibold tracking-tight font-display text-cream"
                             >
                                 {{ $page.props.auth.user?.current_league?.name ?? 'GolfTourney' }}
                             </span>
@@ -80,19 +80,19 @@ function switchLeague(id) {
                                 >
                                     <span class="h-1.5 w-1.5 rounded-full bg-brass"></span>
                                     {{ user.current_league?.name ?? 'No league' }}
-                                    <svg class="h-4 w-4 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <svg class="w-4 h-4 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
                             </template>
                             <template #content>
-                                <p class="px-4 pb-1 pt-2 text-xs uppercase tracking-wider text-ink/40">Switch league</p>
+                                <p class="px-4 pt-2 pb-1 text-xs tracking-wider uppercase text-ink/40">Switch league</p>
                                 <button
                                     v-for="l in leagues"
                                     :key="l.id"
                                     type="button"
                                     @click="switchLeague(l.id)"
-                                    class="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm text-ink transition hover:bg-parchment"
+                                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm text-left transition text-ink hover:bg-parchment"
                                 >
                                     <span class="truncate">{{ l.name }}</span>
                                     <span v-if="l.id === currentLeagueId" class="text-brass">●</span>
@@ -132,12 +132,12 @@ function switchLeague(id) {
                     </div>
 
                     <!-- Hamburger -->
-                    <div class="-me-2 flex items-center sm:hidden">
+                    <div class="flex items-center -me-2 sm:hidden">
                         <button
                             @click="showingNavigationDropdown = !showingNavigationDropdown"
-                            class="inline-flex items-center justify-center rounded-md p-2 text-cream/70 transition hover:bg-pine-light hover:text-cream focus:outline-none"
+                            class="inline-flex items-center justify-center p-2 transition rounded-md text-cream/70 hover:bg-pine-light hover:text-cream focus:outline-none"
                         >
-                            <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                 <path
                                     :class="{ hidden: showingNavigationDropdown, 'inline-flex': !showingNavigationDropdown }"
                                     stroke-linecap="round"
@@ -163,7 +163,7 @@ function switchLeague(id) {
                 :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }"
                 class="bg-cream text-ink sm:hidden"
             >
-                <div class="space-y-1 pb-3 pt-2">
+                <div class="pt-2 pb-3 space-y-1">
                     <ResponsiveNavLink
                         v-for="link in navLinks"
                         :key="link.route"
@@ -173,7 +173,7 @@ function switchLeague(id) {
                         {{ link.label }}
                     </ResponsiveNavLink>
                 </div>
-                <div class="border-t border-parchment-dark pb-1 pt-4">
+                <div class="pt-4 pb-1 border-t border-parchment-dark">
                     <div class="px-4">
                         <div class="text-base font-medium capitalize text-ink">
                             {{ user.first_name }} {{ user.last_name }}
