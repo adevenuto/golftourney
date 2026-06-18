@@ -29,10 +29,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $league = $user?->currentLeague;
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    // Role is per-league: the user's role in their current league.
+                    'role' => $user->roleIn($league),
+                    'current_league' => $league ? [
+                        'id' => $league->id,
+                        'name' => $league->name,
+                    ] : null,
+                ] : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

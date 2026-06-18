@@ -24,7 +24,7 @@
 </head>
 <body>
     <div class="header">
-        <p class="eyebrow">The Black League</p>
+        <p class="eyebrow">{{ $league->name }}</p>
         <h1>Handicaps</h1>
         <p class="meta">
             {{ $golfers->count() }} golfers &middot; Generated {{ $generatedAt->format('F j, Y') }}
@@ -53,6 +53,6 @@
         </tbody>
     </table>
 
-    <p class="footer">The Black League · Robert A. Black Golf Course</p>
+    <p class="footer">{{ $league->name }}</p>
 </body>
 </html>

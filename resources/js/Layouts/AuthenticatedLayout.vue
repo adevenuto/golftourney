@@ -36,7 +36,7 @@ const isActive = (name) => route().current(name);
                             <span
                                 class="font-display text-xl font-semibold tracking-tight text-cream"
                             >
-                                The Black League
+                                {{ $page.props.auth.user?.current_league?.name ?? 'GolfTourney' }}
                             </span>
                         </Link>
 

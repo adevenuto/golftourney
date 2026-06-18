@@ -19,18 +19,8 @@ class Golfer extends Model
     protected $fillable = [
         'first_name',
         'last_name',
-        'handicap',
         'email',
         'phone',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'handicap' => 'decimal:2',
     ];
 
     /**

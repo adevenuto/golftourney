@@ -2,31 +2,34 @@
 
 namespace Tests\Feature;
 
-use App\Models\Golfer;
-use App\Models\Round;
-use App\Models\User;
+use App\Models\League;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\WithLeague;
 use Tests\TestCase;
 
 /**
- * Verifies that write & delete actions are enforced server-side.
+ * Write & delete actions require league-admin rights, enforced server-side.
+ * Only the denied paths (guest 401 / non-admin 403) are exercised here.
  */
 class AuthorizationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithLeague;
+
+    protected League $league;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Records with id 1 so route-model-bound URIs resolve to a real model
+        // A league with a golfer (id 1) + round (id 1) so the bound URIs resolve
         // and execution reaches the `admin` middleware.
-        $golfer = Golfer::factory()->create();
-        Round::factory()->for($golfer)->create();
+        $this->league = League::factory()->create();
+        $golfer = $this->golferIn($this->league);
+        $this->roundFor($golfer, $this->league);
     }
 
-    /** @return array<int, array{0:string,1:string}> Admin-guarded [method, uri] routes. */
+    /** @return array<int, array{0:string,1:string}> */
     public static function adminRoutes(): array
     {
         return [
@@ -48,9 +51,7 @@ class AuthorizationTest extends TestCase
     #[DataProvider('adminRoutes')]
     public function test_non_admins_cannot_access_admin_routes(string $method, string $uri): void
     {
-        $player = User::factory()->create(); // defaults to the player role
-
-        $this->actingAs($player)
+        $this->actingAs($this->playerOf($this->league))
             ->{"{$method}Json"}($uri)
             ->assertForbidden(); // 403
     }

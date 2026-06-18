@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Golfer;
+use App\Models\League;
 use App\Models\Round;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,8 +19,8 @@ class RoundFactory extends Factory
     {
         return [
             'golfer_id' => Golfer::factory(),
+            'league_id' => League::factory(),
             'score' => fake()->numberBetween(35, 60),
-            'course_name' => 'Robert A. Black',
             'created_at' => fake()->dateTimeBetween('-2 years', 'now'),
         ];
     }

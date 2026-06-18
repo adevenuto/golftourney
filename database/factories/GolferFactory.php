@@ -18,7 +18,6 @@ class GolferFactory extends Factory
         return [
             'first_name' => strtolower(fake()->firstName()),
             'last_name' => strtolower(fake()->lastName()),
-            'handicap' => 0,
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->numerify('(###) ###-####'),
         ];

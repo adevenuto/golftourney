@@ -19,7 +19,6 @@ class Round extends Model
         'golfer_id',
         'league_id',
         'score',
-        'course_name',
         'created_at', // admins may backdate a round
     ];
 

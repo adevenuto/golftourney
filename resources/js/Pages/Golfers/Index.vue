@@ -147,7 +147,7 @@ function toggleExpand(id) {
         <header class="border-b border-parchment-dark bg-pine text-cream">
             <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <p class="text-xs uppercase tracking-[0.35em] text-brass-light">
-                    The Black League
+                    {{ $page.props.auth.user?.current_league?.name ?? 'GolfTourney' }}
                 </p>
                 <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
                     <h1 class="font-display text-5xl font-semibold leading-none">

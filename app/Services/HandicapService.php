@@ -3,55 +3,47 @@
 namespace App\Services;
 
 use App\Models\Golfer;
+use App\Models\League;
 use App\Models\Round;
 use Illuminate\Support\Collection;
 
 /**
- * Calculates a golfer's handicap from their recent rounds.
+ * Calculates a golfer's handicap within a league.
  *
- * Rule: average the score differentials of the best COUNTING_ROUNDS scoring
- * rounds out of their most recent RECENT_ROUNDS.
+ * Rule: average the score differentials of the best `counting_rounds` scoring
+ * rounds out of the golfer's most recent `recent_rounds` rounds *in that
+ * league*, using the league's course rating/slope. The handicap is stored on
+ * the golfer_league pivot (a golfer can have a different handicap per league).
  */
 class HandicapService
 {
-    /** Course rating for Robert A. Black (9-hole). */
-    public const COURSE_RATING = 31.5;
-
-    /** USGA standard slope rating. */
+    /** USGA standard slope rating (universal). */
     public const STANDARD_SLOPE = 113;
 
-    /** Course slope rating for Robert A. Black. */
-    public const COURSE_SLOPE = 104;
-
-    /** How many of the most recent rounds are considered. */
-    public const RECENT_ROUNDS = 20;
-
-    /** How many of the best recent rounds count toward the handicap. */
-    public const COUNTING_ROUNDS = 8;
-
     /**
-     * The best scoring rounds (lowest scores) from a golfer's recent rounds.
+     * The golfer's best counting rounds in the league.
      *
      * @return Collection<int, Round>
      */
-    public function countingRounds(Golfer $golfer): Collection
+    public function countingRounds(Golfer $golfer, League $league): Collection
     {
         return $golfer->rounds()
+            ->where('league_id', $league->id)
             ->whereNotNull('score')
             ->orderByDesc('created_at')
-            ->limit(self::RECENT_ROUNDS)
+            ->limit($league->recent_rounds)
             ->get()
             ->sortBy('score')
-            ->take(self::COUNTING_ROUNDS)
+            ->take($league->counting_rounds)
             ->values();
     }
 
     /**
-     * The score differential for a single round score.
+     * The score differential for one round score, using the league's course.
      */
-    public function scoreDifferential(int $score): float
+    public function scoreDifferential(int $score, League $league): float
     {
-        return ($score - self::COURSE_RATING) * self::STANDARD_SLOPE / self::COURSE_SLOPE;
+        return ($score - (float) $league->course_rating) * self::STANDARD_SLOPE / $league->slope_rating;
     }
 
     /**
@@ -59,25 +51,26 @@ class HandicapService
      *
      * @param  Collection<int, Round>  $rounds
      */
-    public function calculate(Collection $rounds): float
+    public function calculate(Collection $rounds, League $league): float
     {
         if ($rounds->isEmpty()) {
             return 0.00;
         }
 
-        $sum = $rounds->sum(fn ($round) => $this->scoreDifferential((int) $round->score));
+        $sum = $rounds->sum(fn ($round) => $this->scoreDifferential((int) $round->score, $league));
 
         return round($sum / $rounds->count(), 2);
     }
 
     /**
-     * Recalculate and persist a golfer's handicap. Returns the new value.
+     * Recalculate and persist a golfer's handicap in a league (on the pivot).
+     * Returns the new value.
      */
-    public function recalculateFor(Golfer $golfer): float
+    public function recalculateFor(Golfer $golfer, League $league): float
     {
-        $handicap = $this->calculate($this->countingRounds($golfer));
+        $handicap = $this->calculate($this->countingRounds($golfer, $league), $league);
 
-        $golfer->update(['handicap' => $handicap]);
+        $golfer->leagues()->updateExistingPivot($league->id, ['handicap' => $handicap]);
 
         return $handicap;
     }

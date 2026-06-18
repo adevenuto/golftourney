@@ -25,7 +25,6 @@ class User extends Authenticatable
     protected $fillable = [
         'first_name',
         'last_name',
-        'role',
         'current_league_id',
         'email',
         'password',
@@ -51,16 +50,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'role' => Role::class,
     ];
-
-    /**
-     * Determine if the user is an administrator (global role — retired in A2).
-     */
-    public function isAdmin(): bool
-    {
-        return $this->role === Role::Admin;
-    }
 
     /**
      * Leagues this user belongs to, with their per-league role.
