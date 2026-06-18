@@ -18,6 +18,8 @@ class League extends Model
     protected $fillable = [
         'name',
         'owner_id',
+        'course_id',
+        'teebox',
         'course_rating',
         'slope_rating',
         'recent_rounds',
@@ -42,6 +44,16 @@ class League extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * The catalog course this league plays (for provenance/display).
+     *
+     * @return BelongsTo<Course, $this>
+     */
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class);
     }
 
     /**
