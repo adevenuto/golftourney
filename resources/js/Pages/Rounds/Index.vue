@@ -60,14 +60,22 @@ function toggleCounts() {
     setPage(1);
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+// A round's date is a calendar day — handle it as a plain date string so it
+// never shifts across timezones (stored UTC midnight must not display as the
+// previous day for viewers behind UTC).
+const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 const toInputDate = (iso) => (iso ? String(iso).slice(0, 10) : '');
-const displayDate = (iso) =>
-    new Date(iso).toLocaleDateString('en-US', {
+const displayDate = (iso) => {
+    const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     });
+};
 
 /* ---------- flash toast ---------- */
 const toast = ref('');
