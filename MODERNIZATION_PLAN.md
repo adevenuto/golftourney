@@ -115,6 +115,12 @@ Sub-steps are committed incrementally:
   - Dropped dead jQuery-era npm libs (boxicons, oh-vue-icons, tippy, popper, sass).
   - Verified: 49 tests green, PHPStan clean, Pint clean, `npm run build` OK, runtime smoke test (Welcome/Login render Inertia, `/golfers` guard redirects). **Golfers/Rounds pages intentionally broken until 4.2/4.3.**
 
+- **4.2 — Golfers index → Inertia ✅**
+  - RESTful golfer routes (`golfers.index/store/update/destroy`); controller returns `Inertia::render` + redirects with flash. Removed `/golfers-list`, `/create/golfer`, `/golfers/{id}/edit`.
+  - Built `Golfers/Index.vue`: Vue-native searchable/sortable table (no DataTables/jQuery), admin-gated add/edit/delete via `useForm` modals, flash toast.
+  - Themed the app shell (country-club aesthetic: pine/parchment/brass, Fraunces display font) in `AuthenticatedLayout`; post-login now lands on Golfers.
+  - Verified: 49 tests green (Inertia assertions), PHPStan/Pint clean, build OK, runtime check (admin login → `/golfers` renders with real data).
+
 1. **Wire Inertia** (from Breeze preset): root template, `app.js` Inertia setup, Vite plugin. ✅ (4.1)
 2. **Convert controllers** to return `Inertia::render('Golfers/Index', [...])` with props
    (golfers + round counts + the *server-resolved* permissions). Remove the JSON endpoints + axios calls.

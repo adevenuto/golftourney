@@ -5,46 +5,51 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGolferRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\Golfer;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class GolfersController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
     /**
-     * Get golfers with their round counts and return as JSON.
+     * Show the golfer roster.
      */
-    public function index(): JsonResponse
+    public function index(): Response
     {
-        $golfers = Golfer::query()
-            ->withCount(['rounds as number_of_rounds'])
-            ->orderByDesc('number_of_rounds')
-            ->get();
-
-        return response()->json(['golfers' => $golfers]);
+        return Inertia::render('Golfers/Index', [
+            'golfers' => Golfer::query()
+                ->withCount(['rounds as number_of_rounds'])
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get(),
+        ]);
     }
 
     /**
-     * Display the view.
+     * Store a new golfer.
      */
-    public function create(): View
+    public function store(StoreGolferRequest $request): RedirectResponse
     {
-        return view('golfers.index');
+        Golfer::create([
+            'first_name' => strtolower($request->input('first_name')),
+            'last_name' => strtolower($request->input('last_name')),
+            'email' => $request->input('email'),
+            'phone' => $request->input('phone'),
+        ]);
+
+        return back()->with('success', 'Golfer added.');
     }
 
     /**
-     * Update golfer and return JSON response.
+     * Update an existing golfer.
      */
-    public function update(UpdateGolferRequest $request, Golfer $golfer): JsonResponse
+    public function update(UpdateGolferRequest $request, Golfer $golfer): RedirectResponse
     {
         $golfer->update([
             'first_name' => strtolower($request->input('first_name')),
@@ -54,36 +59,21 @@ class GolfersController extends Controller
             'phone' => $request->input('phone'),
         ]);
 
-        return response()->json(['message' => 'Golfer updated successfully']);
+        return back()->with('success', 'Golfer updated.');
     }
 
     /**
-     * Store golfer and return JSON response.
+     * Delete a golfer.
      */
-    public function store(StoreGolferRequest $request): JsonResponse
-    {
-        Golfer::create([
-            'first_name' => strtolower($request->input('first_name')),
-            'last_name' => strtolower($request->input('last_name')),
-            'email' => $request->input('email'),
-            'phone' => $request->input('phone'),
-        ]);
-
-        return response()->json(['message' => 'Golfer created successfully'], 201);
-    }
-
-    /**
-     * Delete golfer from storage.
-     */
-    public function delete(Golfer $golfer): JsonResponse
+    public function destroy(Golfer $golfer): RedirectResponse
     {
         $golfer->delete();
 
-        return response()->json(['success' => 'Golfer deleted']);
+        return back()->with('success', 'Golfer removed.');
     }
 
     /**
-     * Get golfer by id.
+     * Return a single golfer as JSON (used by the legacy rounds page until 4.3).
      */
     public function golfer(Golfer $golfer): JsonResponse
     {

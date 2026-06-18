@@ -30,8 +30,8 @@ class AuthorizationTest extends TestCase
     public static function adminRoutes(): array
     {
         return [
-            ['post', '/create/golfer'],
-            ['post', '/golfers/1/edit'],
+            ['post', '/golfers'],
+            ['put', '/golfers/1'],
             ['delete', '/golfers/1'],
             ['post', '/rounds/store'],
             ['post', '/rounds/edit'],

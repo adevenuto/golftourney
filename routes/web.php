@@ -26,11 +26,11 @@ Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    // Golfers & rounds — legacy JSON endpoints; Inertia pages land in later sub-steps.
-    Route::get('/golfers-list', [GolfersController::class, 'index']);
-    Route::get('/golfers', [GolfersController::class, 'create']);
-    Route::get('/golfer/{golfer}', [GolfersController::class, 'golfer']);
+    // Golfers (Inertia).
+    Route::get('/golfers', [GolfersController::class, 'index'])->name('golfers.index');
 
+    // Rounds — legacy JSON endpoints; Inertia page lands in 4.3.
+    Route::get('/golfer/{golfer}', [GolfersController::class, 'golfer']);
     Route::get('/golfers/{golfer}/rounds', [RoundsController::class, 'index']);
     Route::get('/rounds/{id}', [RoundsController::class, 'create']);
 
@@ -41,9 +41,9 @@ Route::middleware('auth')->group(function () {
 
     // Admin-only write & delete actions.
     Route::middleware('admin')->group(function () {
-        Route::delete('/golfers/{golfer}', [GolfersController::class, 'delete']);
-        Route::post('/golfers/{golfer}/edit', [GolfersController::class, 'update']);
-        Route::post('/create/golfer', [GolfersController::class, 'store']);
+        Route::post('/golfers', [GolfersController::class, 'store'])->name('golfers.store');
+        Route::put('/golfers/{golfer}', [GolfersController::class, 'update'])->name('golfers.update');
+        Route::delete('/golfers/{golfer}', [GolfersController::class, 'destroy'])->name('golfers.destroy');
 
         Route::post('/rounds/edit', [RoundsController::class, 'edit']);
         Route::post('/rounds/store', [RoundsController::class, 'store']);
