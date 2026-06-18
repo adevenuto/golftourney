@@ -105,7 +105,17 @@ Goal: get to latest. Do this **after** tests exist so regressions are caught.
 
 Goal: retire jQuery/DataTables and the JSON-over-web-routes pattern; server-driven Inertia pages.
 
-1. **Wire Inertia** (from Breeze preset): root template, `app.js` Inertia setup, Vite plugin.
+Sub-steps are committed incrementally:
+
+- **4.1 — Skeleton + Breeze/Inertia scaffold ✅**
+  - Migrated to the slim Laravel 11+ skeleton (4.1a).
+  - Installed Breeze (Vue/Inertia), Tailwind 3, Vite 6; **removed laravel/ui** and its blade auth.
+  - Adapted Breeze auth to our `first_name`/`last_name`/`role` schema (register, profile, layout, tests).
+  - Removed unused email-verification scaffolding (app never used it; emails are optional).
+  - Dropped dead jQuery-era npm libs (boxicons, oh-vue-icons, tippy, popper, sass).
+  - Verified: 49 tests green, PHPStan clean, Pint clean, `npm run build` OK, runtime smoke test (Welcome/Login render Inertia, `/golfers` guard redirects). **Golfers/Rounds pages intentionally broken until 4.2/4.3.**
+
+1. **Wire Inertia** (from Breeze preset): root template, `app.js` Inertia setup, Vite plugin. ✅ (4.1)
 2. **Convert controllers** to return `Inertia::render('Golfers/Index', [...])` with props
    (golfers + round counts + the *server-resolved* permissions). Remove the JSON endpoints + axios calls.
 3. **Rebuild pages as `<script setup>` Vue components**
