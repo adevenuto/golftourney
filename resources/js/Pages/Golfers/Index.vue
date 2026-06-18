@@ -44,7 +44,7 @@ const {
         handicap: (g) => Number(g.handicap),
         number_of_rounds: (g) => Number(g.number_of_rounds),
     },
-    initialSort: { key: 'last_name', dir: 'asc' },
+    initialSort: { key: 'number_of_rounds', dir: 'desc' },
 });
 
 // Export honours the current sort + search.
@@ -225,14 +225,43 @@ function toggleExpand(id) {
                                 >
                                     <button
                                         type="button"
-                                        class="inline-flex items-center gap-1 transition hover:text-brass-dark"
+                                        class="inline-flex items-center gap-1.5 transition hover:text-brass-dark"
                                         @click="toggleSort(col.key)"
                                     >
                                         {{ col.label }}
-                                        <span class="text-brass">
-                                            <template v-if="sortKey === col.key">{{ sortDir === 'asc' ? '▲' : '▼' }}</template>
-                                            <template v-else>↕</template>
-                                        </span>
+                                        <!-- active ascending -->
+                                        <svg
+                                            v-if="sortKey === col.key && sortDir === 'asc'"
+                                            class="h-3.5 w-3.5 text-brass"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="3"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l6-6 6 6" />
+                                        </svg>
+                                        <!-- active descending -->
+                                        <svg
+                                            v-else-if="sortKey === col.key"
+                                            class="h-3.5 w-3.5 text-brass"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="3"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+                                        </svg>
+                                        <!-- unsorted -->
+                                        <svg
+                                            v-else
+                                            class="h-3.5 w-3.5 text-brass/45"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10l4-4 4 4M8 14l4 4 4-4" />
+                                        </svg>
                                     </button>
                                 </th>
                                 <th scope="col" class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-pine">Email</th>

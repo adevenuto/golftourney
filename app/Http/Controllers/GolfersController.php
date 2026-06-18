@@ -27,8 +27,8 @@ class GolfersController extends Controller
         return Inertia::render('Golfers/Index', [
             'golfers' => Golfer::query()
                 ->withCount(['rounds as number_of_rounds'])
+                ->orderByDesc('number_of_rounds')
                 ->orderBy('last_name')
-                ->orderBy('first_name')
                 ->get(),
         ]);
     }
