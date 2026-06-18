@@ -17,6 +17,7 @@ class Round extends Model
      */
     protected $fillable = [
         'golfer_id',
+        'league_id',
         'score',
         'course_name',
         'created_at', // admins may backdate a round
@@ -40,5 +41,15 @@ class Round extends Model
     public function golfer(): BelongsTo
     {
         return $this->belongsTo(Golfer::class);
+    }
+
+    /**
+     * The league (and thus course) this round was played in.
+     *
+     * @return BelongsTo<League, $this>
+     */
+    public function league(): BelongsTo
+    {
+        return $this->belongsTo(League::class);
     }
 }
