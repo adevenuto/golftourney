@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220">
+  <circle cx="120" cy="108" r="100" fill="#223F2E"/>
+  <circle cx="120" cy="108" r="88" fill="none" stroke="#B98E4F" stroke-width="1.5" opacity="0.7"/>
+  <rect x="117.5" y="50" width="4.5" height="56" rx="2" fill="#F3EFE3"/>
+  <path d="M122 52 L149 61 L122 70 Z" fill="#B98E4F"/>
+  <ellipse cx="120" cy="107" rx="25" ry="4.5" fill="#F3EFE3" opacity="0.14"/>
+  <line x1="86" y1="128" x2="154" y2="128" stroke="#B98E4F" stroke-width="1" opacity="0.5"/>
+  <text x="120" y="156" text-anchor="middle" fill="#F3EFE3" font-family="Georgia, 'Times New Roman', serif" font-size="20" font-weight="500">GolfTourney</text>
+  <text x="120" y="176" text-anchor="middle" fill="#C9A968" font-family="Arial, Helvetica, sans-serif" font-size="9" letter-spacing="3">EST. 2025</text>
+</svg>

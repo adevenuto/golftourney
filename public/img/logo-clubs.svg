@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <circle cx="120" cy="120" r="104" fill="#223F2E"/>
+  <circle cx="120" cy="120" r="90" fill="#F3EFE3"/>
+  <g stroke="#223F2E" stroke-width="6" stroke-linecap="round">
+    <line x1="80" y1="174" x2="150" y2="66"/>
+    <line x1="160" y1="174" x2="90" y2="66"/>
+  </g>
+  <line x1="72" y1="178" x2="92" y2="168" stroke="#223F2E" stroke-width="11" stroke-linecap="round"/>
+  <line x1="168" y1="178" x2="148" y2="168" stroke="#223F2E" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="120" cy="120" r="17" fill="#F3EFE3" stroke="#223F2E" stroke-width="3.5"/>
+  <circle cx="120" cy="120" r="2" fill="#223F2E"/>
+  <circle cx="113" cy="114" r="2" fill="#223F2E"/>
+  <circle cx="127" cy="114" r="2" fill="#223F2E"/>
+  <circle cx="113" cy="126" r="2" fill="#223F2E"/>
+  <circle cx="127" cy="126" r="2" fill="#223F2E"/>
+  <rect x="56" y="195" width="128" height="24" rx="5" fill="#B98E4F"/>
+  <text x="120" y="211.5" text-anchor="middle" fill="#223F2E" font-family="Georgia, 'Times New Roman', serif" font-size="13" font-weight="500">GolfTourney</text>
+</svg>

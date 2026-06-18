@@ -28,11 +28,11 @@ const isActive = (name) => route().current(name);
                             :href="route('golfers.index')"
                             class="flex shrink-0 items-center gap-2.5"
                         >
-                            <span
-                                class="flex h-7 w-7 items-center justify-center rounded-full border border-brass/60"
-                            >
-                                <span class="h-2.5 w-2.5 rounded-full bg-brass"></span>
-                            </span>
+                            <img
+                                src="/img/logo-emblem.svg"
+                                alt="GolfTourney"
+                                class="h-10 w-auto"
+                            />
                             <span
                                 class="font-display text-xl font-semibold tracking-tight text-cream"
                             >
