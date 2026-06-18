@@ -23,7 +23,7 @@
             <div class="flex flex-col items-end">
                 
                 <li class="flex items-center gap-1 text-xs capitalize md:text-base">
-                    {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="px-1 text-white bg-green-800 rounded">{{ Auth::user()->role }}</span>
+                    {{ Auth::user()->first_name }} {{ Auth::user()->last_name }} - <span class="px-1 text-white bg-green-800 rounded">{{ Auth::user()->role->value }}</span>
                 </li>
                 <li>
                     <a class="text-xs text-red-600 hover:text-red-700 hover:underline" href="{{ route('logout') }}"

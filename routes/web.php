@@ -30,17 +30,18 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('home');
 
 Route::get('/golfers-list', [GolfersController::class, 'index']);
 Route::get('/golfers', [GolfersController::class, 'create']);
-
-
-
-Route::delete('/golfers/{id}', [GolfersController::class, 'delete']);
-Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);
-Route::post('/create/golfer', [GolfersController::class, 'store']);
 Route::get('/golfer/{id}', [GolfersController::class, 'golfer']);
-
 
 Route::get('/golfers/{id}/rounds', [RoundsController::class, 'index']);
 Route::get('/rounds/{id}', [RoundsController::class, 'create']);
-Route::post('/rounds/edit', [RoundsController::class, 'edit']);
-Route::post('/rounds/store', [RoundsController::class, 'store']);
-Route::delete('/rounds/{id}', [RoundsController::class, 'delete']);
+
+// Admin-only write & delete actions.
+Route::middleware('admin')->group(function () {
+    Route::delete('/golfers/{id}', [GolfersController::class, 'delete']);
+    Route::post('/golfers/{id}/edit', [GolfersController::class, 'update']);
+    Route::post('/create/golfer', [GolfersController::class, 'store']);
+
+    Route::post('/rounds/edit', [RoundsController::class, 'edit']);
+    Route::post('/rounds/store', [RoundsController::class, 'store']);
+    Route::delete('/rounds/{id}', [RoundsController::class, 'delete']);
+});

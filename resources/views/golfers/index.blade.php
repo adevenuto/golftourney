@@ -21,8 +21,8 @@
 
 @section('content')
     <div class="w-full">
-        <golfers-list 
-            role={{ Auth::user()->role }}
+        <golfers-list
+            role={{ Auth::user()->role->value }}
         ></golfers-list>
     </div>
 @endsection

@@ -7,10 +7,10 @@ use App\Models\Golfer;
 use Illuminate\Http\Request;
 use App\Traits\HandicapTrait;
 use Illuminate\Http\JsonResponse;
-use \Illuminate\Contracts\View\View;
+use Illuminate\Contracts\View\View;
 
 class RoundsController extends Controller
-{   
+{
     use HandicapTrait;
 
     /**
@@ -24,30 +24,22 @@ class RoundsController extends Controller
     }
 
     /**
-     * Return golfers latest rounds
+     * Return a golfer's latest rounds and total.
+     *
      * @param int $id
-     * 
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function index(Int $id): JsonResponse
-    {   
-        try {
-            $golfer = Golfer::find($id);
-            $latest_rounds = $this->latest_rounds($golfer->id);
-            $total_rounds = $this->total_rounds($golfer->id);
-            return response()->json(['rounds' => [
-                'latest' => $latest_rounds,
-                'total' => $total_rounds
-            ]], 200);
-        } catch (\exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+    public function index(int $id): JsonResponse
+    {
+        $golfer = Golfer::findOrFail($id);
+
+        return response()->json(['rounds' => [
+            'latest' => $this->latest_rounds($golfer->id),
+            'total' => $this->total_rounds($golfer->id),
+        ]]);
     }
 
     /**
      * Display the view.
-     * 
-     * @return \Illuminate\Contracts\View\View
      */
     public function create(): View
     {
@@ -56,70 +48,64 @@ class RoundsController extends Controller
 
     /**
      * Store a new golfer round in storage.
-     * 
-     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
-        try {
-            $round = new Round();
-            $round->golfer_id = intval($request->golfer_id);
-            $round->score = intval($request->score);
-            $round->course_name = 'Robert A. Black';
-            $round->created_at = $request->created_at;
-            $round->save();
+        $validated = $request->validate([
+            'golfer_id' => 'required|integer|exists:golfers,id',
+            'score' => 'required|integer|min:1|max:150',
+            'created_at' => 'required|date',
+        ]);
 
-            // calc new handicap
-            $this->update_golfer_handicap($request->golfer_id);
+        $round = new Round();
+        $round->golfer_id = $validated['golfer_id'];
+        $round->score = $validated['score'];
+        $round->course_name = 'Robert A. Black';
+        $round->created_at = $validated['created_at'];
+        $round->save();
 
-            return response()->json(['success' => 'Round was successfully created'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        // Recalculate the golfer's handicap from their latest rounds.
+        $this->update_golfer_handicap($round->golfer_id);
+
+        return response()->json(['success' => 'Round was successfully created'], 201);
     }
 
     /**
-     * Update round in storage.
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     * Update a round in storage.
      */
     public function edit(Request $request): JsonResponse
     {
-        try {
-            $round = Round::find($request->id);
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:rounds,id',
+            'score' => 'required|integer|min:1|max:150',
+            'created_at' => 'required|date',
+        ]);
 
-            $round->score = intval($request->score);
-            $round->created_at = $request->created_at;
-            $round->save();
+        $round = Round::findOrFail($validated['id']);
+        $round->score = $validated['score'];
+        $round->created_at = $validated['created_at'];
+        $round->save();
 
-            // calc new handicap
-            $this->update_golfer_handicap($request->golfer_id);
+        // Recalculate using the round's own golfer, not request input.
+        $this->update_golfer_handicap($round->golfer_id);
 
-            return response()->json(['success' => 'Round was successfully updated'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        return response()->json(['success' => 'Round was successfully updated']);
     }
 
     /**
-     * Delete a resource in storage.
+     * Delete a round from storage.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @param int $id
      */
     public function delete($id): JsonResponse
-    {   
-        
-        try {
-            $round = Round::find($id);
-            $golfer_id = $round->golfer_id;
-            $round->delete();
+    {
+        $round = Round::findOrFail($id);
+        $golferId = $round->golfer_id;
+        $round->delete();
 
-            // calc new handicap
-            $this->update_golfer_handicap($golfer_id);
+        // Recalculate the affected golfer's handicap.
+        $this->update_golfer_handicap($golferId);
 
-            return response()->json(['success' => 'Round was successfully deleted'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        return response()->json(['success' => 'Round was successfully deleted']);
     }
 }

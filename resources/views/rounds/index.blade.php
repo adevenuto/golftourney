@@ -4,7 +4,7 @@
 
     <div class="w-full">
         <manage-rounds
-            role={{ Auth::user()->role }}
+            role={{ Auth::user()->role->value }}
         ></manage-rounds>
     </div>
 

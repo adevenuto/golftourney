@@ -21,29 +21,33 @@ class GolfersController extends Controller
     }
 
     /**
-     * Get golfer and return it as JSON.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Get golfers with their round counts and return as JSON.
      */
     public function index(): JsonResponse
     {
         try {
-          $golfers = DB::table('golfers as g')
-            ->leftJoin('rounds as r', 'g.id', '=', 'r.golfer_id')
-            ->select('g.*', DB::raw('count(r.id) as number_of_rounds'))
-            ->groupBy('g.id')
-            ->orderBy('number_of_rounds', 'desc')
-            ->get();
-            return response()->json(['golfers' => $golfers], 200);
-        } catch (\exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+            // Correlated subquery for the round count avoids a GROUP BY,
+            // keeping the query valid under ONLY_FULL_GROUP_BY (strict SQL mode).
+            $golfers = DB::table('golfers as g')
+                ->select('g.*')
+                ->selectSub(
+                    DB::table('rounds')
+                        ->selectRaw('count(*)')
+                        ->whereColumn('rounds.golfer_id', 'g.id'),
+                    'number_of_rounds'
+                )
+                ->orderByDesc('number_of_rounds')
+                ->get();
+
+            return response()->json(['golfers' => $golfers]);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['error' => 'Unable to load golfers.'], 500);
         }
     }
-    
+
     /**
      * Display the view.
-     *
-     * @return \Illuminate\Contracts\View\View
      */
     public function create(): View
     {
@@ -53,109 +57,73 @@ class GolfersController extends Controller
     /**
      * Update golfer and return JSON response.
      *
-     * @return \Illuminate\Http\JsonResponse
-     * 
      * @param int $id
-     * 
      */
     public function update(Request $request, $id): JsonResponse
-    {   
-        try {
-            $rules = [
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                // 'email' => 'required|email|unique:golfers,email,'.$id,
-                'handicap' => 'required|numeric|min:0',
-            ];
-    
-            $messages = [
-                'email.unique' => 'The email address is already in use by another golfer.',
-            ];
-    
-            $this->validate($request, $rules, $messages);
-    
-            $golfer = Golfer::find($id);
-            if (!$golfer) {
-                return response()->json(['message' => 'Golfer not found'], 404);
-            }
-    
-            $golfer->first_name = strtolower($request->input('first_name'));
-            $golfer->last_name = strtolower($request->input('last_name'));
-            $golfer->email = $request->input('email');
-            $golfer->handicap = $request->input('handicap');
-            $golfer->phone = $request->input('phone');
-            $golfer->save();
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'handicap' => 'required|numeric|min:0',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:255',
+        ]);
 
-            return response()->json(['message' => 'Golfer updated successfully'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        $golfer = Golfer::findOrFail($id);
+        $golfer->first_name = strtolower($request->input('first_name'));
+        $golfer->last_name = strtolower($request->input('last_name'));
+        $golfer->email = $request->input('email');
+        $golfer->handicap = $request->input('handicap');
+        $golfer->phone = $request->input('phone');
+        $golfer->save();
+
+        return response()->json(['message' => 'Golfer updated successfully']);
     }
 
     /**
      * Store golfer and return JSON response.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
-    {   
-        try {
-            $rules = [
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                // 'email' => 'required|email|unique:golfers'
-            ];
-    
-            $messages = [
-                'email.unique' => 'The email address is already in use by another golfer.',
-            ];
-    
-            $this->validate($request, $rules, $messages);
-    
-            $golfer = new Golfer();
-            $golfer->first_name = strtolower($request->input('first_name'));
-            $golfer->last_name = strtolower($request->input('last_name'));
-            $golfer->email = $request->input('email');
-            $golfer->phone = $request->input('phone');
-            $golfer->save();
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:255',
+        ]);
 
-            return response()->json(['message' => 'Golfer created successfully'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        $golfer = new Golfer();
+        $golfer->first_name = strtolower($request->input('first_name'));
+        $golfer->last_name = strtolower($request->input('last_name'));
+        $golfer->email = $request->input('email');
+        $golfer->phone = $request->input('phone');
+        $golfer->save();
+
+        return response()->json(['message' => 'Golfer created successfully'], 201);
     }
 
     /**
      * Delete golfer from storage.
      *
-     * @return \Illuminate\Http\JsonResponse
-     * 
      * @param int $id
      */
     public function delete($id): JsonResponse
-    {   
-        try {
-            DB::table('golfers')->where('id', $id)->delete();
-            return response()->json(['success' => 'Golfer deleted'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+    {
+        $golfer = Golfer::findOrFail($id);
+        $golfer->delete();
+
+        return response()->json(['success' => 'Golfer deleted']);
     }
 
     /**
      * Get golfer by id.
      *
-     * @return \Illuminate\Http\JsonResponse
-     * 
      * @param int $id
      */
     public function golfer($id): JsonResponse
     {
-        try {
-            $golfer = Golfer::find($id);
-            return response()->json(['golfer' => $golfer], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        $golfer = Golfer::findOrFail($id);
+
+        return response()->json(['golfer' => $golfer]);
     }
 }
