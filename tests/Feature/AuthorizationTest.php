@@ -2,20 +2,29 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role;
+use App\Models\Golfer;
+use App\Models\Round;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * Verifies that write & delete actions are enforced server-side.
- *
- * These tests intentionally only exercise the *denied* paths (guest / non-admin),
- * which short-circuit in middleware before any database write occurs. This keeps
- * them safe to run against a non-isolated database until a dedicated test DB is
- * configured (Phase 2/3).
  */
 class AuthorizationTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Records with id 1 so route-model-bound URIs resolve to a real model
+        // and execution reaches the `admin` middleware.
+        $golfer = Golfer::factory()->create();
+        Round::factory()->for($golfer)->create();
+    }
+
     /** @return array<int, array{0:string,1:string}> Admin-guarded [method, uri] routes. */
     public static function adminRoutes(): array
     {
@@ -42,7 +51,7 @@ class AuthorizationTest extends TestCase
      */
     public function test_non_admins_cannot_access_admin_routes(string $method, string $uri): void
     {
-        $player = new User(['role' => Role::Player->value]);
+        $player = User::factory()->create(); // defaults to the player role
 
         $this->actingAs($player)
             ->{"{$method}Json"}($uri)

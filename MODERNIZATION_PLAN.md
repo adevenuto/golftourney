@@ -69,15 +69,16 @@ Goal: a clean, testable domain layer. Still framework-version-agnostic, so safe 
    - Promote magic numbers to named constants/config; make course-name a column-driven value, not hardcoded.
    - Document the rule: *best 8 of last 20 rounds*.
 3. **Form Requests + Resources**
-   - `StoreGolferRequest`, `UpdateGolferRequest`, `StoreRoundRequest`, etc.
-   - Stop normalizing names to lowercase in storage; store as entered, present with CSS only if desired.
-4. **RESTful named routes**
-   - `Route::resource('golfers', ...)`, nested `golfers.rounds`. Replace ad-hoc verbs.
-5. **Tests (Pest)**
-   - Unit: handicap math edge cases (0 rounds, <8 rounds, ties).
-   - Feature: authorization (player cannot delete), CRUD happy/sad paths.
+   - `StoreGolferRequest`, `UpdateGolferRequest`, `StoreRoundRequest`, `UpdateRoundRequest`.
+   - ~~Stop normalizing names to lowercase~~ — **deferred**: existing data is lowercased; changing now mixes case. Revisit during the Phase 5 UI pass.
+4. **RESTful named routes** — **deferred to Phase 4.** Renaming routes now breaks the current Vue frontend (hardcoded URLs), and Phase 4's Inertia rewrite redefines routing anyway. Instead, added **route-model binding** on existing URLs (`{golfer}`, `{round}`) as a stepping stone — URLs unchanged, frontend still works.
+5. **Tests** — used **PHPUnit** (existing setup) rather than adding Pest now; Pest migration can ride along with the Phase 3 tooling work.
+   - Unit: handicap math (0 rounds, averaging, differential).
+   - Feature: authorization (guest 401 / player 403), golfer & round CRUD, handicap recalculation, validation 422s.
 
-**Deliverable:** controllers thin, logic tested, routes RESTful.
+**Done in Phase 2:** relationships + casts; `HandicapService` with named constants (`COURSE_RATING` 31.5, `STANDARD_SLOPE` 113, `COURSE_SLOPE` 104); Form Requests; route-model binding; cascade-delete of rounds via a model event (DB-agnostic, works on MySQL + SQLite); isolated **SQLite `:memory:` test DB**; factories (Golfer/Round/User) fixed; `HandicapService` verified to match the original algorithm on real data. 30 tests green.
+
+**Deliverable:** controllers thin, domain logic in a tested service. ✅
 
 ---
 

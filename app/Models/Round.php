@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Round extends Model
 {
@@ -18,7 +19,24 @@ class Round extends Model
         'golfer_id',
         'score',
         'course_name',
-        'created_at',
-        'updated_at',
+        'created_at', // admins may backdate a round
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'score' => 'integer',
+        'created_at' => 'datetime',
+    ];
+
+    /**
+     * The golfer who posted this round.
+     */
+    public function golfer(): BelongsTo
+    {
+        return $this->belongsTo(Golfer::class);
+    }
 }
