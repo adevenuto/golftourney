@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGolferRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\Golfer;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class GolfersController extends Controller
 {
@@ -28,6 +30,23 @@ class GolfersController extends Controller
                 ->orderBy('first_name')
                 ->get(),
         ]);
+    }
+
+    /**
+     * Download the roster handicaps as a PDF.
+     */
+    public function exportPdf(): SymfonyResponse
+    {
+        $golfers = Golfer::query()
+            ->withCount(['rounds as number_of_rounds'])
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        return Pdf::loadView('pdf.golfers', [
+            'golfers' => $golfers,
+            'generatedAt' => now(),
+        ])->download('black-league-handicaps.pdf');
     }
 
     /**

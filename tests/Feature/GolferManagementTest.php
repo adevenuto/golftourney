@@ -75,6 +75,16 @@ class GolferManagementTest extends TestCase
         $this->assertDatabaseMissing('rounds', ['golfer_id' => $golfer->id]);
     }
 
+    public function test_any_authenticated_user_can_export_handicaps_pdf(): void
+    {
+        Golfer::factory()->count(2)->create();
+
+        $this->actingAs(User::factory()->create()) // a player, not an admin
+            ->get(route('golfers.export'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
     public function test_index_renders_inertia_with_round_counts(): void
     {
         $busy = Golfer::factory()->create(['last_name' => 'aaa']);

@@ -6,6 +6,10 @@ import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
+import PageInfo from '@/Components/Table/PageInfo.vue';
+import TablePager from '@/Components/Table/TablePager.vue';
+import { useDataTable } from '@/composables/useDataTable';
 
 const props = defineProps({
     golfers: { type: Array, default: () => [] },
@@ -14,49 +18,34 @@ const props = defineProps({
 const page = usePage();
 const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 
-/* ---------- search + sort ---------- */
-const search = ref('');
-const sortKey = ref('last_name');
-const sortDir = ref('asc');
-
+/* ---------- search + sort + pagination ---------- */
 const sortable = [
     { key: 'last_name', label: 'Golfer' },
     { key: 'handicap', label: 'Handicap' },
     { key: 'number_of_rounds', label: 'Rounds' },
 ];
 
-function toggleSort(key) {
-    if (sortKey.value === key) {
-        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortKey.value = key;
-        sortDir.value = 'asc';
-    }
-}
-
-const numericKeys = ['handicap', 'number_of_rounds'];
-
-const filteredGolfers = computed(() => {
-    const term = search.value.trim().toLowerCase();
-
-    const rows = props.golfers.filter((g) => {
-        if (!term) return true;
-        return [g.first_name, g.last_name, g.email, g.phone]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(term));
-    });
-
-    const dir = sortDir.value === 'asc' ? 1 : -1;
-    const key = sortKey.value;
-
-    return [...rows].sort((a, b) => {
-        if (numericKeys.includes(key)) {
-            return (Number(a[key]) - Number(b[key])) * dir;
-        }
-        const av = `${a.last_name} ${a.first_name}`.toLowerCase();
-        const bv = `${b.last_name} ${b.first_name}`.toLowerCase();
-        return av.localeCompare(bv) * dir;
-    });
+const {
+    search,
+    sortKey,
+    sortDir,
+    perPage,
+    perPageOptions,
+    page: currentPage,
+    pageCount,
+    paginated,
+    total,
+    range,
+    toggleSort,
+    setPage,
+} = useDataTable(() => props.golfers, {
+    searchFields: ['first_name', 'last_name', 'email', 'phone'],
+    sortAccessors: {
+        last_name: (g) => `${g.last_name} ${g.first_name}`.toLowerCase(),
+        handicap: (g) => Number(g.handicap),
+        number_of_rounds: (g) => Number(g.number_of_rounds),
+    },
+    initialSort: { key: 'last_name', dir: 'asc' },
 });
 
 /* ---------- flash toast ---------- */
@@ -158,37 +147,51 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
         <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <!-- Toolbar -->
             <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <div class="relative">
-                    <svg
-                        class="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-pine/40"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.3-4.3m1.8-5.2a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <label for="golfer-search" class="sr-only">Search golfers</label>
-                    <input
-                        id="golfer-search"
-                        v-model="search"
-                        type="search"
-                        placeholder="Search name, email, phone…"
-                        class="w-72 max-w-full rounded-full border-pine/15 bg-cream py-2 pl-10 pr-4 text-sm text-ink shadow-sm placeholder:text-pine/40 focus:border-brass focus:ring-brass"
-                    />
-                </div>
+                <PerPageSelect v-model="perPage" :options="perPageOptions" />
 
-                <button
-                    v-if="isAdmin"
-                    type="button"
-                    @click="showCreate = true"
-                    class="inline-flex items-center gap-2 rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-cream shadow-sm transition hover:bg-pine-light focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment"
-                >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
-                    </svg>
-                    Add a golfer
-                </button>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative">
+                        <svg
+                            class="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-pine/40"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.3-4.3m1.8-5.2a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <label for="golfer-search" class="sr-only">Search golfers</label>
+                        <input
+                            id="golfer-search"
+                            v-model="search"
+                            type="search"
+                            placeholder="Search name, email, phone…"
+                            class="w-64 max-w-full rounded-full border-pine/15 bg-cream py-2 pl-10 pr-4 text-sm text-ink shadow-sm placeholder:text-pine/40 focus:border-brass focus:ring-brass"
+                        />
+                    </div>
+
+                    <a
+                        :href="route('golfers.export')"
+                        class="inline-flex items-center gap-2 rounded-full border border-pine/20 bg-cream px-4 py-2.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                        </svg>
+                        Export PDF
+                    </a>
+
+                    <button
+                        v-if="isAdmin"
+                        type="button"
+                        @click="showCreate = true"
+                        class="inline-flex items-center gap-2 rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-cream shadow-sm transition hover:bg-pine-light focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                        </svg>
+                        Add a golfer
+                    </button>
+                </div>
             </div>
 
             <!-- Table card -->
@@ -224,7 +227,7 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                         </thead>
                         <tbody class="divide-y divide-parchment-dark">
                             <tr
-                                v-for="g in filteredGolfers"
+                                v-for="g in paginated"
                                 :key="g.id"
                                 class="group transition hover:bg-parchment/50"
                             >
@@ -272,7 +275,7 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                                 </td>
                             </tr>
 
-                            <tr v-if="filteredGolfers.length === 0">
+                            <tr v-if="total === 0">
                                 <td :colspan="isAdmin ? 6 : 5" class="px-5 py-16 text-center">
                                     <p class="font-display text-xl text-pine/70">No golfers found</p>
                                     <p class="mt-1 text-sm text-ink/50">
@@ -283,6 +286,15 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Footer: page info (left) + pager (right) -->
+            <div
+                v-if="total > 0"
+                class="mt-4 flex flex-wrap items-center justify-between gap-3"
+            >
+                <PageInfo :from="range.from" :to="range.to" :total="range.total" />
+                <TablePager :page="currentPage" :page-count="pageCount" @update:page="setPage" />
             </div>
         </div>
 

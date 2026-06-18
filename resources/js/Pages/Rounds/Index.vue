@@ -8,6 +8,10 @@ import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
+import PageInfo from '@/Components/Table/PageInfo.vue';
+import TablePager from '@/Components/Table/TablePager.vue';
+import { useDataTable } from '@/composables/useDataTable';
 
 const props = defineProps({
     golfer: { type: Object, required: true },
@@ -23,6 +27,12 @@ const fullName = computed(
 );
 const countingSet = computed(() => new Set(props.countingRoundIds));
 const counts = (id) => countingSet.value.has(id);
+
+const { perPage, perPageOptions, page: currentPage, pageCount, paginated, total, range, setPage } =
+    useDataTable(() => props.rounds, {
+        sortAccessors: { created_at: (r) => new Date(r.created_at).getTime() },
+        initialSort: { key: 'created_at', dir: 'desc' },
+    });
 
 const today = () => new Date().toISOString().slice(0, 10);
 const toInputDate = (iso) => (iso ? String(iso).slice(0, 10) : '');
@@ -145,7 +155,7 @@ function submitDelete() {
         </header>
 
         <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-            <div class="mb-6 flex items-center justify-between">
+            <div class="mb-4 flex items-center justify-between">
                 <h2 class="font-display text-2xl font-semibold text-pine">Round history</h2>
                 <button
                     v-if="isAdmin"
@@ -160,10 +170,14 @@ function submitDelete() {
                 </button>
             </div>
 
+            <div v-if="total > 0" class="mb-4">
+                <PerPageSelect v-model="perPage" :options="perPageOptions" />
+            </div>
+
             <div class="overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm">
                 <ul role="list" class="divide-y divide-parchment-dark">
                     <li
-                        v-for="round in rounds"
+                        v-for="round in paginated"
                         :key="round.id"
                         class="group flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-parchment/50"
                     >
@@ -216,11 +230,20 @@ function submitDelete() {
                         </div>
                     </li>
 
-                    <li v-if="rounds.length === 0" class="px-5 py-16 text-center">
+                    <li v-if="total === 0" class="px-5 py-16 text-center">
                         <p class="font-display text-xl text-pine/70">No rounds yet</p>
                         <p class="mt-1 text-sm text-ink/50">Scores entered here will set this golfer's handicap.</p>
                     </li>
                 </ul>
+            </div>
+
+            <!-- Footer: page info (left) + pager (right) -->
+            <div
+                v-if="total > 0"
+                class="mt-4 flex flex-wrap items-center justify-between gap-3"
+            >
+                <PageInfo :from="range.from" :to="range.to" :total="range.total" />
+                <TablePager :page="currentPage" :page-count="pageCount" @update:page="setPage" />
             </div>
         </div>
 

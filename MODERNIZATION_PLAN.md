@@ -134,9 +134,14 @@ Remaining items:
 2. **Convert controllers** to `Inertia::render` + redirects; JSON/axios endpoints removed. ✅ (4.2/4.3)
 3. **Rebuild pages as `<script setup>` components** — Golfers + Rounds done. ✅ (4.2/4.3)
 4. **Kill jQuery / DataTables** ✅ (4.3)
-5. **PDF export** (old DataTables button) — **not yet** re-implemented; do server-side (e.g. `barryvdh/laravel-dompdf`) if still wanted.
+5. **PDF export** ✅ (4.4) — server-side `barryvdh/laravel-dompdf`; `golfers.export` renders a themed handicaps sheet (`black-league-handicaps.pdf`). Available to any authenticated user.
 
-**Deliverable:** no jQuery, no DataTables, SPA navigation, server-owned auth in the UI. ✅ (PDF export pending)
+- **4.4 — PDF export + reusable pagination ✅**
+  - PDF handicaps sheet via dompdf (route `golfers.export`, blade `pdf/golfers`, Export button on Golfers).
+  - **Modular client-side table layer**: `composables/useDataTable.js` (search/sort/paginate) + `Components/Table/` (`PerPageSelect` top-left 25/50/75/100, `PageInfo` bottom-left "X–Y of Z", `TablePager` bottom-right windowed pager). Applied to both Golfers and Rounds. Swappable to server-side pagination later (multi-league scale).
+  - Verified: 50 tests green (incl. PDF export), PHPStan/Pint clean, build OK, runtime check (golfers/rounds render, PDF = 7-page sheet with embedded fonts).
+
+**Deliverable:** no jQuery, no DataTables, SPA navigation, server-owned auth, PDF export, paginated tables. ✅
 
 ---
 

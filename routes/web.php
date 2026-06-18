@@ -28,6 +28,7 @@ Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
 Route::middleware('auth')->group(function () {
     // Golfers & rounds (Inertia).
     Route::get('/golfers', [GolfersController::class, 'index'])->name('golfers.index');
+    Route::get('/golfers/export/pdf', [GolfersController::class, 'exportPdf'])->name('golfers.export');
     Route::get('/golfers/{golfer}/rounds', [RoundsController::class, 'index'])->name('golfers.rounds');
 
     // Profile (Breeze).
