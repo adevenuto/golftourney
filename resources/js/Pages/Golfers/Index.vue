@@ -128,6 +128,15 @@ function submitDelete() {
 }
 
 const fullName = (g) => `${g.first_name} ${g.last_name}`;
+
+/* ---------- mobile expandable rows ---------- */
+const expanded = ref(new Set());
+const isExpanded = (id) => expanded.value.has(id);
+function toggleExpand(id) {
+    const next = new Set(expanded.value);
+    next.has(id) ? next.delete(id) : next.add(id);
+    expanded.value = next;
+}
 </script>
 
 <template>
@@ -202,8 +211,8 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                 </div>
             </div>
 
-            <!-- Table card -->
-            <div class="overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm">
+            <!-- Table card (desktop / tablet) -->
+            <div class="hidden overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm sm:block">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-parchment-dark text-sm">
                         <thead>
@@ -293,6 +302,98 @@ const fullName = (g) => `${g.first_name} ${g.last_name}`;
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Stacked, expandable rows (mobile) -->
+            <div class="space-y-3 sm:hidden">
+                <div
+                    v-for="g in paginated"
+                    :key="g.id"
+                    class="overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm"
+                >
+                    <div class="flex items-center gap-2 px-4 py-3">
+                        <button
+                            type="button"
+                            @click="toggleExpand(g.id)"
+                            :aria-expanded="isExpanded(g.id)"
+                            class="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
+                            <svg
+                                class="h-5 w-5 shrink-0 text-pine/50 transition-transform"
+                                :class="isExpanded(g.id) ? 'rotate-180' : ''"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <span class="min-w-0">
+                                <span class="block truncate font-medium capitalize text-ink">{{ fullName(g) }}</span>
+                                <span class="text-xs text-ink/50">{{ g.number_of_rounds }} rounds</span>
+                            </span>
+                        </button>
+
+                        <Link
+                            :href="route('golfers.rounds', g.id)"
+                            class="inline-flex shrink-0 items-center gap-1 rounded-full border border-brass/40 bg-brass/10 px-3 py-1 font-display text-sm font-semibold tabular-nums text-pine"
+                        >
+                            {{ g.handicap }}
+                            <svg class="h-3.5 w-3.5 text-brass-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </Link>
+                    </div>
+
+                    <div
+                        v-if="isExpanded(g.id)"
+                        class="border-t border-parchment-dark px-4 py-3 text-sm"
+                    >
+                        <dl class="space-y-2">
+                            <div class="flex justify-between gap-3">
+                                <dt class="text-ink/50">Email</dt>
+                                <dd class="min-w-0 truncate text-ink/80">{{ g.email || '—' }}</dd>
+                            </div>
+                            <div class="flex justify-between gap-3">
+                                <dt class="text-ink/50">Phone</dt>
+                                <dd class="tabular-nums text-ink/80">{{ g.phone || '—' }}</dd>
+                            </div>
+                        </dl>
+
+                        <div v-if="isAdmin" class="mt-4 flex gap-2">
+                            <button
+                                type="button"
+                                @click="openEdit(g)"
+                                class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                </svg>
+                                Edit
+                            </button>
+                            <button
+                                type="button"
+                                @click="openDelete(g)"
+                                class="inline-flex items-center gap-1.5 rounded-full border border-red-700/30 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:border-red-700"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    v-if="total === 0"
+                    class="rounded-2xl border border-parchment-dark bg-cream px-4 py-12 text-center"
+                >
+                    <p class="font-display text-lg text-pine/70">No golfers found</p>
+                    <p class="mt-1 text-sm text-ink/50">
+                        {{ search ? 'Try a different search.' : 'The roster is empty.' }}
+                    </p>
                 </div>
             </div>
 
