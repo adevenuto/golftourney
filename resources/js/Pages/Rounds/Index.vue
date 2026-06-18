@@ -34,35 +34,51 @@ const countingSet = computed(() => new Set(props.countingRoundIds));
 const counts = (id) => countingSet.value.has(id);
 
 /* ---------- sort toggles + pagination ---------- */
-const dateDir = ref('desc');
+const sortBy = ref('date'); // 'date' | 'score'
+const sortDir = ref('desc');
 const countsFirst = ref(false);
 
+const byDate = (a, b) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+
 const orderedRounds = computed(() => {
-    const dir = dateDir.value === 'asc' ? 1 : -1;
+    const factor = sortDir.value === 'asc' ? 1 : -1;
     return [...props.rounds].sort((a, b) => {
         if (countsFirst.value) {
             const ac = countingSet.value.has(a.id) ? 1 : 0;
             const bc = countingSet.value.has(b.id) ? 1 : 0;
             if (ac !== bc) return bc - ac; // counting rounds first
         }
-        return (
-            (new Date(a.created_at).getTime() -
-                new Date(b.created_at).getTime()) *
-            dir
-        );
+        if (sortBy.value === 'score') {
+            if (a.score !== b.score) return (a.score - b.score) * factor;
+            return -byDate(a, b); // tie-break: newest first
+        }
+        return byDate(a, b) * factor;
     });
 });
 
 const { perPage, perPageOptions, page: currentPage, pageCount, paginated, total, range, setPage } =
     useDataTable(() => orderedRounds.value, { initialPerPage: 25 });
 
-function toggleDate() {
-    dateDir.value = dateDir.value === 'desc' ? 'asc' : 'desc';
+function sortByField(field) {
+    if (sortBy.value === field) {
+        sortDir.value = sortDir.value === 'desc' ? 'asc' : 'desc';
+    } else {
+        sortBy.value = field;
+        sortDir.value = 'desc';
+    }
     setPage(1);
 }
 function toggleCounts() {
     countsFirst.value = !countsFirst.value;
     setPage(1);
+}
+function primarySortClass(field) {
+    const base =
+        'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 font-medium transition';
+    return sortBy.value === field
+        ? `${base} border-pine bg-parchment-dark text-pine`
+        : `${base} border-pine/20 text-pine hover:border-brass`;
 }
 
 /* ---------- flash toast ---------- */
@@ -198,15 +214,23 @@ function submitDelete() {
             >
                 <PerPageSelect v-model="perPage" :options="perPageOptions" />
 
-                <div class="flex items-center gap-2 text-sm">
+                <div class="flex flex-wrap items-center gap-2 text-sm">
                     <span class="text-ink/50">Sort</span>
                     <button
                         type="button"
-                        @click="toggleDate"
-                        class="inline-flex items-center gap-1 rounded-full border border-pine/20 px-3 py-1.5 font-medium text-pine transition hover:border-brass"
+                        @click="sortByField('date')"
+                        :class="primarySortClass('date')"
                     >
                         Date
-                        <span class="text-brass-dark">{{ dateDir === 'desc' ? '↓' : '↑' }}</span>
+                        <span v-if="sortBy === 'date'" class="text-brass-dark">{{ sortDir === 'desc' ? '↓' : '↑' }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="sortByField('score')"
+                        :class="primarySortClass('score')"
+                    >
+                        Score
+                        <span v-if="sortBy === 'score'" class="text-brass-dark">{{ sortDir === 'desc' ? '↓' : '↑' }}</span>
                     </button>
                     <button
                         type="button"
