@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -82,6 +83,38 @@ function submit() {
 function switchTo(id) {
     router.post(route('leagues.switch', id), {}, { preserveScroll: true });
 }
+
+/* ---------- rename ---------- */
+const showRename = ref(false);
+const renaming = ref(null);
+const renameForm = useForm({ name: '' });
+function openRename(league) {
+    renaming.value = league;
+    renameForm.clearErrors();
+    renameForm.name = league.name;
+    showRename.value = true;
+}
+function submitRename() {
+    renameForm.patch(route('leagues.update', renaming.value.id), {
+        preserveScroll: true,
+        onSuccess: () => (showRename.value = false),
+    });
+}
+
+/* ---------- delete ---------- */
+const showDelete = ref(false);
+const deleting = ref(null);
+const deleteForm = useForm({});
+function openDelete(league) {
+    deleting.value = league;
+    showDelete.value = true;
+}
+function submitDelete() {
+    deleteForm.delete(route('leagues.destroy', deleting.value.id), {
+        preserveScroll: true,
+        onSuccess: () => (showDelete.value = false),
+    });
+}
 </script>
 
 <template>
@@ -118,20 +151,44 @@ function switchTo(id) {
                                 · rating {{ league.course_rating }} / slope {{ league.slope_rating }}
                             </p>
                         </div>
-                        <span
-                            v-if="league.is_current"
-                            class="shrink-0 rounded-full bg-pine px-3 py-1 text-xs font-medium text-cream"
-                        >
-                            Current
-                        </span>
-                        <button
-                            v-else
-                            type="button"
-                            @click="switchTo(league.id)"
-                            class="shrink-0 rounded-full border border-pine/20 px-4 py-1.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
-                        >
-                            Switch
-                        </button>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <button
+                                v-if="league.role === 'admin'"
+                                type="button"
+                                @click="openRename(league)"
+                                :aria-label="`Rename ${league.name}`"
+                                class="rounded-full p-1.5 text-pine/60 transition hover:bg-pine/10 hover:text-pine"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                </svg>
+                            </button>
+                            <button
+                                v-if="league.role === 'admin'"
+                                type="button"
+                                @click="openDelete(league)"
+                                :aria-label="`Delete ${league.name}`"
+                                class="rounded-full p-1.5 text-red-700/70 transition hover:bg-red-700/10 hover:text-red-700"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
+                                </svg>
+                            </button>
+                            <span
+                                v-if="league.is_current"
+                                class="rounded-full bg-pine px-3 py-1 text-xs font-medium text-cream"
+                            >
+                                Current
+                            </span>
+                            <button
+                                v-else
+                                type="button"
+                                @click="switchTo(league.id)"
+                                class="rounded-full border border-pine/20 px-4 py-1.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
+                            >
+                                Switch
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <p v-else class="rounded-2xl border border-parchment-dark bg-cream px-5 py-8 text-center text-sm text-ink/50">
@@ -232,5 +289,55 @@ function switchTo(id) {
                 </form>
             </section>
         </div>
+
+        <!-- Rename league modal -->
+        <Modal :show="showRename" @close="showRename = false" max-width="md">
+            <form @submit.prevent="submitRename" class="p-6">
+                <h2 class="font-display text-2xl font-semibold text-pine">Rename league</h2>
+                <div class="mt-4">
+                    <InputLabel for="rename" value="League name" />
+                    <TextInput id="rename" v-model="renameForm.name" type="text" class="mt-1 block w-full" required autofocus />
+                    <InputError :message="renameForm.errors.name" class="mt-1" />
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" @click="showRename = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="renameForm.processing"
+                        class="rounded-full bg-pine px-5 py-2 text-sm font-medium text-cream transition hover:bg-pine-light disabled:opacity-50"
+                    >
+                        Save
+                    </button>
+                </div>
+            </form>
+        </Modal>
+
+        <!-- Delete league modal -->
+        <Modal :show="showDelete" @close="showDelete = false" max-width="md">
+            <div class="p-6">
+                <h2 class="font-display text-2xl font-semibold text-pine">Delete league</h2>
+                <p class="mt-2 text-sm text-ink/70">
+                    Delete
+                    <span class="font-semibold text-ink">“{{ deleting?.name }}”</span>
+                    and all of its rounds? Golfers in this league are removed too —
+                    unless they also belong to one of your other leagues. This can't be undone.
+                </p>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" @click="showDelete = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="deleteForm.processing"
+                        @click="submitDelete"
+                        class="rounded-full bg-red-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+                    >
+                        Yes, delete
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </AuthenticatedLayout>
 </template>

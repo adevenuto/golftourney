@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeagueRequest;
+use App\Models\Golfer;
 use App\Models\League;
+use App\Models\Round;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LeaguesController extends Controller
 {
@@ -36,6 +40,62 @@ class LeaguesController extends Controller
         $user->update(['current_league_id' => $league->id]);
 
         return redirect()->route('golfers.index')->with('success', "“{$league->name}” created.");
+    }
+
+    /**
+     * Rename a league (admins of that league only).
+     */
+    public function update(Request $request, League $league): RedirectResponse
+    {
+        abort_unless($request->user()->isAdminOf($league), 403);
+
+        $validated = $request->validate(['name' => 'required|string|max:255']);
+
+        $league->update(['name' => $validated['name']]);
+
+        return back()->with('success', 'League renamed.');
+    }
+
+    /**
+     * Delete a league (admins of that league only), cascading its rounds and
+     * its golfers — golfers who also belong to another league are kept (just
+     * detached), so the other league isn't corrupted.
+     */
+    public function destroy(Request $request, League $league): RedirectResponse
+    {
+        abort_unless($request->user()->isAdminOf($league), 403);
+
+        $name = $league->name;
+
+        DB::transaction(function () use ($league) {
+            // This league's rounds.
+            Round::where('league_id', $league->id)->delete();
+
+            // Detach golfers; delete any left without another league.
+            $golferIds = DB::table('golfer_league')
+                ->where('league_id', $league->id)
+                ->pluck('golfer_id');
+            $league->golfers()->detach();
+
+            foreach ($golferIds as $golferId) {
+                $stillMember = DB::table('golfer_league')
+                    ->where('golfer_id', $golferId)
+                    ->exists();
+
+                if (! $stillMember) {
+                    Golfer::whereKey($golferId)->delete();
+                }
+            }
+
+            // Members + anyone pointing at this as their current league.
+            $league->members()->detach();
+            User::where('current_league_id', $league->id)
+                ->update(['current_league_id' => null]);
+
+            $league->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', "“{$name}” deleted.");
     }
 
     /**

@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreGolferRequest;
+use App\Http\Requests\StoreGolfersRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\Golfer;
 use App\Models\League;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -78,23 +80,156 @@ class GolfersController extends Controller
     }
 
     /**
-     * Store a new golfer and add them to the current league.
+     * Autocomplete search over golfers the user can already see (those sharing
+     * one of their leagues), excluding anyone already in the current league.
      */
-    public function store(StoreGolferRequest $request): RedirectResponse
+    public function search(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+
+        if (mb_strlen($term) < 3) {
+            return response()->json(['golfers' => []]);
+        }
+
+        $user = $request->user();
+        $leagueIds = $this->visibleLeagueIds($request);
+        $currentId = $user->current_league_id;
+
+        if ($leagueIds->isEmpty()) {
+            return response()->json(['golfers' => []]);
+        }
+
+        $golfers = DB::table('golfers as g')
+            ->join('golfer_league as gl', 'gl.golfer_id', '=', 'g.id')
+            ->whereIn('gl.league_id', $leagueIds)
+            ->whereNotExists(fn (Builder $q) => $q->select(DB::raw(1))
+                ->from('golfer_league as cur')
+                ->whereColumn('cur.golfer_id', 'g.id')
+                ->where('cur.league_id', $currentId))
+            ->where(function (Builder $q) use ($term) {
+                foreach (array_filter(preg_split('/\s+/', $term)) as $token) {
+                    $like = '%'.$token.'%';
+                    $q->where(fn (Builder $sub) => $sub
+                        ->where('g.first_name', 'like', $like)
+                        ->orWhere('g.last_name', 'like', $like)
+                        ->orWhere('g.email', 'like', $like));
+                }
+            })
+            ->distinct()
+            ->orderBy('g.last_name')
+            ->limit(12)
+            ->get(['g.id', 'g.first_name', 'g.last_name', 'g.email', 'g.phone']);
+
+        return response()->json([
+            'golfers' => $golfers->map(fn ($g): array => [
+                'id' => $g->id,
+                'first_name' => $g->first_name,
+                'last_name' => $g->last_name,
+                'email' => $g->email,
+                'phone' => $g->phone,
+                'via' => $this->viaLeagueName((int) $g->id, $leagueIds, $currentId),
+            ])->all(),
+        ]);
+    }
+
+    /**
+     * Add a batch of golfers to the current league — each row is either an
+     * existing golfer (reused) or a brand-new one.
+     */
+    public function store(StoreGolfersRequest $request): RedirectResponse
     {
         $league = $request->user()->currentLeague;
         abort_unless((bool) $league, 404);
 
-        $golfer = Golfer::create([
-            'first_name' => strtolower($request->input('first_name')),
-            'last_name' => strtolower($request->input('last_name')),
-            'email' => $request->input('email'),
-            'phone' => $request->input('phone'),
+        $leagueIds = $this->visibleLeagueIds($request);
+        $added = 0;
+
+        DB::transaction(function () use ($request, $league, $leagueIds, &$added) {
+            foreach ($request->validated()['golfers'] as $row) {
+                $golfer = $this->resolveGolfer($row, $leagueIds);
+
+                if (! $golfer) {
+                    continue;
+                }
+
+                $golfer->leagues()->syncWithoutDetaching([$league->id => ['handicap' => 0]]);
+                $added++;
+            }
+        });
+
+        $noun = $added === 1 ? 'golfer' : 'golfers';
+
+        return back()->with('success', "{$added} {$noun} added.");
+    }
+
+    /**
+     * Resolve a batch row to a golfer: reuse an existing (authorized) golfer,
+     * dedup a new one by email within the user's scope, or create one.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  Collection<int, int>  $leagueIds
+     */
+    private function resolveGolfer(array $row, $leagueIds): ?Golfer
+    {
+        // Reuse: only allowed for golfers the user can already see.
+        if (! empty($row['golfer_id'])) {
+            return Golfer::query()
+                ->whereKey($row['golfer_id'])
+                ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
+                ->first();
+        }
+
+        // New: dedup by email within the user's visible scope.
+        $email = $row['email'] ?? null;
+
+        if ($email) {
+            $existing = Golfer::query()
+                ->where('email', $email)
+                ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        return Golfer::create([
+            'first_name' => strtolower((string) $row['first_name']),
+            'last_name' => strtolower((string) $row['last_name']),
+            'email' => $email,
+            'phone' => $row['phone'] ?? null,
         ]);
+    }
 
-        $golfer->leagues()->attach($league->id, ['handicap' => 0]);
+    /**
+     * League ids the acting user belongs to (the bounds of who they can see).
+     *
+     * @return Collection<int, int>
+     */
+    private function visibleLeagueIds(Request $request): Collection
+    {
+        return DB::table('league_user')
+            ->where('user_id', $request->user()->id)
+            ->pluck('league_id');
+    }
 
-        return back()->with('success', 'Golfer added.');
+    /**
+     * Name of one of the user's leagues (other than the current) the golfer is
+     * in, for the "in <league>" search hint.
+     *
+     * @param  Collection<int, int>  $leagueIds
+     */
+    private function viaLeagueName(int $golferId, $leagueIds, ?int $currentId): ?string
+    {
+        $name = DB::table('golfer_league as gl')
+            ->join('leagues as l', 'l.id', '=', 'gl.league_id')
+            ->where('gl.golfer_id', $golferId)
+            ->whereIn('gl.league_id', $leagueIds)
+            ->when($currentId, fn ($q) => $q->where('gl.league_id', '!=', $currentId))
+            ->orderBy('l.name')
+            ->value('l.name');
+
+        return is_string($name) ? $name : null;
     }
 
     /**

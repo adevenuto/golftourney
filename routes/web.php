@@ -39,10 +39,13 @@ Route::middleware('auth')->group(function () {
     // Leagues & course catalog (any member can create/switch leagues).
     Route::get('/courses/search', [CoursesController::class, 'search'])->name('courses.search');
     Route::post('/leagues', [LeaguesController::class, 'store'])->name('leagues.store');
+    Route::patch('/leagues/{league}', [LeaguesController::class, 'update'])->name('leagues.update');
+    Route::delete('/leagues/{league}', [LeaguesController::class, 'destroy'])->name('leagues.destroy');
     Route::post('/leagues/{league}/switch', [LeaguesController::class, 'switch'])->name('leagues.switch');
 
     // Admin-only write & delete actions.
     Route::middleware('admin')->group(function () {
+        Route::get('/golfers/search', [GolfersController::class, 'search'])->name('golfers.search');
         Route::post('/golfers', [GolfersController::class, 'store'])->name('golfers.store');
         Route::put('/golfers/{golfer}', [GolfersController::class, 'update'])->name('golfers.update');
         Route::delete('/golfers/{golfer}', [GolfersController::class, 'destroy'])->name('golfers.destroy');

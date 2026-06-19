@@ -6,6 +6,7 @@ import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import AddGolfersModal from '@/Components/Golfers/AddGolfersModal.vue';
 import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
 import TableFooter from '@/Components/Table/TableFooter.vue';
 import { useDataTable } from '@/composables/useDataTable';
@@ -71,21 +72,6 @@ watch(
 
 /* ---------- create ---------- */
 const showCreate = ref(false);
-const createForm = useForm({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-});
-function submitCreate() {
-    createForm.post(route('golfers.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            createForm.reset();
-            showCreate.value = false;
-        },
-    });
-}
 
 /* ---------- edit ---------- */
 const showEdit = ref(false);
@@ -206,7 +192,7 @@ function toggleExpand(id) {
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
                         </svg>
-                        Add a golfer
+                        Add golfers
                     </button>
                 </div>
             </div>
@@ -451,49 +437,8 @@ function toggleExpand(id) {
             </div>
         </Transition>
 
-        <!-- Create modal -->
-        <Modal :show="showCreate" @close="showCreate = false">
-            <form @submit.prevent="submitCreate" class="p-6">
-                <h2 class="font-display text-2xl font-semibold text-pine">Add a golfer</h2>
-                <p class="mt-1 text-sm text-ink/60">Add a new member to the roster.</p>
-
-                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <InputLabel for="c_first" value="First name" />
-                        <TextInput id="c_first" v-model="createForm.first_name" type="text" class="mt-1 block w-full capitalize" required autofocus />
-                        <InputError :message="createForm.errors.first_name" class="mt-1" />
-                    </div>
-                    <div>
-                        <InputLabel for="c_last" value="Last name" />
-                        <TextInput id="c_last" v-model="createForm.last_name" type="text" class="mt-1 block w-full capitalize" required />
-                        <InputError :message="createForm.errors.last_name" class="mt-1" />
-                    </div>
-                    <div>
-                        <InputLabel for="c_email" value="Email" />
-                        <TextInput id="c_email" v-model="createForm.email" type="email" class="mt-1 block w-full" />
-                        <InputError :message="createForm.errors.email" class="mt-1" />
-                    </div>
-                    <div>
-                        <InputLabel for="c_phone" value="Phone" />
-                        <TextInput id="c_phone" v-model="createForm.phone" type="text" class="mt-1 block w-full" />
-                        <InputError :message="createForm.errors.phone" class="mt-1" />
-                    </div>
-                </div>
-
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showCreate = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        :disabled="createForm.processing"
-                        class="rounded-full bg-pine px-5 py-2 text-sm font-medium text-cream transition hover:bg-pine-light disabled:opacity-50"
-                    >
-                        Save golfer
-                    </button>
-                </div>
-            </form>
-        </Modal>
+        <!-- Add golfers modal -->
+        <AddGolfersModal :show="showCreate" @close="showCreate = false" />
 
         <!-- Edit modal -->
         <Modal :show="showEdit" @close="showEdit = false">

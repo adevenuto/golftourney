@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Golfer;
 use App\Models\League;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -12,34 +13,130 @@ class GolferManagementTest extends TestCase
 {
     use RefreshDatabase, WithLeague;
 
-    public function test_admin_can_create_a_golfer_added_to_their_league(): void
+    public function test_admin_can_batch_create_new_golfers(): void
     {
         $league = League::factory()->create();
 
         $this->actingAs($this->adminOf($league))
             ->post(route('golfers.store'), [
-                'first_name' => 'John',
-                'last_name' => 'Milne',
-                'email' => 'john@example.com',
+                'golfers' => [
+                    ['first_name' => 'John', 'last_name' => 'Milne', 'email' => 'john@example.com'],
+                    ['first_name' => 'Jane', 'last_name' => 'Doe'],
+                ],
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('golfers', [
-            'first_name' => 'john',
-            'last_name' => 'milne',
-            'email' => 'john@example.com',
-        ]);
-        $this->assertDatabaseHas('golfer_league', ['league_id' => $league->id]);
+        $this->assertDatabaseHas('golfers', ['first_name' => 'john', 'last_name' => 'milne', 'email' => 'john@example.com']);
+        $this->assertDatabaseHas('golfers', ['first_name' => 'jane', 'last_name' => 'doe']);
+        $this->assertSame(2, $league->golfers()->count());
+        $this->assertDatabaseHas('golfer_league', ['league_id' => $league->id, 'handicap' => 0]);
     }
 
-    public function test_creating_a_golfer_requires_a_name(): void
+    public function test_each_batch_row_requires_a_name_or_existing_golfer(): void
     {
         $league = League::factory()->create();
 
         $this->actingAs($this->adminOf($league))
-            ->postJson(route('golfers.store'), ['email' => 'x@example.com'])
+            ->postJson(route('golfers.store'), ['golfers' => [['email' => 'x@example.com']]])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['first_name', 'last_name']);
+            ->assertJsonValidationErrors(['golfers.0.first_name']);
+    }
+
+    public function test_can_reuse_an_existing_golfer_from_another_of_my_leagues(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+
+        // The same user also plays in another league that has a golfer.
+        $other = League::factory()->create();
+        $other->members()->attach($admin->id, ['role' => 'player']);
+        $reusable = $this->golferIn($other, ['first_name' => 'tiger', 'last_name' => 'woods']);
+
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), ['golfers' => [['golfer_id' => $reusable->id]]])
+            ->assertRedirect();
+
+        // Attached to the current league, no duplicate golfer row.
+        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $reusable->id, 'league_id' => $current->id]);
+        $this->assertSame(1, Golfer::count());
+    }
+
+    public function test_cannot_reuse_a_golfer_from_a_league_im_not_in(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+
+        // A golfer in a league the admin has no part of.
+        $stranger = $this->golferIn(League::factory()->create());
+
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), ['golfers' => [['golfer_id' => $stranger->id]]])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('golfer_league', ['golfer_id' => $stranger->id, 'league_id' => $current->id]);
+    }
+
+    public function test_new_golfer_with_matching_email_attaches_the_existing_person(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+
+        $other = League::factory()->create();
+        $other->members()->attach($admin->id, ['role' => 'player']);
+        $existing = $this->golferIn($other, ['email' => 'dup@example.com']);
+
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['first_name' => 'Different', 'last_name' => 'Name', 'email' => 'dup@example.com']],
+            ])
+            ->assertRedirect();
+
+        // No duplicate created; the existing person joins the current league.
+        $this->assertSame(1, Golfer::count());
+        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $existing->id, 'league_id' => $current->id]);
+    }
+
+    public function test_search_returns_in_scope_golfers_excluding_current_league_members(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+        $other = League::factory()->create();
+        $other->members()->attach($admin->id, ['role' => 'player']);
+
+        $reusable = $this->golferIn($other, ['first_name' => 'tiger', 'last_name' => 'woods']);
+        $this->golferIn($current, ['first_name' => 'tiger', 'last_name' => 'current']); // already in current → excluded
+        $this->golferIn(League::factory()->create(), ['first_name' => 'tiger', 'last_name' => 'stranger']); // out of scope
+
+        $this->actingAs($admin)
+            ->getJson(route('golfers.search', ['q' => 'tiger']))
+            ->assertOk()
+            ->assertJsonCount(1, 'golfers')
+            ->assertJsonPath('golfers.0.id', $reusable->id)
+            ->assertJsonPath('golfers.0.via', $other->name);
+    }
+
+    public function test_search_requires_at_least_three_characters(): void
+    {
+        $league = League::factory()->create();
+
+        $this->actingAs($this->adminOf($league))
+            ->getJson(route('golfers.search', ['q' => 'ti']))
+            ->assertOk()
+            ->assertExactJson(['golfers' => []]);
+    }
+
+    public function test_non_admin_cannot_add_or_search_golfers(): void
+    {
+        $league = League::factory()->create();
+        $player = $this->playerOf($league);
+
+        $this->actingAs($player)
+            ->post(route('golfers.store'), ['golfers' => [['first_name' => 'No', 'last_name' => 'Way']]])
+            ->assertForbidden();
+
+        $this->actingAs($player)
+            ->getJson(route('golfers.search', ['q' => 'tiger']))
+            ->assertForbidden();
     }
 
     public function test_admin_can_update_a_golfer_in_their_league(): void

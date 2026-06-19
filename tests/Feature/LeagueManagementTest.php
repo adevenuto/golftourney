@@ -147,6 +147,83 @@ class LeagueManagementTest extends TestCase
             ->assertJsonValidationErrors(['name', 'course_rating', 'slope_rating']);
     }
 
+    public function test_an_admin_can_rename_their_league(): void
+    {
+        $league = League::factory()->create(['name' => 'Old Name']);
+        $admin = $this->adminOf($league);
+
+        $this->actingAs($admin)
+            ->patch(route('leagues.update', $league), ['name' => 'New Name'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('leagues', ['id' => $league->id, 'name' => 'New Name']);
+    }
+
+    public function test_a_non_admin_cannot_rename_a_league(): void
+    {
+        $league = League::factory()->create(['name' => 'Untouched']);
+        $player = $this->playerOf($league);
+
+        $this->actingAs($player)
+            ->patch(route('leagues.update', $league), ['name' => 'Hijacked'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('leagues', ['id' => $league->id, 'name' => 'Untouched']);
+    }
+
+    public function test_renaming_a_league_requires_a_name(): void
+    {
+        $league = League::factory()->create();
+
+        $this->actingAs($this->adminOf($league))
+            ->patchJson(route('leagues.update', $league), ['name' => ''])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name']);
+    }
+
+    public function test_an_admin_can_delete_a_league_and_cascade_its_rounds_and_golfers(): void
+    {
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        $orphan = $this->golferIn($league);
+        $this->roundFor($orphan, $league);
+        $this->roundFor($orphan, $league);
+
+        // A golfer also on another league must survive (just detached).
+        $other = League::factory()->create();
+        $shared = $this->golferIn($league);
+        $shared->leagues()->attach($other->id, ['handicap' => 0]);
+
+        $this->actingAs($admin)
+            ->delete(route('leagues.destroy', $league))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
+        $this->assertDatabaseMissing('rounds', ['league_id' => $league->id]);
+        $this->assertDatabaseMissing('golfer_league', ['league_id' => $league->id]);
+
+        // Orphan golfer gone; shared golfer kept (still in the other league).
+        $this->assertDatabaseMissing('golfers', ['id' => $orphan->id]);
+        $this->assertDatabaseHas('golfers', ['id' => $shared->id]);
+        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $shared->id, 'league_id' => $other->id]);
+
+        // The admin no longer points at the deleted league.
+        $this->assertNull($admin->fresh()->current_league_id);
+    }
+
+    public function test_a_non_admin_cannot_delete_a_league(): void
+    {
+        $league = League::factory()->create();
+        $player = $this->playerOf($league);
+
+        $this->actingAs($player)
+            ->delete(route('leagues.destroy', $league))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('leagues', ['id' => $league->id]);
+    }
+
     public function test_a_member_can_switch_their_active_league(): void
     {
         $a = League::factory()->create();
