@@ -112,6 +112,8 @@ jobs:
             --exclude='.env' \
             --exclude='storage' \
             --exclude='public/storage' \
+            --exclude='/.htaccess' \
+            --exclude='/composer.phar' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
             ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
