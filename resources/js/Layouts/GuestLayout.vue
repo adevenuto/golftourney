@@ -20,7 +20,7 @@ import { Link } from '@inertiajs/vue3';
             href="/"
             class="relative z-10 flex items-center gap-2.5 text-cream transition hover:opacity-90"
         >
-            <img src="/img/logo-emblem.svg" alt="GolfTourney" class="w-auto h-28" />
+            <img src="/img/logo-emblem.svg?v=2" alt="GolfTourney" class="w-auto h-28" />
             <!-- <span class="text-2xl font-semibold tracking-tight font-display">GolfTourney</span> -->
         </Link>
 

@@ -37,7 +37,7 @@ function switchLeague(id) {
                             class="flex shrink-0 items-center gap-2.5"
                         >
                             <img
-                                src="/img/logo-emblem.svg"
+                                src="/img/logo-emblem.svg?v=2"
                                 alt="GolfTourney"
                                 class="w-auto h-14"
                             />

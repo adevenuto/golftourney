@@ -49,7 +49,7 @@ const features = [
             <header class="relative z-10">
                 <nav class="flex items-center justify-between px-6 py-6 mx-auto max-w-7xl lg:px-8">
                     <div class="flex items-center gap-2.5">
-                        <img src="/img/logo-emblem.svg" alt="GolfTourney" class="w-auto h-32" />
+                        <img src="/img/logo-emblem.svg?v=2" alt="GolfTourney" class="w-auto h-32" />
                         <!-- <span class="text-xl font-semibold tracking-tight font-display text-cream">
                             GolfTourney
                         </span> -->
