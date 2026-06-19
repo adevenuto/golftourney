@@ -88,9 +88,6 @@ jobs:
 
       - name: Build production artifacts
         run: |
-          # Throwaway .env (not shipped) so composer's package:discover can boot artisan.
-          cp .env.example .env
-          php artisan key:generate
           composer install --no-dev --optimize-autoloader --no-interaction --no-progress
           npm ci
           npm run build
