@@ -80,8 +80,13 @@ function submit() {
     form.post(route('leagues.store'), { preserveScroll: true });
 }
 
-function switchTo(id) {
-    router.post(route('leagues.switch', id), {}, { preserveScroll: true });
+// Clicking a league card opens it: switch to it if needed, then land on the roster.
+function openLeague(league) {
+    if (league.is_current) {
+        router.visit(route('golfers.index'));
+    } else {
+        router.post(route('leagues.switch', league.id), { enter: true });
+    }
 }
 
 /* ---------- rename ---------- */
@@ -139,10 +144,16 @@ function submitDelete() {
                     <div
                         v-for="league in leagues"
                         :key="league.id"
-                        class="flex items-center justify-between gap-3 rounded-2xl border border-parchment-dark bg-cream p-5 shadow-sm"
+                        role="button"
+                        tabindex="0"
+                        @click="openLeague(league)"
+                        @keydown.enter="openLeague(league)"
+                        @keydown.space.prevent="openLeague(league)"
+                        :aria-label="`Open ${league.name}`"
+                        class="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-parchment-dark bg-cream p-5 shadow-sm transition hover:border-brass hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment"
                     >
                         <div class="min-w-0">
-                            <p class="truncate font-display text-lg font-semibold text-pine">
+                            <p class="truncate font-display text-lg font-semibold text-pine transition group-hover:text-brass-dark">
                                 {{ league.name }}
                             </p>
                             <p class="mt-0.5 text-xs text-ink/50">
@@ -155,7 +166,7 @@ function submitDelete() {
                             <button
                                 v-if="league.role === 'admin'"
                                 type="button"
-                                @click="openRename(league)"
+                                @click.stop="openRename(league)"
                                 :aria-label="`Rename ${league.name}`"
                                 class="rounded-full p-1.5 text-pine/60 transition hover:bg-pine/10 hover:text-pine"
                             >
@@ -166,7 +177,7 @@ function submitDelete() {
                             <button
                                 v-if="league.role === 'admin'"
                                 type="button"
-                                @click="openDelete(league)"
+                                @click.stop="openDelete(league)"
                                 :aria-label="`Delete ${league.name}`"
                                 class="rounded-full p-1.5 text-red-700/70 transition hover:bg-red-700/10 hover:text-red-700"
                             >
@@ -180,14 +191,16 @@ function submitDelete() {
                             >
                                 Current
                             </span>
-                            <button
-                                v-else
-                                type="button"
-                                @click="switchTo(league.id)"
-                                class="rounded-full border border-pine/20 px-4 py-1.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
+                            <svg
+                                class="h-5 w-5 text-pine/40 transition group-hover:translate-x-0.5 group-hover:text-brass"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                aria-hidden="true"
                             >
-                                Switch
-                            </button>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
                         </div>
                     </div>
                 </div>

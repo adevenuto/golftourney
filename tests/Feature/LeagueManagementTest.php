@@ -239,6 +239,21 @@ class LeagueManagementTest extends TestCase
         $this->assertSame($b->id, $user->fresh()->current_league_id);
     }
 
+    public function test_entering_a_league_switches_and_redirects_to_the_roster(): void
+    {
+        $a = League::factory()->create();
+        $b = League::factory()->create();
+        $user = User::factory()->create(['current_league_id' => $a->id]);
+        $a->members()->attach($user->id, ['role' => 'admin']);
+        $b->members()->attach($user->id, ['role' => 'admin']);
+
+        $this->actingAs($user)
+            ->post(route('leagues.switch', $b), ['enter' => true])
+            ->assertRedirect(route('golfers.index'));
+
+        $this->assertSame($b->id, $user->fresh()->current_league_id);
+    }
+
     public function test_cannot_switch_to_a_league_you_are_not_in(): void
     {
         $user = User::factory()->create();

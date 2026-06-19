@@ -108,6 +108,11 @@ class LeaguesController extends Controller
 
         $user->update(['current_league_id' => $league->id]);
 
+        // "Enter" the league (e.g. clicking its dashboard card) lands on the roster.
+        if ($request->boolean('enter')) {
+            return redirect()->route('golfers.index');
+        }
+
         return back()->with('success', "Switched to “{$league->name}”.");
     }
 }
