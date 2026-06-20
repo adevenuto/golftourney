@@ -306,4 +306,20 @@ class LeagueManagementTest extends TestCase
                 ->where('leagues.0.is_current', true)
             );
     }
+
+    public function test_dashboard_exposes_the_leagues_course_club_and_name(): void
+    {
+        $course = Course::factory()->create([
+            'club_name' => 'Augusta National',
+            'course_name' => 'Magnolia Course',
+        ]);
+        $league = League::factory()->create(['course_id' => $course->id]);
+
+        $this->actingAs($this->adminOf($league))
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('leagues.0.club_name', 'Augusta National')
+                ->where('leagues.0.course_name', 'Magnolia Course')
+            );
+    }
 }

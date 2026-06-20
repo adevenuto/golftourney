@@ -150,9 +150,17 @@ function submitDelete() {
                             <p class="text-lg font-semibold truncate transition font-display text-pine group-hover:text-brass-dark">
                                 {{ league.name }}
                             </p>
+                            <p v-if="league.club_name" class="mt-0.5 text-sm truncate text-ink/70">
+                                {{ league.club_name }}
+                            </p>
+                            <p
+                                v-if="league.course_name && league.course_name !== league.club_name"
+                                class="text-xs truncate text-ink/50"
+                            >
+                                {{ league.course_name }}
+                            </p>
                             <p class="mt-0.5 text-xs text-ink/50">
-                                <span class="tracking-wider uppercase text-brass-dark">{{ league.role }}</span>
-                                · {{ league.golfers_count }} golfers
+                                {{ league.golfers_count }} golfers
                                 · rating {{ league.course_rating }} / slope {{ league.slope_rating }}
                             </p>
                         </div>
