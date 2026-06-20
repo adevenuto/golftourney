@@ -27,6 +27,7 @@ class LeagueManagementTest extends TestCase
     public function test_course_search_returns_matches_with_teeboxes(): void
     {
         Course::factory()->create([
+            'club_name' => 'Pine Valley Country Club',
             'course_name' => 'Pine Valley Golf Club',
             'layout_data' => [
                 'hole_count' => 18,
@@ -42,6 +43,7 @@ class LeagueManagementTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->getJson(route('courses.search', ['q' => 'Pine']))
             ->assertOk()
+            ->assertJsonPath('courses.0.club', 'Pine Valley Country Club')
             ->assertJsonPath('courses.0.name', 'Pine Valley Golf Club')
             ->assertJsonPath('courses.0.holes', 18)
             ->assertJsonPath('courses.0.teeboxes.0.name', 'Blue')
@@ -50,12 +52,36 @@ class LeagueManagementTest extends TestCase
             ->assertJsonPath('courses.0.teeboxes.0.rating', 72.1);
     }
 
+    public function test_course_search_matches_club_name_not_course_name(): void
+    {
+        Course::factory()->create([
+            'club_name' => 'Augusta National',
+            'course_name' => 'Magnolia Championship Layout',
+        ]);
+
+        $user = User::factory()->create();
+
+        // A term in the club name matches…
+        $this->actingAs($user)
+            ->getJson(route('courses.search', ['q' => 'Augusta']))
+            ->assertOk()
+            ->assertJsonPath('courses.0.club', 'Augusta National')
+            ->assertJsonPath('courses.0.name', 'Magnolia Championship Layout');
+
+        // …but a term that appears only in the course name does not.
+        $this->actingAs($user)
+            ->getJson(route('courses.search', ['q' => 'Magnolia']))
+            ->assertOk()
+            ->assertExactJson(['courses' => []]);
+    }
+
     public function test_course_search_halves_doubled_nine_hole_ratings(): void
     {
         // Robert A. Black: a 9-hole course whose rating (63) was doubled by the
         // source API. Par sums to 33, so 63 is closer to 2*par (66) than par —
         // it must come back halved to the true 31.5.
         Course::factory()->create([
+            'club_name' => 'Robert A. Black',
             'course_name' => 'Robert A. Black',
             'layout_data' => [
                 'hole_count' => 9,
@@ -81,6 +107,7 @@ class LeagueManagementTest extends TestCase
         // An already-correct 9-hole rating (33.6 vs par 35) must NOT be halved —
         // the par anchor guards against double-halving.
         Course::factory()->create([
+            'club_name' => 'Little Miami Golf Center',
             'course_name' => 'Little Miami Golf Center',
             'layout_data' => [
                 'hole_count' => 9,

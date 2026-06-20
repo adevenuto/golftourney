@@ -67,7 +67,7 @@ async function runSearch(term) {
 
 function choose(course) {
     emit('select', course);
-    query.value = course.name;
+    query.value = course.club || course.name;
     results.value = [];
     open.value = false;
 }
@@ -184,7 +184,13 @@ onBeforeUnmount(() => {
                 class="cursor-pointer px-4 py-2.5"
                 :class="i === activeIndex ? 'bg-parchment' : ''"
             >
-                <p class="font-medium text-ink">{{ course.name }}</p>
+                <p class="font-medium text-ink">{{ course.club || course.name }}</p>
+                <p
+                    v-if="course.name && course.club && course.name !== course.club"
+                    class="mt-0.5 text-xs text-ink/70"
+                >
+                    {{ course.name }}
+                </p>
                 <p class="mt-0.5 text-xs text-ink/50">
                     <span v-if="course.location">{{ course.location }}</span>
                     <span v-if="course.teeboxes.length"> · {{ course.teeboxes.length }} tee{{ course.teeboxes.length === 1 ? '' : 's' }}</span>
