@@ -95,6 +95,8 @@ class LeaguesController extends Controller
             $league->delete();
         });
 
+        $league->forgetRosterCache();
+
         return redirect()->route('dashboard')->with('success', "“{$name}” deleted.");
     }
 
