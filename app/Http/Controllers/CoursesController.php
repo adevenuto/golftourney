@@ -25,8 +25,8 @@ class CoursesController extends Controller
         }
 
         $courses = Course::query()
-            ->where('course_name', 'like', '%'.$term.'%')
-            ->orderBy('course_name')
+            ->where('club_name', 'like', '%'.$term.'%')
+            ->orderBy('club_name')
             ->limit(12)
             ->get(['id', 'course_name', 'club_name', 'state', 'postal_code', 'layout_data']);
 
