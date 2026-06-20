@@ -26,7 +26,7 @@ const user = computed(() => usePage().props.auth.user);
         <PageHeader
             eyebrow="Account"
             :title="`${user.first_name} ${user.last_name}`"
-            max-width="3xl"
+            max-width="5xl"
             capitalize-title
         >
             <template #below>
@@ -34,8 +34,8 @@ const user = computed(() => usePage().props.auth.user);
             </template>
         </PageHeader>
 
-        <div class="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-parchment-dark bg-cream p-6 shadow-sm sm:p-8">
+        <div class="max-w-3xl px-4 py-8 mx-auto space-y-6 sm:px-6 lg:px-8">
+            <div class="p-6 border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:p-8">
                 <UpdateProfileInformationForm
                     :must-verify-email="mustVerifyEmail"
                     :status="status"
@@ -43,11 +43,11 @@ const user = computed(() => usePage().props.auth.user);
                 />
             </div>
 
-            <div class="rounded-2xl border border-parchment-dark bg-cream p-6 shadow-sm sm:p-8">
+            <div class="p-6 border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:p-8">
                 <UpdatePasswordForm class="max-w-xl" />
             </div>
 
-            <div class="rounded-2xl border border-parchment-dark bg-cream p-6 shadow-sm sm:p-8">
+            <div class="p-6 border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:p-8">
                 <DeleteUserForm class="max-w-xl" />
             </div>
         </div>
