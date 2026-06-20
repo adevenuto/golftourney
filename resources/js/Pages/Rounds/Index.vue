@@ -4,6 +4,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -147,9 +148,8 @@ function submitDelete() {
     <Head :title="`${fullName} — Rounds`" />
 
     <AuthenticatedLayout>
-        <!-- Hero -->
-        <header class="border-b border-parchment-dark bg-pine text-cream">
-            <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <PageHeader eyebrow="Member" :title="fullName" max-width="5xl" capitalize-title>
+            <template #top>
                 <Link
                     :href="route('golfers.index')"
                     class="inline-flex items-center gap-1.5 text-sm text-cream/70 transition hover:text-brass-light"
@@ -159,37 +159,32 @@ function submitDelete() {
                     </svg>
                     All golfers
                 </Link>
+            </template>
 
-                <div class="mt-4 flex flex-wrap items-end justify-between gap-6">
+            <template #actions>
+                <dl class="flex items-end gap-8">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.35em] text-brass-light">Member</p>
-                        <h1 class="mt-2 font-display text-4xl font-semibold capitalize leading-none sm:text-5xl">
-                            {{ fullName }}
-                        </h1>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Handicap</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums text-brass-light">
+                            {{ golfer.handicap }}
+                        </dd>
                     </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Rounds</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums">{{ rounds.length }}</dd>
+                    </div>
+                </dl>
+            </template>
 
-                    <dl class="flex items-end gap-8">
-                        <div>
-                            <dt class="text-xs uppercase tracking-widest text-cream/50">Handicap</dt>
-                            <dd class="font-display text-4xl font-semibold tabular-nums text-brass-light">
-                                {{ golfer.handicap }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs uppercase tracking-widest text-cream/50">Rounds</dt>
-                            <dd class="font-display text-4xl font-semibold tabular-nums">{{ rounds.length }}</dd>
-                        </div>
-                    </dl>
-                </div>
-
+            <template #below>
                 <p class="mt-4 text-sm text-cream/60">
                     Handicap is the average of the best
                     <span class="text-cream">8</span> of the last
                     <span class="text-cream">20</span> rounds — those rounds are marked
                     <span class="text-brass-light">●</span> below.
                 </p>
-            </div>
-        </header>
+            </template>
+        </PageHeader>
 
         <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
             <div class="mb-4 flex items-center justify-between">

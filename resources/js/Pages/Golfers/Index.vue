@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import AddGolfersModal from '@/Components/Golfers/AddGolfersModal.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
 import TableFooter from '@/Components/Table/TableFooter.vue';
 import { useDataTable } from '@/composables/useDataTable';
@@ -129,27 +130,22 @@ function toggleExpand(id) {
     <Head title="Golfers" />
 
     <AuthenticatedLayout>
-        <!-- Hero -->
-        <header class="border-b border-parchment-dark bg-pine text-cream">
-            <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <p class="text-xs uppercase tracking-[0.35em] text-brass-light">
-                    {{ $page.props.auth.user?.current_league?.name ?? 'GolfTourney' }}
+        <PageHeader
+            :eyebrow="$page.props.auth.user?.current_league?.name ?? 'GolfTourney'"
+            title="Golfers"
+            max-width="5xl"
+        >
+            <template #actions>
+                <p class="text-lg font-display text-cream/70">
+                    <span class="tabular-nums text-cream">{{ golfers.length }}</span>
+                    on the roster
                 </p>
-                <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
-                    <h1 class="font-display text-5xl font-semibold leading-none">
-                        Golfers
-                    </h1>
-                    <p class="font-display text-lg text-cream/70">
-                        <span class="tabular-nums text-cream">{{ golfers.length }}</span>
-                        on the roster
-                    </p>
-                </div>
-            </div>
-        </header>
+            </template>
+        </PageHeader>
 
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="max-w-5xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
             <!-- Toolbar -->
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <PerPageSelect v-model="perPage" :options="perPageOptions" />
 
                 <div class="flex flex-wrap items-center gap-3">
@@ -169,7 +165,7 @@ function toggleExpand(id) {
                             v-model="search"
                             type="search"
                             placeholder="Search name, email, phone…"
-                            class="w-64 max-w-full rounded-full border-pine/15 bg-cream py-2 pl-10 pr-4 text-sm text-ink shadow-sm placeholder:text-pine/40 focus:border-brass focus:ring-brass"
+                            class="w-64 max-w-full py-2 pl-10 pr-4 text-sm rounded-full shadow-sm border-pine/15 bg-cream text-ink placeholder:text-pine/40 focus:border-brass focus:ring-brass"
                         />
                     </div>
 
@@ -177,7 +173,7 @@ function toggleExpand(id) {
                         :href="exportUrl"
                         class="inline-flex items-center gap-2 rounded-full border border-pine/20 bg-cream px-4 py-2.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark"
                     >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
                         </svg>
                         Export PDF
@@ -189,7 +185,7 @@ function toggleExpand(id) {
                         @click="showCreate = true"
                         class="inline-flex items-center gap-2 rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-cream shadow-sm transition hover:bg-pine-light focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment"
                     >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
                         </svg>
                         Add golfers
@@ -198,16 +194,16 @@ function toggleExpand(id) {
             </div>
 
             <!-- Table card (desktop / tablet) -->
-            <div class="hidden overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm sm:block">
+            <div class="hidden overflow-hidden border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:block">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-parchment-dark text-sm">
+                    <table class="min-w-full text-sm divide-y divide-parchment-dark">
                         <thead>
-                            <tr class="bg-parchment/60 text-left">
+                            <tr class="text-left bg-parchment/60">
                                 <th
                                     v-for="col in sortable"
                                     :key="col.key"
                                     scope="col"
-                                    class="px-5 py-3 font-sans text-xs font-semibold uppercase tracking-wider text-pine"
+                                    class="px-5 py-3 font-sans text-xs font-semibold tracking-wider uppercase text-pine"
                                 >
                                     <button
                                         type="button"
@@ -250,9 +246,9 @@ function toggleExpand(id) {
                                         </svg>
                                     </button>
                                 </th>
-                                <th scope="col" class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-pine">Email</th>
-                                <th scope="col" class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-pine">Phone</th>
-                                <th v-if="isAdmin" scope="col" class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-pine">
+                                <th scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-pine">Email</th>
+                                <th scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-pine">Phone</th>
+                                <th v-if="isAdmin" scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider text-right uppercase text-pine">
                                     <span class="sr-only">Actions</span>
                                 </th>
                             </tr>
@@ -261,7 +257,7 @@ function toggleExpand(id) {
                             <tr
                                 v-for="g in paginated"
                                 :key="g.id"
-                                class="group transition hover:bg-parchment/50"
+                                class="transition group hover:bg-parchment/50"
                             >
                                 <td class="px-5 py-3.5">
                                     <span class="font-medium capitalize text-ink">{{ fullName(g) }}</span>
@@ -282,14 +278,14 @@ function toggleExpand(id) {
                                 <td class="px-5 py-3.5 text-ink/70">{{ g.email || '—' }}</td>
                                 <td class="px-5 py-3.5 tabular-nums text-ink/70">{{ g.phone || '—' }}</td>
                                 <td v-if="isAdmin" class="px-5 py-3.5">
-                                    <div class="flex items-center justify-end gap-1 opacity-60 transition group-hover:opacity-100">
+                                    <div class="flex items-center justify-end gap-1 transition opacity-60 group-hover:opacity-100">
                                         <button
                                             type="button"
                                             @click="openEdit(g)"
                                             class="rounded-full p-1.5 text-pine transition hover:bg-pine/10"
                                             :aria-label="`Edit ${fullName(g)}`"
                                         >
-                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
                                             </svg>
                                         </button>
@@ -299,7 +295,7 @@ function toggleExpand(id) {
                                             class="rounded-full p-1.5 text-red-700 transition hover:bg-red-700/10"
                                             :aria-label="`Delete ${fullName(g)}`"
                                         >
-                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
                                             </svg>
                                         </button>
@@ -309,7 +305,7 @@ function toggleExpand(id) {
 
                             <tr v-if="total === 0">
                                 <td :colspan="isAdmin ? 6 : 5" class="px-5 py-16 text-center">
-                                    <p class="font-display text-xl text-pine/70">No golfers found</p>
+                                    <p class="text-xl font-display text-pine/70">No golfers found</p>
                                     <p class="mt-1 text-sm text-ink/50">
                                         {{ search ? 'Try a different search.' : 'The roster is empty.' }}
                                     </p>
@@ -325,17 +321,17 @@ function toggleExpand(id) {
                 <div
                     v-for="g in paginated"
                     :key="g.id"
-                    class="overflow-hidden rounded-2xl border border-parchment-dark bg-cream shadow-sm"
+                    class="overflow-hidden border shadow-sm rounded-2xl border-parchment-dark bg-cream"
                 >
                     <div class="flex items-center gap-2 px-4 py-3">
                         <button
                             type="button"
                             @click="toggleExpand(g.id)"
                             :aria-expanded="isExpanded(g.id)"
-                            class="flex min-w-0 flex-1 items-center gap-2 text-left"
+                            class="flex items-center flex-1 min-w-0 gap-2 text-left"
                         >
                             <svg
-                                class="h-5 w-5 shrink-0 text-pine/50 transition-transform"
+                                class="w-5 h-5 transition-transform shrink-0 text-pine/50"
                                 :class="isExpanded(g.id) ? 'rotate-180' : ''"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -345,14 +341,14 @@ function toggleExpand(id) {
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                             <span class="min-w-0">
-                                <span class="block truncate font-medium capitalize text-ink">{{ fullName(g) }}</span>
+                                <span class="block font-medium capitalize truncate text-ink">{{ fullName(g) }}</span>
                                 <span class="text-xs text-ink/50">{{ g.number_of_rounds }} rounds</span>
                             </span>
                         </button>
 
                         <Link
                             :href="route('golfers.rounds', g.id)"
-                            class="inline-flex shrink-0 items-center gap-1 rounded-full border border-brass/40 bg-brass/10 px-3 py-1 font-display text-sm font-semibold tabular-nums text-pine"
+                            class="inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold border rounded-full shrink-0 border-brass/40 bg-brass/10 font-display tabular-nums text-pine"
                         >
                             {{ g.handicap }}
                             <svg class="h-3.5 w-3.5 text-brass-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -363,7 +359,7 @@ function toggleExpand(id) {
 
                     <div
                         v-if="isExpanded(g.id)"
-                        class="border-t border-parchment-dark px-4 py-3 text-sm"
+                        class="px-4 py-3 text-sm border-t border-parchment-dark"
                     >
                         <dl class="space-y-2">
                             <div class="flex justify-between gap-3">
@@ -376,13 +372,13 @@ function toggleExpand(id) {
                             </div>
                         </dl>
 
-                        <div v-if="isAdmin" class="mt-4 flex gap-2">
+                        <div v-if="isAdmin" class="flex gap-2 mt-4">
                             <button
                                 type="button"
                                 @click="openEdit(g)"
                                 class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass"
                             >
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
                                 </svg>
                                 Edit
@@ -392,7 +388,7 @@ function toggleExpand(id) {
                                 @click="openDelete(g)"
                                 class="inline-flex items-center gap-1.5 rounded-full border border-red-700/30 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:border-red-700"
                             >
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
                                 </svg>
                                 Delete
@@ -403,9 +399,9 @@ function toggleExpand(id) {
 
                 <div
                     v-if="total === 0"
-                    class="rounded-2xl border border-parchment-dark bg-cream px-4 py-12 text-center"
+                    class="px-4 py-12 text-center border rounded-2xl border-parchment-dark bg-cream"
                 >
-                    <p class="font-display text-lg text-pine/70">No golfers found</p>
+                    <p class="text-lg font-display text-pine/70">No golfers found</p>
                     <p class="mt-1 text-sm text-ink/50">
                         {{ search ? 'Try a different search.' : 'The roster is empty.' }}
                     </p>
@@ -443,42 +439,42 @@ function toggleExpand(id) {
         <!-- Edit modal -->
         <Modal :show="showEdit" @close="showEdit = false">
             <form @submit.prevent="submitEdit" class="p-6">
-                <h2 class="font-display text-2xl font-semibold capitalize text-pine">
+                <h2 class="text-2xl font-semibold capitalize font-display text-pine">
                     {{ editing ? fullName(editing) : 'Edit golfer' }}
                 </h2>
                 <p class="mt-1 text-sm text-ink/60">Update this golfer's details.</p>
 
-                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 mt-5 sm:grid-cols-2">
                     <div>
                         <InputLabel for="e_first" value="First name" />
-                        <TextInput id="e_first" v-model="editForm.first_name" type="text" class="mt-1 block w-full capitalize" required />
+                        <TextInput id="e_first" v-model="editForm.first_name" type="text" class="block w-full mt-1 capitalize" required />
                         <InputError :message="editForm.errors.first_name" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_last" value="Last name" />
-                        <TextInput id="e_last" v-model="editForm.last_name" type="text" class="mt-1 block w-full capitalize" required />
+                        <TextInput id="e_last" v-model="editForm.last_name" type="text" class="block w-full mt-1 capitalize" required />
                         <InputError :message="editForm.errors.last_name" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_phone" value="Phone" />
-                        <TextInput id="e_phone" v-model="editForm.phone" type="text" class="mt-1 block w-full" />
+                        <TextInput id="e_phone" v-model="editForm.phone" type="text" class="block w-full mt-1" />
                         <InputError :message="editForm.errors.phone" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_email" value="Email" />
-                        <TextInput id="e_email" v-model="editForm.email" type="email" class="mt-1 block w-full" />
+                        <TextInput id="e_email" v-model="editForm.email" type="email" class="block w-full mt-1" />
                         <InputError :message="editForm.errors.email" class="mt-1" />
                     </div>
                 </div>
 
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showEdit = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" @click="showEdit = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
                     </button>
                     <button
                         type="submit"
                         :disabled="editForm.processing"
-                        class="rounded-full bg-pine px-5 py-2 text-sm font-medium text-cream transition hover:bg-pine-light disabled:opacity-50"
+                        class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
                     >
                         Save changes
                     </button>
@@ -489,21 +485,21 @@ function toggleExpand(id) {
         <!-- Delete modal -->
         <Modal :show="showDelete" @close="showDelete = false" max-width="md">
             <div class="p-6">
-                <h2 class="font-display text-2xl font-semibold text-pine">Remove golfer</h2>
+                <h2 class="text-2xl font-semibold font-display text-pine">Remove golfer</h2>
                 <p class="mt-2 text-sm text-ink/70">
                     Remove
                     <span class="font-semibold capitalize text-ink">{{ deleting ? fullName(deleting) : '' }}</span>
                     and all of their rounds? This can't be undone.
                 </p>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showDelete = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" @click="showDelete = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
                     </button>
                     <button
                         type="button"
                         :disabled="deleteForm.processing"
                         @click="submitDelete"
-                        class="rounded-full bg-red-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+                        class="px-5 py-2 text-sm font-medium text-white transition bg-red-700 rounded-full hover:bg-red-800 disabled:opacity-50"
                     >
                         Yes, remove
                     </button>

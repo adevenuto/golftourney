@@ -14,6 +14,7 @@ const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 const navLinks = [
     { label: 'Dashboard', route: 'dashboard' },
     { label: 'Golfers', route: 'golfers.index' },
+    { label: 'Profile', route: 'profile.edit' },
 ];
 
 const isActive = (name) => route().current(name);
@@ -28,7 +29,7 @@ function switchLeague(id) {
 <template>
     <div class="min-h-screen font-sans bg-parchment text-ink">
         <nav class="bg-pine text-cream shadow-[0_1px_0_0_theme(colors.brass.dark)]">
-            <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="max-w-5xl px-4 mx-auto sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex">
                         <!-- Brand -->
@@ -52,6 +53,7 @@ function switchLeague(id) {
                         <div class="hidden sm:ms-10 sm:flex sm:items-center sm:gap-1">
                             <Link
                                 v-for="link in navLinks"
+                                v-show="link.label !== 'Profile'"
                                 :key="link.route"
                                 :href="route(link.route)"
                                 class="relative px-3 py-2 text-sm font-medium tracking-wide transition"
@@ -71,8 +73,10 @@ function switchLeague(id) {
                     </div>
 
                     <!-- Right: league switcher + user menu -->
-                    <div class="hidden sm:flex sm:items-center sm:gap-3">
-                        <Dropdown v-if="leagues.length > 1" align="right" width="56">
+                    <div class="flex sm:items-center sm:gap-3">
+                        
+                        <div class="hidden lg:flex">
+                          <Dropdown v-if="leagues.length > 1" align="right" width="56">
                             <template #trigger>
                                 <button
                                     type="button"
@@ -100,39 +104,42 @@ function switchLeague(id) {
                                 <div class="my-1 border-t border-parchment-dark"></div>
                                 <DropdownLink :href="route('dashboard')">Manage leagues</DropdownLink>
                             </template>
-                        </Dropdown>
-
-                        <Dropdown align="right" width="48">
-                            <template #trigger>
-                                <button
-                                    type="button"
-                                    class="inline-flex items-center gap-2 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium capitalize text-cream/90 transition hover:border-brass/60 hover:text-cream"
-                                >
-                                    {{ user.first_name }} {{ user.last_name }}
-                                    <span
-                                        class="rounded-full bg-brass/20 px-2 py-0.5 text-[10px] uppercase tracking-widest text-brass-light"
-                                    >
-                                        {{ user.role }}
-                                    </span>
-                                </button>
-                            </template>
-                            <template #content>
-                                <DropdownLink :href="route('profile.edit')">
-                                    Profile
-                                </DropdownLink>
-                                <DropdownLink
-                                    :href="route('logout')"
-                                    method="post"
-                                    as="button"
-                                >
-                                    Log Out
-                                </DropdownLink>
-                            </template>
-                        </Dropdown>
+                          </Dropdown>
+                        </div>
+                        
+                        <div class="hidden md:flex">
+                          <Dropdown align="right" width="48">
+                              <template #trigger>
+                                  <button
+                                      type="button"
+                                      class="inline-flex items-center gap-2 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium capitalize text-cream/90 transition hover:border-brass/60 hover:text-cream"
+                                  >
+                                      {{ user.first_name }} {{ user.last_name }}
+                                      <span
+                                          class="rounded-full bg-brass/20 px-2 py-0.5 text-[10px] uppercase tracking-widest text-brass-light"
+                                      >
+                                          {{ user.role }}
+                                      </span>
+                                  </button>
+                              </template>
+                              <template #content>
+                                  <DropdownLink :href="route('profile.edit')">
+                                      Profile
+                                  </DropdownLink>
+                                  <DropdownLink
+                                      :href="route('logout')"
+                                      method="post"
+                                      as="button"
+                                  >
+                                      Log Out
+                                  </DropdownLink>
+                              </template>
+                          </Dropdown>
+                        </div>
                     </div>
 
                     <!-- Hamburger -->
-                    <div class="flex items-center -me-2 sm:hidden">
+                    <div class="flex items-center -me-2 md:hidden">
                         <button
                             @click="showingNavigationDropdown = !showingNavigationDropdown"
                             class="inline-flex items-center justify-center p-2 transition rounded-md text-cream/70 hover:bg-pine-light hover:text-cream focus:outline-none"
@@ -161,7 +168,7 @@ function switchLeague(id) {
             <!-- Mobile menu -->
             <div
                 :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }"
-                class="bg-cream text-ink sm:hidden"
+                class="bg-cream text-ink"
             >
                 <div class="pt-2 pb-3 space-y-1">
                     <ResponsiveNavLink
@@ -172,24 +179,12 @@ function switchLeague(id) {
                     >
                         {{ link.label }}
                     </ResponsiveNavLink>
-                </div>
-                <div class="pt-4 pb-1 border-t border-parchment-dark">
-                    <div class="px-4">
-                        <div class="text-base font-medium capitalize text-ink">
-                            {{ user.first_name }} {{ user.last_name }}
-                        </div>
-                        <div class="text-sm font-medium text-ink/60">
-                            {{ user.email }}
-                        </div>
-                    </div>
-                    <div class="mt-3 space-y-1">
-                        <ResponsiveNavLink :href="route('profile.edit')">
-                            Profile
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('logout')" method="post" as="button">
+                    <div class="border-t">
+                      <ResponsiveNavLink :href="route('logout')" method="post" as="button">
                             Log Out
-                        </ResponsiveNavLink>
+                      </ResponsiveNavLink>
                     </div>
+                    
                 </div>
             </div>
         </nav>
