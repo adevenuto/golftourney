@@ -17,6 +17,9 @@ const root = ref(null);
 
 let debounceTimer = null;
 let controller = null;
+// Set when we write to `query` ourselves (on select) so the watcher below
+// doesn't treat it as the user typing and re-open the results.
+let skipNextWatch = false;
 
 // Flip the dropdown above the input when there isn't room below.
 function updatePlacement() {
@@ -28,6 +31,10 @@ function updatePlacement() {
 }
 
 watch(query, (value) => {
+    if (skipNextWatch) {
+        skipNextWatch = false;
+        return;
+    }
     clearTimeout(debounceTimer);
     activeIndex.value = -1;
     const term = value.trim();
@@ -67,8 +74,13 @@ async function runSearch(term) {
 
 function choose(course) {
     emit('select', course);
+    clearTimeout(debounceTimer);
+    controller?.abort();
+    skipNextWatch = true;
     query.value = course.club || course.name;
     results.value = [];
+    activeIndex.value = -1;
+    loading.value = false;
     open.value = false;
 }
 

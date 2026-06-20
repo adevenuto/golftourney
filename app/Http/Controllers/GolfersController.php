@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -34,7 +35,10 @@ class GolfersController extends Controller
 
         return Inertia::render('Golfers/Index', [
             'golfers' => $league
-                ? $this->rosterQuery($league)->orderByDesc('number_of_rounds')->get()
+                ? Cache::rememberForever(
+                    $league->rosterCacheKey(),
+                    fn () => $this->rosterQuery($league)->orderByDesc('number_of_rounds')->get()
+                )
                 : [],
         ]);
     }
@@ -157,6 +161,8 @@ class GolfersController extends Controller
             }
         });
 
+        $league->forgetRosterCache();
+
         $noun = $added === 1 ? 'golfer' : 'golfers';
 
         return back()->with('success', "{$added} {$noun} added.");
@@ -246,6 +252,9 @@ class GolfersController extends Controller
             'phone' => $request->input('phone'),
         ]);
 
+        // Name/email/phone live on the golfer, so every league they're in is stale.
+        $golfer->leagues()->get()->each->forgetRosterCache();
+
         return back()->with('success', 'Golfer updated.');
     }
 
@@ -263,6 +272,8 @@ class GolfersController extends Controller
         if ($golfer->leagues()->count() === 0) {
             $golfer->delete();
         }
+
+        $league->forgetRosterCache();
 
         return back()->with('success', 'Golfer removed.');
     }

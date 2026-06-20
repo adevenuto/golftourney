@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class League extends Model
 {
@@ -86,5 +87,22 @@ class League extends Model
     public function rounds(): HasMany
     {
         return $this->hasMany(Round::class);
+    }
+
+    /**
+     * Cache key for this league's golfer roster (the Golfers/Index payload).
+     */
+    public function rosterCacheKey(): string
+    {
+        return "league.{$this->id}.roster";
+    }
+
+    /**
+     * Invalidate the cached roster — call whenever a golfer, round, or handicap
+     * in this league changes.
+     */
+    public function forgetRosterCache(): void
+    {
+        Cache::forget($this->rosterCacheKey());
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Golfer;
 use App\Models\League;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\WithLeague;
 use Tests\TestCase;
@@ -222,5 +223,29 @@ class GolferManagementTest extends TestCase
                 ->where('golfers.0.id', $busy->id)
                 ->where('golfers.0.number_of_rounds', 3)
             );
+    }
+
+    public function test_roster_is_cached_and_invalidated_when_it_changes(): void
+    {
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        // A cold read caches the (empty) roster.
+        $this->actingAs($admin)
+            ->get(route('golfers.index'))
+            ->assertInertia(fn (Assert $page) => $page->has('golfers', 0));
+        $this->assertTrue(Cache::has($league->rosterCacheKey()));
+
+        // Adding a golfer must bust the cache so the next read reflects it.
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['first_name' => 'New', 'last_name' => 'Golfer']],
+            ])
+            ->assertRedirect();
+        $this->assertFalse(Cache::has($league->rosterCacheKey()));
+
+        $this->actingAs($admin)
+            ->get(route('golfers.index'))
+            ->assertInertia(fn (Assert $page) => $page->has('golfers', 1));
     }
 }

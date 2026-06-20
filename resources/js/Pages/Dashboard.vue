@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import CourseSearch from '@/Components/CourseSearch.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 
 defineProps({
     leagues: { type: Array, default: () => [] },
@@ -126,19 +127,12 @@ function submitDelete() {
     <Head title="Dashboard" />
 
     <AuthenticatedLayout>
-        <header class="border-b border-parchment-dark bg-pine text-cream">
-            <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-                <p class="text-xs uppercase tracking-[0.35em] text-brass-light">Dashboard</p>
-                <h1 class="mt-3 font-display text-4xl font-semibold leading-none sm:text-5xl">
-                    Your leagues
-                </h1>
-            </div>
-        </header>
+        <PageHeader eyebrow="Dashboard" title="Your leagues" max-width="5xl" />
 
-        <div class="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+        <div class="max-w-5xl px-4 py-8 mx-auto space-y-10 sm:px-6 lg:px-8">
             <!-- Leagues -->
             <section>
-                <h2 class="mb-4 font-display text-2xl font-semibold text-pine">Leagues</h2>
+                <h2 class="mb-4 text-2xl font-semibold font-display text-pine">Leagues</h2>
 
                 <div v-if="leagues.length" class="grid gap-3 sm:grid-cols-2">
                     <div
@@ -150,19 +144,19 @@ function submitDelete() {
                         @keydown.enter="openLeague(league)"
                         @keydown.space.prevent="openLeague(league)"
                         :aria-label="`Open ${league.name}`"
-                        class="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-parchment-dark bg-cream p-5 shadow-sm transition hover:border-brass hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment"
+                        class="flex flex-col gap-3 p-5 transition border shadow-sm cursor-pointer group rounded-2xl border-parchment-dark bg-cream hover:border-brass hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment lg:flex-row lg:items-center lg:justify-between"
                     >
                         <div class="min-w-0">
-                            <p class="truncate font-display text-lg font-semibold text-pine transition group-hover:text-brass-dark">
+                            <p class="text-lg font-semibold truncate transition font-display text-pine group-hover:text-brass-dark">
                                 {{ league.name }}
                             </p>
                             <p class="mt-0.5 text-xs text-ink/50">
-                                <span class="uppercase tracking-wider text-brass-dark">{{ league.role }}</span>
+                                <span class="tracking-wider uppercase text-brass-dark">{{ league.role }}</span>
                                 · {{ league.golfers_count }} golfers
                                 · rating {{ league.course_rating }} / slope {{ league.slope_rating }}
                             </p>
                         </div>
-                        <div class="flex shrink-0 items-center gap-2">
+                        <div class="flex items-center justify-start gap-2 shrink-0">
                             <button
                                 v-if="league.role === 'admin'"
                                 type="button"
@@ -170,7 +164,7 @@ function submitDelete() {
                                 :aria-label="`Rename ${league.name}`"
                                 class="rounded-full p-1.5 text-pine/60 transition hover:bg-pine/10 hover:text-pine"
                             >
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
                                 </svg>
                             </button>
@@ -181,13 +175,13 @@ function submitDelete() {
                                 :aria-label="`Delete ${league.name}`"
                                 class="rounded-full p-1.5 text-red-700/70 transition hover:bg-red-700/10 hover:text-red-700"
                             >
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
                                 </svg>
                             </button>
                             <span
                                 v-if="league.is_current"
-                                class="rounded-full bg-pine px-3 py-1 text-xs font-medium text-cream"
+                                class="px-3 py-1 text-xs font-medium rounded-full bg-pine text-cream"
                             >
                                 Current
                             </span>
@@ -204,22 +198,22 @@ function submitDelete() {
                         </div>
                     </div>
                 </div>
-                <p v-else class="rounded-2xl border border-parchment-dark bg-cream px-5 py-8 text-center text-sm text-ink/50">
+                <p v-else class="px-5 py-8 text-sm text-center border rounded-2xl border-parchment-dark bg-cream text-ink/50">
                     You're not in any leagues yet — create one below.
                 </p>
             </section>
 
             <!-- Create a league -->
             <section>
-                <h2 class="mb-4 font-display text-2xl font-semibold text-pine">Create a league</h2>
+                <h2 class="mb-4 text-2xl font-semibold font-display text-pine">Create a league</h2>
 
                 <form
                     @submit.prevent="submit"
-                    class="space-y-5 rounded-2xl border border-parchment-dark bg-cream p-6 shadow-sm sm:p-8"
+                    class="p-6 space-y-5 border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:p-8"
                 >
                     <div>
                         <InputLabel for="l_name" value="League name" />
-                        <TextInput id="l_name" v-model="form.name" type="text" class="mt-1 block w-full" required />
+                        <TextInput id="l_name" v-model="form.name" type="text" class="block w-full mt-1" required />
                         <InputError :message="form.errors.name" class="mt-1" />
                     </div>
 
@@ -238,7 +232,7 @@ function submitDelete() {
                                 id="l_teebox"
                                 v-model="form.teebox"
                                 @change="applyTee"
-                                class="mt-1 block w-full rounded-lg border-pine/20 bg-cream text-sm text-ink shadow-sm focus:border-brass focus:ring-brass"
+                                class="block w-full mt-1 text-sm rounded-lg shadow-sm border-pine/20 bg-cream text-ink focus:border-brass focus:ring-brass"
                             >
                                 <option v-if="!selectedCourse.teeboxes.length" :value="null">No tee data — enter manually</option>
                                 <option v-for="tee in selectedCourse.teeboxes" :key="tee.name" :value="tee.name">
@@ -248,13 +242,13 @@ function submitDelete() {
                         </div>
                         <div>
                             <InputLabel value="Holes" />
-                            <div class="mt-1 flex gap-2">
+                            <div class="flex gap-2 mt-1">
                                 <button
                                     v-for="n in [9, 18]"
                                     :key="n"
                                     type="button"
                                     @click="holes = n"
-                                    class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition"
+                                    class="flex-1 px-3 py-2 text-sm font-medium transition border rounded-lg"
                                     :class="holes === n ? 'border-pine bg-pine text-cream' : 'border-pine/20 text-pine hover:border-brass'"
                                 >
                                     {{ n }} holes
@@ -276,12 +270,12 @@ function submitDelete() {
                         </div>
                         <div>
                             <InputLabel for="l_recent" value="Recent rounds" />
-                            <TextInput id="l_recent" v-model="form.recent_rounds" type="number" min="1" max="100" class="mt-1 block w-full tabular-nums" required />
+                            <TextInput id="l_recent" v-model="form.recent_rounds" type="number" min="1" max="100" class="block w-full mt-1 tabular-nums" required />
                             <InputError :message="form.errors.recent_rounds" class="mt-1" />
                         </div>
                         <div>
                             <InputLabel for="l_counting" value="Counting" />
-                            <TextInput id="l_counting" v-model="form.counting_rounds" type="number" min="1" class="mt-1 block w-full tabular-nums" required />
+                            <TextInput id="l_counting" v-model="form.counting_rounds" type="number" min="1" class="block w-full mt-1 tabular-nums" required />
                             <InputError :message="form.errors.counting_rounds" class="mt-1" />
                         </div>
                     </div>
@@ -306,20 +300,20 @@ function submitDelete() {
         <!-- Rename league modal -->
         <Modal :show="showRename" @close="showRename = false" max-width="md">
             <form @submit.prevent="submitRename" class="p-6">
-                <h2 class="font-display text-2xl font-semibold text-pine">Rename league</h2>
+                <h2 class="text-2xl font-semibold font-display text-pine">Rename league</h2>
                 <div class="mt-4">
                     <InputLabel for="rename" value="League name" />
-                    <TextInput id="rename" v-model="renameForm.name" type="text" class="mt-1 block w-full" required autofocus />
+                    <TextInput id="rename" v-model="renameForm.name" type="text" class="block w-full mt-1" required autofocus />
                     <InputError :message="renameForm.errors.name" class="mt-1" />
                 </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showRename = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" @click="showRename = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
                     </button>
                     <button
                         type="submit"
                         :disabled="renameForm.processing"
-                        class="rounded-full bg-pine px-5 py-2 text-sm font-medium text-cream transition hover:bg-pine-light disabled:opacity-50"
+                        class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
                     >
                         Save
                     </button>
@@ -330,22 +324,22 @@ function submitDelete() {
         <!-- Delete league modal -->
         <Modal :show="showDelete" @close="showDelete = false" max-width="md">
             <div class="p-6">
-                <h2 class="font-display text-2xl font-semibold text-pine">Delete league</h2>
+                <h2 class="text-2xl font-semibold font-display text-pine">Delete league</h2>
                 <p class="mt-2 text-sm text-ink/70">
                     Delete
                     <span class="font-semibold text-ink">“{{ deleting?.name }}”</span>
                     and all of its rounds? Golfers in this league are removed too —
                     unless they also belong to one of your other leagues. This can't be undone.
                 </p>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showDelete = false" class="rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition hover:text-ink">
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" @click="showDelete = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
                     </button>
                     <button
                         type="button"
                         :disabled="deleteForm.processing"
                         @click="submitDelete"
-                        class="rounded-full bg-red-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-50"
+                        class="px-5 py-2 text-sm font-medium text-white transition bg-red-700 rounded-full hover:bg-red-800 disabled:opacity-50"
                     >
                         Yes, delete
                     </button>

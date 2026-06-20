@@ -72,6 +72,9 @@ class HandicapService
 
         $golfer->leagues()->updateExistingPivot($league->id, ['handicap' => $handicap]);
 
+        // The roster shows this handicap and the round count — both just changed.
+        $league->forgetRosterCache();
+
         return $handicap;
     }
 }
