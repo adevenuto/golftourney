@@ -273,7 +273,9 @@ defineExpose({ openCreate });
 
                 <li v-if="total === 0" class="px-5 py-16 text-center">
                     <p class="font-display text-xl text-pine/70">No rounds yet</p>
-                    <p class="mt-1 text-sm text-ink/50">Scores entered here set the handicap.</p>
+                    <slot name="empty">
+                        <p class="mt-1 text-sm text-ink/50">Scores entered here set the handicap.</p>
+                    </slot>
                 </li>
             </ul>
         </div>

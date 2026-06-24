@@ -14,6 +14,11 @@ const props = defineProps({
 const page = usePage();
 const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 const fullName = computed(() => `${props.golfer.first_name} ${props.golfer.last_name}`);
+
+// A non-admin viewing their own record can't manage rounds here — point them to
+// their self-service My Handicap page instead.
+const isSelf = computed(() => page.props.auth.user?.id === props.golfer.id);
+const showMyHandicapLink = computed(() => isSelf.value && !isAdmin.value);
 </script>
 
 <template>
@@ -79,7 +84,22 @@ const fullName = computed(() => `${props.golfer.first_name} ${props.golfer.last_
                 :allow-league-round="isAdmin"
                 :league-name="golfer.league"
                 :for-label="`For ${fullName}`"
-            />
+            >
+                <template v-if="showMyHandicapLink" #empty>
+                    <p class="mt-1 text-sm text-ink/50">
+                        Log the rounds you play to build your handicap.
+                    </p>
+                    <Link
+                        :href="route('my-handicap')"
+                        class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brass px-4 py-1.5 text-sm font-medium text-pine transition hover:bg-brass-light"
+                    >
+                        Log your rounds on My Handicap
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </Link>
+                </template>
+            </RoundHistory>
         </div>
     </AuthenticatedLayout>
 </template>

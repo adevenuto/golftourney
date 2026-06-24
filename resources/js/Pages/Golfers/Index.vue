@@ -98,6 +98,20 @@ function openEdit(golfer) {
     editForm.manual_handicap_index = golfer.manual_handicap_index ?? '';
     showEdit.value = true;
 }
+
+// Quick skill-bracket presets for seeding an established index when the exact
+// USGA number isn't known — each maps to a representative value the admin can
+// then fine-tune. (The seed is replaced by the computed index at 3 rounds.)
+const indexPresets = [
+    { label: '+2–0', value: 0 },
+    { label: '1–3', value: 2 },
+    { label: '4–6', value: 5 },
+    { label: '7–9', value: 8 },
+    { label: '10+', value: 12 },
+];
+function setIndexPreset(value) {
+    editForm.manual_handicap_index = value;
+}
 function submitEdit() {
     editForm.put(route('golfers.update', editing.value.id), {
         preserveScroll: true,
@@ -552,6 +566,26 @@ function toggleExpand(id) {
                         class="block w-full mt-2 tabular-nums"
                         placeholder="e.g. 12.3"
                     />
+
+                    <!-- Quick presets to seed a rough index when the exact number isn't known. -->
+                    <div v-if="!editing?.has_computed_index" class="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span class="text-xs text-ink/50">Quick set:</span>
+                        <button
+                            v-for="preset in indexPresets"
+                            :key="preset.label"
+                            type="button"
+                            @click="setIndexPreset(preset.value)"
+                            :class="[
+                                'rounded-full border px-2.5 py-0.5 text-xs font-medium tabular-nums transition',
+                                Number(editForm.manual_handicap_index) === preset.value && editForm.manual_handicap_index !== ''
+                                    ? 'border-pine bg-pine text-cream'
+                                    : 'border-pine/20 text-pine hover:border-brass',
+                            ]"
+                        >
+                            {{ preset.label }}
+                        </button>
+                    </div>
+
                     <p class="mt-1 text-xs text-ink/50">
                         {{
                             editing?.has_computed_index
