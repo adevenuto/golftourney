@@ -97,11 +97,11 @@ function switchLeague(id) {
                             <template #trigger>
                                 <button
                                     type="button"
-                                    class="inline-flex items-center gap-1.5 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium text-cream/90 transition hover:border-brass/60 hover:text-cream"
+                                    class="inline-flex sm:max-w-[9rem] items-center gap-1.5 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium text-cream/90 transition hover:border-brass/60 hover:text-cream"
                                 >
-                                    <span class="h-1.5 w-1.5 rounded-full bg-brass"></span>
-                                    {{ user.current_league?.name ?? 'No league' }}
-                                    <svg class="w-4 h-4 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brass"></span>
+                                    <span class="truncate">{{ user.current_league?.name ?? 'No league' }}</span>
+                                    <svg class="w-4 h-4 shrink-0 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
@@ -124,14 +124,14 @@ function switchLeague(id) {
                           </Dropdown>
                         </div>
                         
-                        <div class="hidden md:flex">
+                        <div class="hidden lg:flex">
                           <Dropdown align="right" width="48">
                               <template #trigger>
                                   <button
                                       type="button"
-                                      class="inline-flex items-center gap-2 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium capitalize text-cream/90 transition hover:border-brass/60 hover:text-cream"
+                                      class="inline-flex items-center gap-2 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium capitalize text-cream/90 transition hover:border-brass/60 hover:text-cream lg:max-w-[14rem]"
                                   >
-                                      {{ user.first_name }} {{ user.last_name }}
+                                      <span class="truncate">{{ user.first_name }} {{ user.last_name }}</span>
                                       <span
                                           class="rounded-full bg-brass/20 px-2 py-0.5 text-[10px] uppercase tracking-widest text-brass-light"
                                       >
@@ -156,7 +156,7 @@ function switchLeague(id) {
                     </div>
 
                     <!-- Hamburger -->
-                    <div class="flex items-center -me-2 md:hidden">
+                    <div class="flex items-center -me-2 lg:hidden">
                         <button
                             @click="showingNavigationDropdown = !showingNavigationDropdown"
                             class="inline-flex items-center justify-center p-2 transition rounded-md text-cream/70 hover:bg-pine-light hover:text-cream focus:outline-none"
