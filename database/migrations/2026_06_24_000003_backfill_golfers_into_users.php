@@ -58,10 +58,11 @@ return new class extends Migration
                     }
                 }
 
-                if ($g = DB::table('golfers')->find($golferId)) {
+                $phone = DB::table('golfers')->where('id', $golferId)->value('phone');
+                if (! is_null($phone)) {
                     DB::table('users')->where('id', $userId)
                         ->whereNull('phone')
-                        ->update(['phone' => $g->phone]);
+                        ->update(['phone' => $phone]);
                 }
             }
 
