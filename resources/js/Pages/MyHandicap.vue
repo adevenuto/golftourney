@@ -9,6 +9,7 @@ defineProps({
     rounds: { type: Array, default: () => [] },
     usedRoundIds: { type: Array, default: () => [] },
     userId: { type: Number, required: true },
+    recentWindow: { type: Number, default: 0 },
 });
 </script>
 
@@ -35,7 +36,9 @@ defineProps({
             <template #below>
                 <p class="mt-4 text-sm text-cream/60">
                     Your <span class="text-cream">Index</span> is one portable number, built from your
-                    lowest differentials over your most recent <span class="text-cream">20</span> rounds —
+                    lowest differentials over your most recent
+                    <span class="text-cream">{{ recentWindow }}</span>
+                    round{{ recentWindow === 1 ? '' : 's' }} —
                     those that count are marked <span class="text-brass-light">●</span> below. Log rounds
                     you play <span class="text-cream">anywhere</span> to keep it accurate.
                     <Link :href="route('handicaps')" class="text-brass-light underline-offset-2 hover:underline">

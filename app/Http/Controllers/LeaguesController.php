@@ -112,7 +112,7 @@ class LeaguesController extends Controller
 
         $league->forgetRosterCache();
 
-        return redirect()->route('dashboard')->with('success', "“{$name}” deleted.");
+        return redirect()->route('leagues')->with('success', "“{$name}” deleted.");
     }
 
     /**

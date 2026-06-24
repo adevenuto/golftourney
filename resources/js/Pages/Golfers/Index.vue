@@ -6,6 +6,7 @@ import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import InfoPopover from '@/Components/InfoPopover.vue';
 import AddGolfersModal from '@/Components/Golfers/AddGolfersModal.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
@@ -475,9 +476,18 @@ function toggleExpand(id) {
         <!-- Edit modal -->
         <Modal :show="showEdit" @close="showEdit = false">
             <form @submit.prevent="submitEdit" class="p-6">
-                <h2 class="text-2xl font-semibold capitalize font-display text-pine">
-                    {{ editing ? fullName(editing) : 'Edit golfer' }}
-                </h2>
+                <div class="flex items-start justify-between gap-3">
+                    <h2 class="text-2xl font-semibold capitalize font-display text-pine">
+                        {{ editing ? fullName(editing) : 'Edit golfer' }}
+                    </h2>
+                    <span
+                        v-if="editing"
+                        class="mt-0.5 inline-flex shrink-0 items-baseline gap-1 rounded-full bg-pine/10 px-3 py-1 text-sm font-medium text-pine"
+                    >
+                        <span class="tabular-nums">{{ editing.number_of_rounds }}</span>
+                        {{ editing.number_of_rounds === 1 ? 'round' : 'rounds' }}
+                    </span>
+                </div>
                 <p class="mt-1 text-sm text-ink/60">Update this golfer's details.</p>
 
                 <div class="grid grid-cols-1 gap-4 mt-5 sm:grid-cols-2">
@@ -504,19 +514,50 @@ function toggleExpand(id) {
                 </div>
 
                 <div class="mt-4">
-                    <InputLabel for="e_index" value="Established Index (USGA)" />
+                    <div class="flex items-center gap-1.5">
+                        <InputLabel for="e_index" value="Established Index (USGA)" />
+                        <InfoPopover label="About the established index">
+                            <p class="font-medium text-pine">How this works</p>
+                            <p class="mt-1">
+                                A player's index is normally computed from their logged rounds. Until a
+                                golfer has <span class="font-medium">3</span> rounds there's nothing to
+                                compute, so an established index — a known USGA/GHIN handicap — is required
+                                to gauge their play.
+                            </p>
+                            <p class="mt-2">
+                                Once they reach 3 rounds, their computed index takes over automatically and
+                                this field locks to the calculated value.
+                            </p>
+                        </InfoPopover>
+                    </div>
+
+                    <!-- Computed index exists: locked to the calculated value. -->
+                    <input
+                        v-if="editing?.has_computed_index"
+                        :value="editing.index"
+                        type="text"
+                        readonly
+                        class="block w-full mt-2 rounded-lg shadow-sm cursor-not-allowed border-pine/20 bg-parchment tabular-nums text-ink/60 focus:border-pine/20 focus:ring-0"
+                    />
+                    <!-- No computed index yet: an established index is required to seed play. -->
                     <TextInput
+                        v-else
                         id="e_index"
                         v-model="editForm.manual_handicap_index"
                         type="number"
                         step="0.1"
                         min="-9.9"
                         max="54.0"
-                        class="block w-full mt-1 tabular-nums"
+                        required
+                        class="block w-full mt-2 tabular-nums"
                         placeholder="e.g. 12.3"
                     />
                     <p class="mt-1 text-xs text-ink/50">
-                        Overrides the computed index. Leave blank to use the index calculated from rounds.
+                        {{
+                            editing?.has_computed_index
+                                ? `Calculated from ${editing.number_of_rounds} rounds.`
+                                : 'Required until this golfer has 3 rounds logged.'
+                        }}
                     </p>
                     <InputError :message="editForm.errors.manual_handicap_index" class="mt-1" />
                 </div>

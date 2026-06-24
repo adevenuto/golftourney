@@ -258,16 +258,22 @@ class GolfersController extends Controller
     {
         $this->authorizeUser($request, $user);
 
-        $manual = $request->input('manual_handicap_index');
-
-        $user->update([
+        $attributes = [
             'first_name' => strtolower($request->input('first_name')),
             'last_name' => strtolower($request->input('last_name')),
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
-            // Blank clears the override and reverts to the computed index.
-            'manual_handicap_index' => ($manual === null || $manual === '') ? null : $manual,
-        ]);
+        ];
+
+        // The established index is editable only while the golfer has no
+        // computed index; once they qualify the computed value is authoritative,
+        // so we leave any prior seed untouched and ignore the (locked) field.
+        if ($user->handicap_index === null) {
+            $manual = $request->input('manual_handicap_index');
+            $attributes['manual_handicap_index'] = ($manual === null || $manual === '') ? null : $manual;
+        }
+
+        $user->update($attributes);
 
         // Name/email/phone/override live on the user, so every league is stale.
         $user->leagues()->get()->each->forgetRosterCache();
@@ -323,7 +329,7 @@ class GolfersController extends Controller
      * The league roster: each member with their per-league round count, portable
      * Handicap Index (formatted + raw for sorting), and derived Course Handicap.
      *
-     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, course_handicap: ?int, can_login: bool}>
+     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, has_computed_index: bool, course_handicap: ?int, can_login: bool}>
      */
     private function rosterFor(League $league): array
     {
@@ -342,7 +348,9 @@ class GolfersController extends Controller
             ->get();
 
         return $rows->map(function (object $r) use ($league): array {
-            $effective = $r->manual_handicap_index ?? $r->handicap_index;
+            // Mirror User::effectiveHandicapIndex: the established index only
+            // seeds a thin record; the computed index takes over once it exists.
+            $effective = $r->handicap_index ?? $r->manual_handicap_index;
             $effective = is_null($effective) ? null : (float) $effective;
 
             return [
@@ -355,6 +363,9 @@ class GolfersController extends Controller
                 'index' => $this->handicaps->formatIndex($effective),
                 'index_value' => $effective,
                 'manual_handicap_index' => is_null($r->manual_handicap_index) ? null : (float) $r->manual_handicap_index,
+                // A computed index exists once the round minimum is met; until
+                // then the established index is required and editable.
+                'has_computed_index' => ! is_null($r->handicap_index),
                 'course_handicap' => $this->handicaps->courseHandicapForIndex($effective, $league),
                 'can_login' => (bool) $r->can_login,
             ];

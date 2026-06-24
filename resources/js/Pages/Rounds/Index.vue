@@ -58,7 +58,8 @@ const fullName = computed(() => `${props.golfer.first_name} ${props.golfer.last_
                 <p class="mt-4 text-sm text-cream/60">
                     The <span class="text-cream">Index</span> is a portable handicap from this golfer's
                     lowest differentials over their most recent
-                    <span class="text-cream">20</span> rounds — those that count are marked
+                    <span class="text-cream">{{ golfer.recent_window }}</span>
+                    round{{ golfer.recent_window === 1 ? '' : 's' }} — those that count are marked
                     <span class="text-brass-light">●</span> below. The
                     <span class="text-cream">Course Handicap</span> applies it to this course's
                     rating, slope, and par.

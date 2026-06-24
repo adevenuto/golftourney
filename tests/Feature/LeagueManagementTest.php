@@ -224,7 +224,7 @@ class LeagueManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->delete(route('leagues.destroy', $league))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('leagues'));
 
         $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
         $this->assertDatabaseMissing('rounds', ['league_id' => $league->id]);
@@ -297,7 +297,7 @@ class LeagueManagementTest extends TestCase
         $user = $this->adminOf($league);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('leagues'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
                 ->has('leagues', 1)
@@ -316,7 +316,7 @@ class LeagueManagementTest extends TestCase
         $league = League::factory()->create(['course_id' => $course->id]);
 
         $this->actingAs($this->adminOf($league))
-            ->get(route('dashboard'))
+            ->get(route('leagues'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('leagues.0.club_name', 'Augusta National')
                 ->where('leagues.0.course_name', 'Magnolia Course')

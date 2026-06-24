@@ -23,9 +23,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
+Route::get('/leagues', [DashboardController::class, 'index'])
     ->middleware('auth')
-    ->name('dashboard');
+    ->name('leagues');
 
 Route::middleware('auth')->group(function () {
     // Golfers & rounds (Inertia).

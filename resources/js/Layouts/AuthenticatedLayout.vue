@@ -28,7 +28,7 @@ const leagues = computed(() => user.value?.leagues ?? []);
 const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 
 const navLinks = computed(() => [
-    { label: 'Dashboard', route: 'dashboard' },
+    { label: 'Leagues', route: 'leagues' },
     { label: 'Golfers', route: 'golfers.index' },
     { label: 'Handicaps', route: 'handicaps' },
     { label: 'Profile', route: 'profile.edit' },
@@ -117,12 +117,13 @@ function switchLeague(id) {
                                     type="button"
                                     @click="switchLeague(l.id)"
                                     class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm text-left transition text-ink hover:bg-parchment"
+                                    :class="l.id === currentLeagueId ? 'bg-parchment font-medium' : ''"
                                 >
                                     <span class="truncate">{{ l.name }}</span>
                                     <span v-if="l.id === currentLeagueId" class="text-brass">●</span>
                                 </button>
                                 <div class="my-1 border-t border-parchment-dark"></div>
-                                <DropdownLink :href="route('dashboard')">Manage leagues</DropdownLink>
+                                <DropdownLink :href="route('leagues')">Manage leagues</DropdownLink>
                             </template>
                           </Dropdown>
                           <span

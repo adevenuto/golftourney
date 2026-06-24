@@ -98,6 +98,16 @@ class HandicapService
     }
 
     /**
+     * How many rounds actually feed the index right now: the count of eligible
+     * rounds in the recent window, capped at 20. Used to phrase the "most recent
+     * N rounds" copy so it reflects players with a short record.
+     */
+    public function recentWindowSize(User $user): int
+    {
+        return $this->recentEligible($user)->count();
+    }
+
+    /**
      * A player's Course Handicap for a league, derived from their effective
      * index + the league's slope/rating/par. Null if no index or no par.
      * 9-hole courses use half the (18-hole) index.

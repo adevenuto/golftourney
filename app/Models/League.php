@@ -83,11 +83,18 @@ class League extends Model
     }
 
     /**
+     * Bump whenever the cached roster payload's SHAPE changes (a new/renamed
+     * field), so old forever-cached payloads are abandoned on deploy instead of
+     * serving a stale shape.
+     */
+    public const ROSTER_CACHE_VERSION = 2;
+
+    /**
      * Cache key for this league's golfer roster (the Golfers/Index payload).
      */
     public function rosterCacheKey(): string
     {
-        return "league.{$this->id}.roster";
+        return "league.{$this->id}.roster.v".self::ROSTER_CACHE_VERSION;
     }
 
     /**

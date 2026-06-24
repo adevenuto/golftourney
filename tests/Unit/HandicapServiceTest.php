@@ -171,12 +171,18 @@ class HandicapServiceTest extends TestCase
         $this->assertSame([$best->id], $this->service->usedRoundIds($golfer));
     }
 
-    public function test_effective_index_prefers_the_manual_override(): void
+    public function test_established_index_seeds_until_a_computed_index_exists(): void
     {
-        $user = User::factory()->create(['handicap_index' => 12.0, 'manual_handicap_index' => 8.5]);
+        // No computed index yet (too few rounds): the established index seeds it.
+        $user = User::factory()->create(['handicap_index' => null, 'manual_handicap_index' => 8.5]);
         $this->assertSame(8.5, $user->effectiveHandicapIndex());
 
-        $user->update(['manual_handicap_index' => null]);
+        // Once enough rounds yield a computed index, it takes over automatically.
+        $user->update(['handicap_index' => 12.0]);
         $this->assertSame(12.0, $user->fresh()->effectiveHandicapIndex());
+
+        // Nothing computed and no seed → N/A.
+        $user->update(['handicap_index' => null, 'manual_handicap_index' => null]);
+        $this->assertNull($user->fresh()->effectiveHandicapIndex());
     }
 }

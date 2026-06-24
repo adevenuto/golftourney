@@ -58,12 +58,15 @@ class User extends Authenticatable
     ];
 
     /**
-     * The player's effective WHS Handicap Index: an admin-entered override
-     * (e.g. a known USGA index) wins over the computed value; null = N/A.
+     * The player's effective WHS Handicap Index. The admin-entered "established
+     * index" only seeds a thin record: once the player has enough rounds to
+     * compute one (handicap_index stays null until the 3-round minimum, see
+     * HandicapService::MINIMUM_ROUNDS), the computed value automatically takes
+     * over. Null = N/A.
      */
     public function effectiveHandicapIndex(): ?float
     {
-        $value = $this->manual_handicap_index ?? $this->handicap_index;
+        $value = $this->handicap_index ?? $this->manual_handicap_index;
 
         return is_null($value) ? null : (float) $value;
     }

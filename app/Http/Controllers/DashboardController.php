@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\HandicapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -9,7 +10,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __construct()
+    public function __construct(private HandicapService $handicaps)
     {
         $this->middleware('auth');
     }
@@ -44,8 +45,19 @@ class DashboardController extends Controller
                 'is_current' => $l->id === $user->current_league_id,
             ]);
 
+        // The signed-in user's own numbers, mirroring the handicap header: the
+        // portable Index + total rounds always, plus a Course Handicap for their
+        // active league (null when they're not in one).
+        $league = $user->currentLeague;
+
         return Inertia::render('Dashboard', [
             'leagues' => $leagues,
+            'stats' => [
+                'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
+                'rounds' => $user->rounds()->count(),
+                'course_handicap' => $league ? $this->handicaps->courseHandicap($user, $league) : null,
+                'has_league' => (bool) $league,
+            ],
         ]);
     }
 }

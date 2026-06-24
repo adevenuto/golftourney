@@ -12,6 +12,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 
 defineProps({
     leagues: { type: Array, default: () => [] },
+    stats: { type: Object, default: () => ({}) },
 });
 
 const selectedCourse = ref(null);
@@ -82,7 +83,13 @@ function submit() {
     form.post(route('leagues.store'), { preserveScroll: true });
 }
 
-// Clicking a league card opens it: switch to it if needed, then land on the roster.
+// Clicking a card makes that league active, without leaving the page.
+function selectLeague(league) {
+    if (league.is_current) return;
+    router.post(route('leagues.switch', league.id), { preserveScroll: true });
+}
+
+// "View roster" switches to the league if needed, then lands on its roster.
 function openLeague(league) {
     if (league.is_current) {
         router.visit(route('golfers.index'));
@@ -125,10 +132,31 @@ function submitDelete() {
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Leagues" />
 
     <AuthenticatedLayout>
-        <PageHeader eyebrow="Dashboard" title="Your leagues" max-width="5xl" />
+        <PageHeader eyebrow="Leagues" title="Your leagues" max-width="5xl">
+            <template #actions>
+                <dl class="flex items-end gap-8">
+                    <div>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Index</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums text-brass-light">
+                            {{ stats.index ?? 'N/A' }}
+                        </dd>
+                    </div>
+                    <div v-if="stats.has_league">
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Course Hcp</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums">
+                            {{ stats.course_handicap ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Rounds</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums">{{ stats.rounds ?? 0 }}</dd>
+                    </div>
+                </dl>
+            </template>
+        </PageHeader>
 
         <div class="max-w-5xl px-4 py-8 mx-auto space-y-10 sm:px-6 lg:px-8">
             <!-- Leagues -->
@@ -137,16 +165,19 @@ function submitDelete() {
                     <div
                         v-for="league in leagues"
                         :key="league.id"
-                        role="button"
-                        tabindex="0"
-                        @click="openLeague(league)"
-                        @keydown.enter="openLeague(league)"
-                        @keydown.space.prevent="openLeague(league)"
-                        :aria-label="`Open ${league.name}`"
-                        class="flex flex-col gap-3 p-5 transition border shadow-sm cursor-pointer group rounded-2xl border-parchment-dark bg-cream hover:border-brass hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brass focus:ring-offset-2 focus:ring-offset-parchment lg:flex-row lg:items-center lg:justify-between"
+                        :role="league.is_current ? null : 'button'"
+                        :tabindex="league.is_current ? null : 0"
+                        @click="selectLeague(league)"
+                        @keydown.enter="selectLeague(league)"
+                        @keydown.space.prevent="selectLeague(league)"
+                        :aria-label="league.is_current ? null : `Switch to ${league.name}`"
+                        class="flex flex-col gap-3 p-5 transition border shadow-sm rounded-2xl bg-cream focus:outline-none lg:flex-row lg:items-center lg:justify-between"
+                        :class="league.is_current
+                            ? 'border-brass shadow-md ring-1 ring-brass/30'
+                            : 'cursor-pointer border-parchment-dark hover:border-brass hover:shadow-md'"
                     >
                         <div class="min-w-0">
-                            <p class="text-lg font-semibold truncate transition font-display text-pine group-hover:text-brass-dark">
+                            <p class="text-lg font-semibold truncate font-display text-pine">
                                 {{ league.name }}
                             </p>
                             <p v-if="league.club_name" class="mt-0.5 text-sm truncate text-ink/70">
@@ -186,22 +217,24 @@ function submitDelete() {
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
                                 </svg>
                             </button>
-                            <span
-                                v-if="league.is_current"
-                                class="px-3 py-1 text-xs font-medium rounded-full bg-pine text-cream"
+                            <button
+                                type="button"
+                                @click.stop="openLeague(league)"
+                                :aria-label="`View roster for ${league.name}`"
+                                class="group inline-flex items-center gap-1.5 rounded-full bg-pine px-3 py-1.5 text-xs font-medium text-cream transition hover:bg-pine-light"
                             >
-                                Current
-                            </span>
-                            <svg
-                                class="h-5 w-5 text-pine/40 transition group-hover:translate-x-0.5 group-hover:text-brass"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                aria-hidden="true"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
+                                View roster
+                                <svg
+                                    class="h-3.5 w-3.5 transition group-hover:translate-x-0.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    aria-hidden="true"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>

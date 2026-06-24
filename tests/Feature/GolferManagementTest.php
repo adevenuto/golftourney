@@ -143,7 +143,8 @@ class GolferManagementTest extends TestCase
     public function test_admin_can_update_a_golfer_in_their_league(): void
     {
         $league = League::factory()->create();
-        $golfer = $this->golferIn($league);
+        // Seeded with a computed index, so the established index isn't required.
+        $golfer = $this->golferIn($league, [], 14.0);
 
         $this->actingAs($this->adminOf($league))
             ->put(route('golfers.update', $golfer), [
@@ -160,10 +161,51 @@ class GolferManagementTest extends TestCase
         ]);
     }
 
+    public function test_a_golfer_without_a_computed_index_requires_an_established_index(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league); // no rounds -> no computed index
+
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $golfer), [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+            ])
+            ->assertInvalid('manual_handicap_index');
+
+        // With a seed provided, the update goes through and is stored.
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $golfer), [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'manual_handicap_index' => 12.3,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(12.3, (float) $golfer->fresh()->manual_handicap_index);
+    }
+
+    public function test_the_established_index_is_locked_once_a_golfer_has_a_computed_index(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league, [], 14.0); // computed index exists
+
+        // The field is locked: a submitted value is ignored, not stored.
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $golfer), [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'manual_handicap_index' => 5.0,
+            ])
+            ->assertRedirect();
+
+        $this->assertNull($golfer->fresh()->manual_handicap_index);
+    }
+
     public function test_admin_cannot_touch_a_golfer_from_another_league(): void
     {
         $league = League::factory()->create();
-        $otherGolfer = $this->golferIn(League::factory()->create());
+        $otherGolfer = $this->golferIn(League::factory()->create(), [], 10.0);
 
         $this->actingAs($this->adminOf($league))
             ->put(route('golfers.update', $otherGolfer), [

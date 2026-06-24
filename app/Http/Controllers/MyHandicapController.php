@@ -27,6 +27,7 @@ class MyHandicapController extends Controller
         return Inertia::render('MyHandicap', [
             'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
             'userId' => $user->id,
+            'recentWindow' => $this->handicaps->recentWindowSize($user),
             'rounds' => $user->rounds()
                 ->with(['league:id,name', 'course:id,club_name,course_name'])
                 ->orderByDesc('created_at')

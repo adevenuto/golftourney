@@ -36,6 +36,7 @@ class RoundsController extends Controller
                 'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
                 'course_handicap' => $this->handicaps->courseHandicap($user, $league),
                 'league' => $league->name,
+                'recent_window' => $this->handicaps->recentWindowSize($user),
             ],
             'rounds' => $user->rounds()
                 ->with(['league:id,name', 'course:id,club_name,course_name'])
