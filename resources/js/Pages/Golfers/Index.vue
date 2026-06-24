@@ -104,6 +104,31 @@ function submitEdit() {
     });
 }
 
+/* ---------- invite to log in ---------- */
+const inviteForm = useForm({});
+function sendInvite() {
+    inviteForm.post(route('golfers.invite', editing.value.id), { preserveScroll: true });
+}
+
+// Surface the invite link the server returns (mail-delivery fallback).
+const inviteLink = ref('');
+const showInviteLink = ref(false);
+const linkCopied = ref(false);
+watch(
+    () => page.props.flash?.invite_link,
+    (link) => {
+        if (!link) return;
+        inviteLink.value = link;
+        linkCopied.value = false;
+        showInviteLink.value = true;
+        showEdit.value = false;
+    },
+);
+function copyInviteLink() {
+    navigator.clipboard?.writeText(inviteLink.value);
+    linkCopied.value = true;
+}
+
 /* ---------- delete ---------- */
 const showDelete = ref(false);
 const deleting = ref(null);
@@ -496,6 +521,31 @@ function toggleExpand(id) {
                     <InputError :message="editForm.errors.manual_handicap_index" class="mt-1" />
                 </div>
 
+                <!-- Account access -->
+                <div class="pt-4 mt-4 border-t border-parchment-dark">
+                    <InputLabel value="Account access" />
+                    <div v-if="editing?.can_login" class="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-pine/10 px-3 py-1 text-sm text-pine">
+                        <span class="h-1.5 w-1.5 rounded-full bg-pine"></span> Active login
+                    </div>
+                    <div v-else class="mt-1.5">
+                        <button
+                            type="button"
+                            @click="sendInvite"
+                            :disabled="inviteForm.processing"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark disabled:opacity-50"
+                        >
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 12H8m0 0l3-3m-3 3l3 3M3 12a9 9 0 1018 0 9 9 0 00-18 0z" />
+                            </svg>
+                            Invite to log in
+                        </button>
+                        <p class="mt-1 text-xs text-ink/50">
+                            Emails a set-up link to this golfer's saved address — save a real email first if you just edited it.
+                        </p>
+                        <InputError :message="inviteForm.errors.invite" class="mt-1" />
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" @click="showEdit = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
@@ -509,6 +559,35 @@ function toggleExpand(id) {
                     </button>
                 </div>
             </form>
+        </Modal>
+
+        <!-- Invite link modal (shown after sending; also a share/copy fallback) -->
+        <Modal :show="showInviteLink" @close="showInviteLink = false" max-width="md">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold font-display text-pine">Invitation ready</h2>
+                <p class="mt-1 text-sm text-ink/60">
+                    We emailed a set-up link. You can also copy it and share it with the player directly.
+                </p>
+                <div class="flex items-center gap-2 mt-4">
+                    <input
+                        type="text"
+                        readonly
+                        :value="inviteLink"
+                        class="block w-full text-sm rounded-lg border-pine/20 bg-parchment text-ink/80"
+                        @focus="$event.target.select()"
+                    />
+                    <button
+                        type="button"
+                        @click="copyInviteLink"
+                        class="px-4 py-2 text-sm font-medium transition rounded-full shrink-0 bg-pine text-cream hover:bg-pine-light"
+                    >
+                        {{ linkCopied ? 'Copied' : 'Copy' }}
+                    </button>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button type="button" @click="showInviteLink = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">Done</button>
+                </div>
+            </div>
         </Modal>
 
         <!-- Delete modal -->

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreGolfersRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\League;
 use App\Models\User;
+use App\Notifications\PlayerInvitation;
 use App\Services\HandicapService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Query\Builder;
@@ -15,7 +16,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -293,10 +296,34 @@ class GolfersController extends Controller
     }
 
     /**
+     * Invite a roster player to set up a login: email them a set-password link
+     * (and surface it to the admin to copy, since mail delivery isn't assured).
+     */
+    public function invite(Request $request, User $user): RedirectResponse
+    {
+        $this->authorizeUser($request, $user);
+
+        if ($user->canLogin()) {
+            throw ValidationException::withMessages(['invite' => 'This golfer already has a login.']);
+        }
+
+        if (! $user->email || str_ends_with($user->email, '@noreply.com')) {
+            throw ValidationException::withMessages(['invite' => 'Add the player’s real email before inviting them.']);
+        }
+
+        $token = Password::broker('invites')->createToken($user);
+        $user->notify(new PlayerInvitation($token));
+
+        return back()
+            ->with('success', "Invitation sent to {$user->email}.")
+            ->with('invite_link', route('invite.accept', ['token' => $token, 'email' => $user->email]));
+    }
+
+    /**
      * The league roster: each member with their per-league round count, portable
      * Handicap Index (formatted + raw for sorting), and derived Course Handicap.
      *
-     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, course_handicap: ?int}>
+     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, course_handicap: ?int, can_login: bool}>
      */
     private function rosterFor(League $league): array
     {
@@ -304,6 +331,7 @@ class GolfersController extends Controller
             ->join('league_user as lu', 'lu.user_id', '=', 'u.id')
             ->where('lu.league_id', $league->id)
             ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'u.handicap_index', 'u.manual_handicap_index')
+            ->selectRaw('(u.password is not null) as can_login')
             ->selectSub(
                 DB::table('rounds')
                     ->selectRaw('count(*)')
@@ -328,6 +356,7 @@ class GolfersController extends Controller
                 'index_value' => $effective,
                 'manual_handicap_index' => is_null($r->manual_handicap_index) ? null : (float) $r->manual_handicap_index,
                 'course_handicap' => $this->handicaps->courseHandicapForIndex($effective, $league),
+                'can_login' => (bool) $r->can_login,
             ];
         })->values()->all();
     }

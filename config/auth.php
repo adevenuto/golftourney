@@ -99,6 +99,15 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Player login invitations: same token table, but a long-lived window
+        // so an admin can share the link and the player can accept later.
+        'invites' => [
+            'provider' => 'users',
+            'table' => 'password_reset_tokens',
+            'expire' => 10080, // 7 days
+            'throttle' => 0,
+        ],
     ],
 
     /*

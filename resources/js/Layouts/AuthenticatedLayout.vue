@@ -27,12 +27,15 @@ const user = computed(() => usePage().props.auth.user);
 const leagues = computed(() => user.value?.leagues ?? []);
 const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 
-const navLinks = [
+const navLinks = computed(() => [
     { label: 'Dashboard', route: 'dashboard' },
     { label: 'Golfers', route: 'golfers.index' },
     { label: 'Handicaps', route: 'handicaps' },
     { label: 'Profile', route: 'profile.edit' },
-];
+]);
+
+// The signed-in player's personal, league-agnostic handicap page.
+const myHandicapHref = computed(() => route('my-handicap'));
 
 const isActive = (name) => route().current(name);
 
@@ -62,7 +65,7 @@ function switchLeague(id) {
                             <span
                                 class="text-xl font-semibold tracking-tight font-display text-cream"
                             >
-                                {{ $page.props.auth.user?.current_league?.name ?? 'GolfTourney' }}
+                                GolfTourney
                             </span>
                         </Link>
 
@@ -72,7 +75,7 @@ function switchLeague(id) {
                                 v-for="link in navLinks"
                                 v-show="link.label !== 'Profile'"
                                 :key="link.route"
-                                :href="route(link.route)"
+                                :href="route(link.route, link.params)"
                                 class="relative px-3 py-2 text-sm font-medium tracking-wide transition"
                                 :class="
                                     isActive(link.route)
@@ -122,8 +125,15 @@ function switchLeague(id) {
                                 <DropdownLink :href="route('dashboard')">Manage leagues</DropdownLink>
                             </template>
                           </Dropdown>
+                          <span
+                            v-else-if="user.current_league?.name"
+                            class="inline-flex sm:max-w-[12rem] items-center gap-1.5 rounded-full border border-cream/20 px-3 py-1.5 text-sm font-medium text-cream/90"
+                          >
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brass"></span>
+                            <span class="truncate">{{ user.current_league.name }}</span>
+                          </span>
                         </div>
-                        
+
                         <div class="hidden lg:flex">
                           <Dropdown align="right" width="48">
                               <template #trigger>
@@ -140,6 +150,9 @@ function switchLeague(id) {
                                   </button>
                               </template>
                               <template #content>
+                                  <DropdownLink :href="myHandicapHref">
+                                      My Handicap
+                                  </DropdownLink>
                                   <DropdownLink :href="route('profile.edit')">
                                       Profile
                                   </DropdownLink>
@@ -191,12 +204,15 @@ function switchLeague(id) {
                     <ResponsiveNavLink
                         v-for="link in navLinks"
                         :key="link.route"
-                        :href="route(link.route)"
+                        :href="route(link.route, link.params)"
                         :active="isActive(link.route)"
                     >
                         {{ link.label }}
                     </ResponsiveNavLink>
                     <div class="border-t">
+                      <ResponsiveNavLink :href="myHandicapHref">
+                            My Handicap
+                      </ResponsiveNavLink>
                       <ResponsiveNavLink :href="route('logout')" method="post" as="button">
                             Log Out
                       </ResponsiveNavLink>

@@ -29,16 +29,19 @@ class AuthorizationTest extends TestCase
         $this->roundFor($golfer, $this->league);
     }
 
-    /** @return array<int, array{0:string,1:string}> */
+    /**
+     * Admin-only routes (gated by the `admin` middleware). Round write routes are
+     * NOT here — they're self-or-admin and covered by SelfServiceRoundTest.
+     *
+     * @return array<int, array{0:string,1:string}>
+     */
     public static function adminRoutes(): array
     {
         return [
             ['post', '/golfers'],
             ['put', '/golfers/1'],
             ['delete', '/golfers/1'],
-            ['post', '/golfers/1/rounds'],
-            ['put', '/rounds/1'],
-            ['delete', '/rounds/1'],
+            ['post', '/golfers/1/invite'],
         ];
     }
 

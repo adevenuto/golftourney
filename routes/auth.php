@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AcceptInviteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -30,6 +31,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    // Player invitation: set a password from the invite link, then log in.
+    Route::get('invite/{token}', [AcceptInviteController::class, 'create'])
+        ->name('invite.accept');
+
+    Route::post('invite', [AcceptInviteController::class, 'store'])
+        ->name('invite.store');
 });
 
 Route::middleware('auth')->group(function () {

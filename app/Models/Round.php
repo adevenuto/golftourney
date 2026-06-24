@@ -78,4 +78,17 @@ class Round extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    /**
+     * Where this round was played, for display: the league name, or
+     * "Casual · {course}" for a non-league round.
+     */
+    public function originLabel(): string
+    {
+        if ($this->league) {
+            return $this->league->name;
+        }
+
+        return 'Casual'.($this->course ? ' · '.($this->course->club_name ?? $this->course->course_name) : '');
+    }
 }

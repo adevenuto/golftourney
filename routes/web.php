@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GolfersController;
 use App\Http\Controllers\HandicapsController;
 use App\Http\Controllers\LeaguesController;
+use App\Http\Controllers\MyHandicapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoundsController;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,15 @@ Route::middleware('auth')->group(function () {
     // How handicaps work (explainer).
     Route::get('/handicaps', [HandicapsController::class, 'show'])->name('handicaps');
 
+    // The player's own, league-agnostic handicap page.
+    Route::get('/my-handicap', [MyHandicapController::class, 'show'])->name('my-handicap');
+
+    // Round entry/edit — authorization is per-action in RoundsController
+    // (admins manage any round; players manage their own casual rounds).
+    Route::post('/golfers/{user}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
+    Route::put('/rounds/{round}', [RoundsController::class, 'update'])->name('rounds.update');
+    Route::delete('/rounds/{round}', [RoundsController::class, 'destroy'])->name('rounds.destroy');
+
     // Profile (Breeze).
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -54,9 +64,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/golfers/{user}', [GolfersController::class, 'update'])->name('golfers.update');
         Route::delete('/golfers/{user}', [GolfersController::class, 'destroy'])->name('golfers.destroy');
 
-        Route::post('/golfers/{user}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
-        Route::put('/rounds/{round}', [RoundsController::class, 'update'])->name('rounds.update');
-        Route::delete('/rounds/{round}', [RoundsController::class, 'destroy'])->name('rounds.destroy');
+        // Invite a roster player to set up a login.
+        Route::post('/golfers/{user}/invite', [GolfersController::class, 'invite'])->name('golfers.invite');
     });
 });
 

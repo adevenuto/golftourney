@@ -45,7 +45,8 @@ class RoundsController extends Controller
                     'id' => $r->id,
                     'score' => $r->score,
                     'created_at' => $r->created_at,
-                    'origin' => $this->originLabel($r),
+                    'origin' => $r->originLabel(),
+                    'is_casual' => is_null($r->league_id),
                 ]),
             'usedRoundIds' => $this->handicaps->usedRoundIds($user),
         ]);
@@ -58,33 +59,37 @@ class RoundsController extends Controller
      */
     public function store(StoreRoundRequest $request, User $user): RedirectResponse
     {
-        $league = $this->leagueFor($request, $user);
+        $actor = $request->user();
+        $courseId = $request->integer('course_id');
+        $casual = $courseId > 0;
 
+        $teebox = is_string($t = $request->input('teebox')) ? $t : null;
         $attributes = [
             'score' => $request->integer('score'),
             'created_at' => $request->date('created_at'),
         ];
 
-        if ($courseId = $request->integer('course_id')) {
-            $course = Course::findOrFail($courseId);
-            $context = $course->teeboxContext($request->input('teebox'));
-            abort_if(is_null($context), 422, 'That course has no usable tee data.');
-
-            $user->rounds()->create($attributes + $context + [
-                'league_id' => null,
-                'course_id' => $course->id,
-                'teebox' => $request->input('teebox'),
-            ]);
+        if ($casual && $actor->id === $user->id) {
+            // A player logging their OWN casual round — no league context needed.
+            $this->storeCasualRound($user, $courseId, $teebox, $attributes);
         } else {
-            $user->rounds()->create($attributes + [
-                'league_id' => $league->id,
-                'course_id' => $league->course_id,
-                'teebox' => $league->teebox,
-                'course_rating' => $league->course_rating,
-                'slope_rating' => $league->slope_rating,
-                'par' => $league->par,
-                'holes' => $league->holes,
-            ]);
+            // League rounds, or managing another player, are admin-only.
+            $league = $this->leagueFor($request, $user);
+            abort_unless($actor->isAdminOf($league), 403);
+
+            if ($casual) {
+                $this->storeCasualRound($user, $courseId, $teebox, $attributes);
+            } else {
+                $user->rounds()->create($attributes + [
+                    'league_id' => $league->id,
+                    'course_id' => $league->course_id,
+                    'teebox' => $league->teebox,
+                    'course_rating' => $league->course_rating,
+                    'slope_rating' => $league->slope_rating,
+                    'par' => $league->par,
+                    'holes' => $league->holes,
+                ]);
+            }
         }
 
         $this->handicaps->recalculateFor($user);
@@ -93,11 +98,29 @@ class RoundsController extends Controller
     }
 
     /**
+     * Create a casual round, snapshotting the chosen course + teebox context.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function storeCasualRound(User $user, int $courseId, ?string $teebox, array $attributes): void
+    {
+        $course = Course::findOrFail($courseId);
+        $context = $course->teeboxContext($teebox);
+        abort_if(is_null($context), 422, 'That course has no usable tee data.');
+
+        $user->rounds()->create($attributes + $context + [
+            'league_id' => null,
+            'course_id' => $course->id,
+            'teebox' => $teebox,
+        ]);
+    }
+
+    /**
      * Update a round (score/date only — the course context is fixed at creation).
      */
     public function update(UpdateRoundRequest $request, Round $round): RedirectResponse
     {
-        $this->authorizeRound($request, $round);
+        $this->authorizeManage($request->user(), $round);
 
         $round->update([
             'score' => $request->integer('score'),
@@ -114,27 +137,13 @@ class RoundsController extends Controller
      */
     public function destroy(Request $request, Round $round): RedirectResponse
     {
-        $this->authorizeRound($request, $round);
+        $this->authorizeManage($request->user(), $round);
         $user = $round->user;
         $round->delete();
 
         $this->handicaps->recalculateFor($user);
 
         return back()->with('success', 'Round removed.');
-    }
-
-    /**
-     * Where a round was played, for display: the league name, or "Casual · course".
-     */
-    private function originLabel(Round $round): string
-    {
-        if ($round->league) {
-            return $round->league->name;
-        }
-
-        $course = $round->course;
-
-        return 'Casual'.($course ? ' · '.($course->club_name ?? $course->course_name) : '');
     }
 
     /**
@@ -149,13 +158,18 @@ class RoundsController extends Controller
     }
 
     /**
-     * Authorize managing a round: its owner must be a member of the acting
-     * admin's current league (the route already enforces admin). Works for
-     * league and casual rounds alike.
+     * Authorize editing/deleting a round: an admin may manage any round of a
+     * member of their current league; a player may manage only their OWN casual
+     * rounds (league rounds stay admin-entered).
      */
-    private function authorizeRound(Request $request, Round $round): void
+    private function authorizeManage(User $actor, Round $round): void
     {
-        $league = $request->user()->currentLeague;
-        abort_unless($league && $round->user->leagues()->whereKey($league->id)->exists(), 404);
+        $league = $actor->currentLeague;
+        $isAdmin = $league
+            && $actor->isAdminOf($league)
+            && $round->user->leagues()->whereKey($league->id)->exists();
+        $isOwnCasual = is_null($round->league_id) && $round->user_id === $actor->id;
+
+        abort_unless($isAdmin || $isOwnCasual, 403);
     }
 }
