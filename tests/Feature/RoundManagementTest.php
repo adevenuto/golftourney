@@ -25,13 +25,13 @@ class RoundManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('rounds', [
-            'golfer_id' => $golfer->id,
+            'user_id' => $golfer->id,
             'league_id' => $league->id,
             'score' => 40,
         ]);
         // (40 - 31.5) * 113 / 104 = 9.24 — stored on the pivot.
-        $this->assertDatabaseHas('golfer_league', [
-            'golfer_id' => $golfer->id,
+        $this->assertDatabaseHas('league_user', [
+            'user_id' => $golfer->id,
             'league_id' => $league->id,
             'handicap' => 9.24,
         ]);
@@ -78,8 +78,8 @@ class RoundManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('rounds', ['id' => $round->id, 'score' => 40]);
-        $this->assertDatabaseHas('golfer_league', [
-            'golfer_id' => $golfer->id,
+        $this->assertDatabaseHas('league_user', [
+            'user_id' => $golfer->id,
             'league_id' => $league->id,
             'handicap' => 9.24,
         ]);
@@ -97,8 +97,8 @@ class RoundManagementTest extends TestCase
 
         $this->assertDatabaseMissing('rounds', ['id' => $round->id]);
         // No rounds left -> handicap resets to 0.
-        $this->assertDatabaseHas('golfer_league', [
-            'golfer_id' => $golfer->id,
+        $this->assertDatabaseHas('league_user', [
+            'user_id' => $golfer->id,
             'league_id' => $league->id,
             'handicap' => 0,
         ]);

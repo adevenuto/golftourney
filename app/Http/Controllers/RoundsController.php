@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRoundRequest;
 use App\Http\Requests\UpdateRoundRequest;
-use App\Models\Golfer;
 use App\Models\League;
 use App\Models\Round;
+use App\Models\User;
 use App\Services\HandicapService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,44 +24,44 @@ class RoundsController extends Controller
     /**
      * Show a golfer's rounds within the current league.
      */
-    public function index(Request $request, Golfer $golfer): Response
+    public function index(Request $request, User $user): Response
     {
-        $league = $this->leagueFor($request, $golfer);
+        $league = $this->leagueFor($request, $user);
 
-        $handicap = DB::table('golfer_league')
-            ->where('golfer_id', $golfer->id)
+        $handicap = DB::table('league_user')
+            ->where('user_id', $user->id)
             ->where('league_id', $league->id)
             ->value('handicap');
 
         return Inertia::render('Rounds/Index', [
             'golfer' => [
-                'id' => $golfer->id,
-                'first_name' => $golfer->first_name,
-                'last_name' => $golfer->last_name,
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'handicap' => $handicap,
             ],
-            'rounds' => $golfer->rounds()
+            'rounds' => $user->rounds()
                 ->where('league_id', $league->id)
                 ->orderByDesc('created_at')
                 ->get(),
-            'countingRoundIds' => $this->handicaps->countingRounds($golfer, $league)->pluck('id'),
+            'countingRoundIds' => $this->handicaps->countingRounds($user, $league)->pluck('id'),
         ]);
     }
 
     /**
      * Store a new round for the golfer in the current league.
      */
-    public function store(StoreRoundRequest $request, Golfer $golfer): RedirectResponse
+    public function store(StoreRoundRequest $request, User $user): RedirectResponse
     {
-        $league = $this->leagueFor($request, $golfer);
+        $league = $this->leagueFor($request, $user);
 
-        $golfer->rounds()->create([
+        $user->rounds()->create([
             'league_id' => $league->id,
             'score' => $request->integer('score'),
             'created_at' => $request->date('created_at'),
         ]);
 
-        $this->handicaps->recalculateFor($golfer, $league);
+        $this->handicaps->recalculateFor($user, $league);
 
         return back()->with('success', 'Round added.');
     }
@@ -78,7 +78,7 @@ class RoundsController extends Controller
             'created_at' => $request->date('created_at'),
         ]);
 
-        $this->handicaps->recalculateFor($round->golfer, $league);
+        $this->handicaps->recalculateFor($round->user, $league);
 
         return back()->with('success', 'Round updated.');
     }
@@ -89,10 +89,10 @@ class RoundsController extends Controller
     public function destroy(Request $request, Round $round): RedirectResponse
     {
         $league = $this->leagueForRound($request, $round);
-        $golfer = $round->golfer;
+        $user = $round->user;
         $round->delete();
 
-        $this->handicaps->recalculateFor($golfer, $league);
+        $this->handicaps->recalculateFor($user, $league);
 
         return back()->with('success', 'Round removed.');
     }
@@ -100,10 +100,10 @@ class RoundsController extends Controller
     /**
      * Resolve the acting user's current league, ensuring the golfer belongs to it.
      */
-    private function leagueFor(Request $request, Golfer $golfer): League
+    private function leagueFor(Request $request, User $user): League
     {
         $league = $request->user()->currentLeague;
-        abort_unless($league && $golfer->leagues()->whereKey($league->id)->exists(), 404);
+        abort_unless($league && $user->leagues()->whereKey($league->id)->exists(), 404);
 
         return $league;
     }

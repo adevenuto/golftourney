@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeagueRequest;
-use App\Models\Golfer;
 use App\Models\League;
 use App\Models\Round;
 use App\Models\User;
@@ -58,8 +57,8 @@ class LeaguesController extends Controller
 
     /**
      * Delete a league (admins of that league only), cascading its rounds and
-     * its golfers — golfers who also belong to another league are kept (just
-     * detached), so the other league isn't corrupted.
+     * its roster — members who also belong to another league, or who can log in,
+     * are kept (just detached) so nothing else is corrupted.
      */
     public function destroy(Request $request, League $league): RedirectResponse
     {
@@ -71,24 +70,23 @@ class LeaguesController extends Controller
             // This league's rounds.
             Round::where('league_id', $league->id)->delete();
 
-            // Detach golfers; delete any left without another league.
-            $golferIds = DB::table('golfer_league')
+            // Detach members; delete any login-less roster user left leagueless.
+            $memberIds = DB::table('league_user')
                 ->where('league_id', $league->id)
-                ->pluck('golfer_id');
-            $league->golfers()->detach();
+                ->pluck('user_id');
+            $league->members()->detach();
 
-            foreach ($golferIds as $golferId) {
-                $stillMember = DB::table('golfer_league')
-                    ->where('golfer_id', $golferId)
+            foreach ($memberIds as $memberId) {
+                $stillMember = DB::table('league_user')
+                    ->where('user_id', $memberId)
                     ->exists();
 
                 if (! $stillMember) {
-                    Golfer::whereKey($golferId)->delete();
+                    User::whereKey($memberId)->whereNull('password')->delete();
                 }
             }
 
-            // Members + anyone pointing at this as their current league.
-            $league->members()->detach();
+            // Anyone pointing at this as their current league.
             User::where('current_league_id', $league->id)
                 ->update(['current_league_id' => null]);
 

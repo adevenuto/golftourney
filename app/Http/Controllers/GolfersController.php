@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGolfersRequest;
 use App\Http\Requests\UpdateGolferRequest;
-use App\Models\Golfer;
 use App\Models\League;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -63,16 +63,16 @@ class GolfersController extends Controller
         foreach (array_filter(preg_split('/\s+/', $search)) as $token) {
             $query->where(function (Builder $q) use ($token) {
                 $like = '%'.$token.'%';
-                $q->where('g.first_name', 'like', $like)
-                    ->orWhere('g.last_name', 'like', $like)
-                    ->orWhere('g.email', 'like', $like)
-                    ->orWhere('g.phone', 'like', $like);
+                $q->where('u.first_name', 'like', $like)
+                    ->orWhere('u.last_name', 'like', $like)
+                    ->orWhere('u.email', 'like', $like)
+                    ->orWhere('u.phone', 'like', $like);
             });
         }
 
         $query->orderBy($sort, $direction);
         if ($sort === 'last_name') {
-            $query->orderBy('g.first_name', $direction);
+            $query->orderBy('u.first_name', $direction);
         }
 
         return Pdf::loadView('pdf.golfers', [
@@ -103,26 +103,26 @@ class GolfersController extends Controller
             return response()->json(['golfers' => []]);
         }
 
-        $golfers = DB::table('golfers as g')
-            ->join('golfer_league as gl', 'gl.golfer_id', '=', 'g.id')
-            ->whereIn('gl.league_id', $leagueIds)
+        $golfers = DB::table('users as u')
+            ->join('league_user as lu', 'lu.user_id', '=', 'u.id')
+            ->whereIn('lu.league_id', $leagueIds)
             ->whereNotExists(fn (Builder $q) => $q->select(DB::raw(1))
-                ->from('golfer_league as cur')
-                ->whereColumn('cur.golfer_id', 'g.id')
+                ->from('league_user as cur')
+                ->whereColumn('cur.user_id', 'u.id')
                 ->where('cur.league_id', $currentId))
             ->where(function (Builder $q) use ($term) {
                 foreach (array_filter(preg_split('/\s+/', $term)) as $token) {
                     $like = '%'.$token.'%';
                     $q->where(fn (Builder $sub) => $sub
-                        ->where('g.first_name', 'like', $like)
-                        ->orWhere('g.last_name', 'like', $like)
-                        ->orWhere('g.email', 'like', $like));
+                        ->where('u.first_name', 'like', $like)
+                        ->orWhere('u.last_name', 'like', $like)
+                        ->orWhere('u.email', 'like', $like));
                 }
             })
             ->distinct()
-            ->orderBy('g.last_name')
+            ->orderBy('u.last_name')
             ->limit(12)
-            ->get(['g.id', 'g.first_name', 'g.last_name', 'g.email', 'g.phone']);
+            ->get(['u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone']);
 
         return response()->json([
             'golfers' => $golfers->map(fn ($g): array => [
@@ -150,13 +150,15 @@ class GolfersController extends Controller
 
         DB::transaction(function () use ($request, $league, $leagueIds, &$added) {
             foreach ($request->validated()['golfers'] as $row) {
-                $golfer = $this->resolveGolfer($row, $leagueIds);
+                $golfer = $this->resolveUser($row, $leagueIds);
 
                 if (! $golfer) {
                     continue;
                 }
 
-                $golfer->leagues()->syncWithoutDetaching([$league->id => ['handicap' => 0]]);
+                $golfer->leagues()->syncWithoutDetaching([
+                    $league->id => ['role' => 'player', 'handicap' => 0],
+                ]);
                 $added++;
             }
         });
@@ -169,17 +171,17 @@ class GolfersController extends Controller
     }
 
     /**
-     * Resolve a batch row to a golfer: reuse an existing (authorized) golfer,
-     * dedup a new one by email within the user's scope, or create one.
+     * Resolve a batch row to a user: reuse an existing (authorized) user, dedup
+     * a new one by email within the user's scope, or create a login-less one.
      *
      * @param  array<string, mixed>  $row
      * @param  Collection<int, int>  $leagueIds
      */
-    private function resolveGolfer(array $row, $leagueIds): ?Golfer
+    private function resolveUser(array $row, $leagueIds): ?User
     {
-        // Reuse: only allowed for golfers the user can already see.
+        // Reuse: only allowed for users the acting user can already see.
         if (! empty($row['golfer_id'])) {
-            return Golfer::query()
+            return User::query()
                 ->whereKey($row['golfer_id'])
                 ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
                 ->first();
@@ -189,7 +191,7 @@ class GolfersController extends Controller
         $email = $row['email'] ?? null;
 
         if ($email) {
-            $existing = Golfer::query()
+            $existing = User::query()
                 ->where('email', $email)
                 ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
                 ->first();
@@ -199,11 +201,12 @@ class GolfersController extends Controller
             }
         }
 
-        return Golfer::create([
+        return User::create([
             'first_name' => strtolower((string) $row['first_name']),
             'last_name' => strtolower((string) $row['last_name']),
             'email' => $email,
             'phone' => $row['phone'] ?? null,
+            'password' => null, // roster user, not a login account
         ]);
     }
 
@@ -227,11 +230,11 @@ class GolfersController extends Controller
      */
     private function viaLeagueName(int $golferId, $leagueIds, ?int $currentId): ?string
     {
-        $name = DB::table('golfer_league as gl')
-            ->join('leagues as l', 'l.id', '=', 'gl.league_id')
-            ->where('gl.golfer_id', $golferId)
-            ->whereIn('gl.league_id', $leagueIds)
-            ->when($currentId, fn ($q) => $q->where('gl.league_id', '!=', $currentId))
+        $name = DB::table('league_user as lu')
+            ->join('leagues as l', 'l.id', '=', 'lu.league_id')
+            ->where('lu.user_id', $golferId)
+            ->whereIn('lu.league_id', $leagueIds)
+            ->when($currentId, fn ($q) => $q->where('lu.league_id', '!=', $currentId))
             ->orderBy('l.name')
             ->value('l.name');
 
@@ -241,36 +244,36 @@ class GolfersController extends Controller
     /**
      * Update a golfer (must be in the current league).
      */
-    public function update(UpdateGolferRequest $request, Golfer $golfer): RedirectResponse
+    public function update(UpdateGolferRequest $request, User $user): RedirectResponse
     {
-        $this->authorizeGolfer($request, $golfer);
+        $this->authorizeUser($request, $user);
 
-        $golfer->update([
+        $user->update([
             'first_name' => strtolower($request->input('first_name')),
             'last_name' => strtolower($request->input('last_name')),
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
         ]);
 
-        // Name/email/phone live on the golfer, so every league they're in is stale.
-        $golfer->leagues()->get()->each->forgetRosterCache();
+        // Name/email/phone live on the user, so every league they're in is stale.
+        $user->leagues()->get()->each->forgetRosterCache();
 
         return back()->with('success', 'Golfer updated.');
     }
 
     /**
-     * Remove a golfer from the current league (and delete the golfer entirely
-     * if they're left with no leagues).
+     * Remove a golfer from the current league. Login-less roster users left with
+     * no leagues are deleted entirely; login accounts are only detached.
      */
-    public function destroy(Request $request, Golfer $golfer): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
-        $league = $this->authorizeGolfer($request, $golfer);
+        $league = $this->authorizeUser($request, $user);
 
-        $golfer->rounds()->where('league_id', $league->id)->delete();
-        $golfer->leagues()->detach($league->id);
+        $user->rounds()->where('league_id', $league->id)->delete();
+        $user->leagues()->detach($league->id);
 
-        if ($golfer->leagues()->count() === 0) {
-            $golfer->delete();
+        if ($user->leagues()->count() === 0 && ! $user->canLogin()) {
+            $user->delete();
         }
 
         $league->forgetRosterCache();
@@ -279,30 +282,30 @@ class GolfersController extends Controller
     }
 
     /**
-     * Roster query for a league: golfer fields + pivot handicap + per-league round count.
+     * Roster query for a league: member fields + pivot handicap + per-league round count.
      */
     private function rosterQuery(League $league): Builder
     {
-        return DB::table('golfers as g')
-            ->join('golfer_league as gl', 'gl.golfer_id', '=', 'g.id')
-            ->where('gl.league_id', $league->id)
-            ->select('g.id', 'g.first_name', 'g.last_name', 'g.email', 'g.phone', 'gl.handicap')
+        return DB::table('users as u')
+            ->join('league_user as lu', 'lu.user_id', '=', 'u.id')
+            ->where('lu.league_id', $league->id)
+            ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'lu.handicap')
             ->selectSub(
                 DB::table('rounds')
                     ->selectRaw('count(*)')
-                    ->whereColumn('rounds.golfer_id', 'g.id')
+                    ->whereColumn('rounds.user_id', 'u.id')
                     ->where('rounds.league_id', $league->id),
                 'number_of_rounds'
             );
     }
 
     /**
-     * Ensure the golfer belongs to the acting user's current league; return it.
+     * Ensure the user belongs to the acting user's current league; return it.
      */
-    private function authorizeGolfer(Request $request, Golfer $golfer): League
+    private function authorizeUser(Request $request, User $user): League
     {
         $league = $request->user()->currentLeague;
-        abort_unless($league && $golfer->leagues()->whereKey($league->id)->exists(), 404);
+        abort_unless($league && $user->leagues()->whereKey($league->id)->exists(), 404);
 
         return $league;
     }

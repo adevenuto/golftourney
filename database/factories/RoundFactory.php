@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Golfer;
 use App\Models\League;
 use App\Models\Round;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +18,7 @@ class RoundFactory extends Factory
     public function definition(): array
     {
         return [
-            'golfer_id' => Golfer::factory(),
+            'user_id' => User::factory(),
             'league_id' => League::factory(),
             'score' => fake()->numberBetween(35, 60),
             'created_at' => fake()->dateTimeBetween('-2 years', 'now'),

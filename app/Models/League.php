@@ -58,26 +58,15 @@ class League extends Model
     }
 
     /**
-     * Golfers on this league's roster, with their per-league handicap.
-     *
-     * @return BelongsToMany<Golfer, $this>
-     */
-    public function golfers(): BelongsToMany
-    {
-        return $this->belongsToMany(Golfer::class)
-            ->withPivot('handicap')
-            ->withTimestamps();
-    }
-
-    /**
-     * Users who belong to this league, with their per-league role.
+     * Users on this league's roster, with their per-league role and handicap.
+     * (Every member is a golfer; the 4 admins included.)
      *
      * @return BelongsToMany<User, $this>
      */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'league_user')
-            ->withPivot('role')
+            ->withPivot('role', 'handicap')
             ->withTimestamps();
     }
 

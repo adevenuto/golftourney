@@ -52,8 +52,8 @@ class HandicapCalculationTest extends TestCase
 
         // (40 - 31.5) * 113 / 104 = 9.24
         $this->assertSame(9.24, $handicap);
-        $this->assertDatabaseHas('golfer_league', [
-            'golfer_id' => $golfer->id,
+        $this->assertDatabaseHas('league_user', [
+            'user_id' => $golfer->id,
             'league_id' => $league->id,
             'handicap' => 9.24,
         ]);

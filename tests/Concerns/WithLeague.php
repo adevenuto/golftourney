@@ -2,7 +2,6 @@
 
 namespace Tests\Concerns;
 
-use App\Models\Golfer;
 use App\Models\League;
 use App\Models\Round;
 use App\Models\User;
@@ -32,23 +31,23 @@ trait WithLeague
     }
 
     /**
-     * A golfer on the given league's roster (with an optional pivot handicap).
+     * A login-less roster user on the given league (with an optional handicap).
      */
-    protected function golferIn(League $league, array $attributes = [], float $handicap = 0): Golfer
+    protected function golferIn(League $league, array $attributes = [], float $handicap = 0): User
     {
-        $golfer = Golfer::factory()->create($attributes);
-        $golfer->leagues()->attach($league->id, ['handicap' => $handicap]);
+        $user = User::factory()->roster()->create($attributes);
+        $user->leagues()->attach($league->id, ['role' => 'player', 'handicap' => $handicap]);
 
-        return $golfer;
+        return $user;
     }
 
     /**
-     * A round for a golfer in a league.
+     * A round for a roster user in a league.
      */
-    protected function roundFor(Golfer $golfer, League $league, array $attributes = []): Round
+    protected function roundFor(User $user, League $league, array $attributes = []): Round
     {
         return Round::factory()
-            ->for($golfer)
+            ->for($user)
             ->create(array_merge(['league_id' => $league->id], $attributes));
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Golfer;
 use App\Models\League;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -27,10 +27,10 @@ class GolferManagementTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('golfers', ['first_name' => 'john', 'last_name' => 'milne', 'email' => 'john@example.com']);
-        $this->assertDatabaseHas('golfers', ['first_name' => 'jane', 'last_name' => 'doe']);
-        $this->assertSame(2, $league->golfers()->count());
-        $this->assertDatabaseHas('golfer_league', ['league_id' => $league->id, 'handicap' => 0]);
+        $this->assertDatabaseHas('users', ['first_name' => 'john', 'last_name' => 'milne', 'email' => 'john@example.com']);
+        $this->assertDatabaseHas('users', ['first_name' => 'jane', 'last_name' => 'doe']);
+        $this->assertSame(2, $league->members()->wherePivot('role', 'player')->count());
+        $this->assertDatabaseHas('league_user', ['league_id' => $league->id, 'role' => 'player', 'handicap' => 0]);
     }
 
     public function test_each_batch_row_requires_a_name_or_existing_golfer(): void
@@ -57,9 +57,9 @@ class GolferManagementTest extends TestCase
             ->post(route('golfers.store'), ['golfers' => [['golfer_id' => $reusable->id]]])
             ->assertRedirect();
 
-        // Attached to the current league, no duplicate golfer row.
-        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $reusable->id, 'league_id' => $current->id]);
-        $this->assertSame(1, Golfer::count());
+        // Attached to the current league, no duplicate roster user.
+        $this->assertDatabaseHas('league_user', ['user_id' => $reusable->id, 'league_id' => $current->id]);
+        $this->assertSame(1, User::whereNull('password')->count());
     }
 
     public function test_cannot_reuse_a_golfer_from_a_league_im_not_in(): void
@@ -74,7 +74,7 @@ class GolferManagementTest extends TestCase
             ->post(route('golfers.store'), ['golfers' => [['golfer_id' => $stranger->id]]])
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('golfer_league', ['golfer_id' => $stranger->id, 'league_id' => $current->id]);
+        $this->assertDatabaseMissing('league_user', ['user_id' => $stranger->id, 'league_id' => $current->id]);
     }
 
     public function test_new_golfer_with_matching_email_attaches_the_existing_person(): void
@@ -93,8 +93,8 @@ class GolferManagementTest extends TestCase
             ->assertRedirect();
 
         // No duplicate created; the existing person joins the current league.
-        $this->assertSame(1, Golfer::count());
-        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $existing->id, 'league_id' => $current->id]);
+        $this->assertSame(1, User::whereNull('password')->count());
+        $this->assertDatabaseHas('league_user', ['user_id' => $existing->id, 'league_id' => $current->id]);
     }
 
     public function test_search_returns_in_scope_golfers_excluding_current_league_members(): void
@@ -153,7 +153,7 @@ class GolferManagementTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('golfers', [
+        $this->assertDatabaseHas('users', [
             'id' => $golfer->id,
             'first_name' => 'jane',
             'email' => 'jane@example.com',
@@ -184,10 +184,27 @@ class GolferManagementTest extends TestCase
             ->delete(route('golfers.destroy', $golfer))
             ->assertRedirect();
 
-        // Golfer had no other leagues -> fully removed, with its rounds.
-        $this->assertDatabaseMissing('golfers', ['id' => $golfer->id]);
-        $this->assertDatabaseMissing('rounds', ['golfer_id' => $golfer->id]);
-        $this->assertDatabaseMissing('golfer_league', ['golfer_id' => $golfer->id]);
+        // Login-less roster user had no other leagues -> fully removed, with its rounds.
+        $this->assertDatabaseMissing('users', ['id' => $golfer->id]);
+        $this->assertDatabaseMissing('rounds', ['user_id' => $golfer->id]);
+        $this->assertDatabaseMissing('league_user', ['user_id' => $golfer->id]);
+    }
+
+    public function test_removing_a_login_user_detaches_but_keeps_the_account(): void
+    {
+        $league = League::factory()->create();
+
+        // A login-capable member (has a password), not just a roster golfer.
+        $member = User::factory()->create();
+        $member->leagues()->attach($league->id, ['role' => 'player', 'handicap' => 0]);
+
+        $this->actingAs($this->adminOf($league))
+            ->delete(route('golfers.destroy', $member))
+            ->assertRedirect();
+
+        // Detached from the league, but the login account survives.
+        $this->assertDatabaseMissing('league_user', ['user_id' => $member->id, 'league_id' => $league->id]);
+        $this->assertDatabaseHas('users', ['id' => $member->id]);
     }
 
     public function test_any_league_member_can_export_handicaps_pdf(): void
@@ -215,11 +232,14 @@ class GolferManagementTest extends TestCase
         // A golfer in a different league must not appear.
         $this->golferIn(League::factory()->create());
 
+        // The roster is every league member: the 2 golfers + the acting admin
+        // (who, like the real admins, is a member). Ordered by round count, the
+        // roundless admin sorts last, so the busy golfer stays at index 0.
         $this->actingAs($this->adminOf($league))
             ->get(route('golfers.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Golfers/Index')
-                ->has('golfers', 2)
+                ->has('golfers', 3)
                 ->where('golfers.0.id', $busy->id)
                 ->where('golfers.0.number_of_rounds', 3)
             );
@@ -230,10 +250,10 @@ class GolferManagementTest extends TestCase
         $league = League::factory()->create();
         $admin = $this->adminOf($league);
 
-        // A cold read caches the (empty) roster.
+        // A cold read caches the roster (just the admin member so far).
         $this->actingAs($admin)
             ->get(route('golfers.index'))
-            ->assertInertia(fn (Assert $page) => $page->has('golfers', 0));
+            ->assertInertia(fn (Assert $page) => $page->has('golfers', 1));
         $this->assertTrue(Cache::has($league->rosterCacheKey()));
 
         // Adding a golfer must bust the cache so the next read reflects it.
@@ -246,6 +266,6 @@ class GolferManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('golfers.index'))
-            ->assertInertia(fn (Assert $page) => $page->has('golfers', 1));
+            ->assertInertia(fn (Assert $page) => $page->has('golfers', 2));
     }
 }

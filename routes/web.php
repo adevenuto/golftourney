@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     // Golfers & rounds (Inertia).
     Route::get('/golfers', [GolfersController::class, 'index'])->name('golfers.index');
     Route::get('/golfers/export/pdf', [GolfersController::class, 'exportPdf'])->name('golfers.export');
-    Route::get('/golfers/{golfer}/rounds', [RoundsController::class, 'index'])->name('golfers.rounds');
+    Route::get('/golfers/{user}/rounds', [RoundsController::class, 'index'])->name('golfers.rounds');
 
     // Profile (Breeze).
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -47,10 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('/golfers/search', [GolfersController::class, 'search'])->name('golfers.search');
         Route::post('/golfers', [GolfersController::class, 'store'])->name('golfers.store');
-        Route::put('/golfers/{golfer}', [GolfersController::class, 'update'])->name('golfers.update');
-        Route::delete('/golfers/{golfer}', [GolfersController::class, 'destroy'])->name('golfers.destroy');
+        Route::put('/golfers/{user}', [GolfersController::class, 'update'])->name('golfers.update');
+        Route::delete('/golfers/{user}', [GolfersController::class, 'destroy'])->name('golfers.destroy');
 
-        Route::post('/golfers/{golfer}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
+        Route::post('/golfers/{user}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
         Route::put('/rounds/{round}', [RoundsController::class, 'update'])->name('rounds.update');
         Route::delete('/rounds/{round}', [RoundsController::class, 'destroy'])->name('rounds.destroy');
     });

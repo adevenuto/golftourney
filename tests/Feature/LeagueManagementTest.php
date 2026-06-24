@@ -220,7 +220,7 @@ class LeagueManagementTest extends TestCase
         // A golfer also on another league must survive (just detached).
         $other = League::factory()->create();
         $shared = $this->golferIn($league);
-        $shared->leagues()->attach($other->id, ['handicap' => 0]);
+        $shared->leagues()->attach($other->id, ['role' => 'player', 'handicap' => 0]);
 
         $this->actingAs($admin)
             ->delete(route('leagues.destroy', $league))
@@ -228,12 +228,12 @@ class LeagueManagementTest extends TestCase
 
         $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
         $this->assertDatabaseMissing('rounds', ['league_id' => $league->id]);
-        $this->assertDatabaseMissing('golfer_league', ['league_id' => $league->id]);
+        $this->assertDatabaseMissing('league_user', ['league_id' => $league->id]);
 
         // Orphan golfer gone; shared golfer kept (still in the other league).
-        $this->assertDatabaseMissing('golfers', ['id' => $orphan->id]);
-        $this->assertDatabaseHas('golfers', ['id' => $shared->id]);
-        $this->assertDatabaseHas('golfer_league', ['golfer_id' => $shared->id, 'league_id' => $other->id]);
+        $this->assertDatabaseMissing('users', ['id' => $orphan->id]);
+        $this->assertDatabaseHas('users', ['id' => $shared->id]);
+        $this->assertDatabaseHas('league_user', ['user_id' => $shared->id, 'league_id' => $other->id]);
 
         // The admin no longer points at the deleted league.
         $this->assertNull($admin->fresh()->current_league_id);

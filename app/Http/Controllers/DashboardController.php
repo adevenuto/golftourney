@@ -27,7 +27,7 @@ class DashboardController extends Controller
             ->where('lu.user_id', $user->id)
             ->select('l.id', 'l.name', 'lu.role', 'l.course_rating', 'l.slope_rating', 'c.club_name', 'c.course_name')
             ->selectSub(
-                DB::table('golfer_league')->selectRaw('count(*)')->whereColumn('golfer_league.league_id', 'l.id'),
+                DB::table('league_user')->selectRaw('count(*)')->whereColumn('league_user.league_id', 'l.id'),
                 'golfers_count'
             )
             ->orderBy('l.name')

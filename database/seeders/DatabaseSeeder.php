@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Golfer;
 use App\Models\League;
 use App\Models\Round;
 use App\Models\User;
@@ -27,13 +26,13 @@ class DatabaseSeeder extends Seeder
             'name' => 'The Black League',
             'owner_id' => $admin->id,
         ]);
-        $league->members()->attach($admin->id, ['role' => 'admin']);
+        $league->members()->attach($admin->id, ['role' => 'admin', 'handicap' => 0]);
         $admin->update(['current_league_id' => $league->id]);
 
-        Golfer::factory(25)->create()->each(function (Golfer $golfer) use ($league, $handicaps) {
-            $golfer->leagues()->attach($league->id, ['handicap' => 0]);
-            Round::factory(random_int(5, 25))->for($golfer)->create(['league_id' => $league->id]);
-            $handicaps->recalculateFor($golfer, $league);
+        User::factory(25)->roster()->create()->each(function (User $user) use ($league, $handicaps) {
+            $user->leagues()->attach($league->id, ['role' => 'player', 'handicap' => 0]);
+            Round::factory(random_int(5, 25))->for($user)->create(['league_id' => $league->id]);
+            $handicaps->recalculateFor($user, $league);
         });
     }
 }

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'last_name',
         'current_league_id',
         'email',
+        'phone',
         'password',
         'created_at',
         'updated_at',
@@ -53,15 +54,34 @@ class User extends Authenticatable
     ];
 
     /**
-     * Leagues this user belongs to, with their per-league role.
+     * Leagues this user belongs to, with their per-league role and handicap.
      *
      * @return BelongsToMany<League, $this>
      */
     public function leagues(): BelongsToMany
     {
         return $this->belongsToMany(League::class, 'league_user')
-            ->withPivot('role')
+            ->withPivot('role', 'handicap')
             ->withTimestamps();
+    }
+
+    /**
+     * The rounds this user has posted (across all leagues).
+     *
+     * @return HasMany<Round, $this>
+     */
+    public function rounds(): HasMany
+    {
+        return $this->hasMany(Round::class);
+    }
+
+    /**
+     * Whether this user can sign in (golfer-derived roster users have no
+     * password and exist only to own their rounds/handicap).
+     */
+    public function canLogin(): bool
+    {
+        return ! is_null($this->password);
     }
 
     /**

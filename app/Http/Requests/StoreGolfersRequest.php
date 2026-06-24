@@ -22,7 +22,7 @@ class StoreGolfersRequest extends FormRequest
     {
         return [
             'golfers' => 'required|array|min:1|max:100',
-            'golfers.*.golfer_id' => 'nullable|integer|exists:golfers,id',
+            'golfers.*.golfer_id' => 'nullable|integer|exists:users,id',
             'golfers.*.first_name' => 'nullable|string|max:255',
             'golfers.*.last_name' => 'nullable|string|max:255',
             'golfers.*.email' => 'nullable|email|max:255',

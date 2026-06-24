@@ -16,7 +16,7 @@ class Round extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'golfer_id',
+        'user_id',
         'league_id',
         'score',
         'created_at', // admins may backdate a round
@@ -33,13 +33,13 @@ class Round extends Model
     ];
 
     /**
-     * The golfer who posted this round.
+     * The user who posted this round.
      *
-     * @return BelongsTo<Golfer, $this>
+     * @return BelongsTo<User, $this>
      */
-    public function golfer(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Golfer::class);
+        return $this->belongsTo(User::class);
     }
 
     /**

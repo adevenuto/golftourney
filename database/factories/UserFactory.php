@@ -43,4 +43,17 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * A login-less roster user (a golfer who owns rounds but never signs in).
+     */
+    public function roster(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email' => null,
+            'email_verified_at' => null,
+            'password' => null,
+            'remember_token' => null,
+        ]);
+    }
 }
