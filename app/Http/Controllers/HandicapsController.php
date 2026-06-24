@@ -24,6 +24,7 @@ class HandicapsController extends Controller
 
         $you = $league ? [
             'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
+            'index_value' => $user->effectiveHandicapIndex(),
             'course_handicap' => $this->handicaps->courseHandicap($user, $league),
             'league' => $league->name,
             'holes' => $league->holes,

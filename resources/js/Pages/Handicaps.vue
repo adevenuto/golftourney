@@ -16,6 +16,34 @@ const props = defineProps({
 const hasIndex = computed(() => !!props.you && props.you.index !== 'N/A');
 const needsRounds = computed(() => !!props.you && props.you.index === 'N/A');
 
+// A worked example built from the viewer's own numbers (null → use the generic
+// one). Shows how their Index becomes their Course Handicap, step by step.
+const example = computed(() => {
+    const y = props.you;
+    if (!y || y.index_value === null || y.index_value === undefined) return null;
+
+    const idx = Number(y.index_value);
+    const nine = y.holes === 9;
+    const hi = nine ? idx / 2 : idx;
+    const slopeScaled = (hi * y.slope_rating) / props.constants.standardSlope;
+    const afterPar = slopeScaled + (Number(y.course_rating) - y.par);
+    const r2 = (n) => (Math.round(n * 100) / 100).toString();
+
+    return {
+        league: y.league,
+        holes: y.holes,
+        cr: Number(y.course_rating),
+        slope: y.slope_rating,
+        par: y.par,
+        nine,
+        idx: idx.toFixed(1),
+        hi: r2(hi),
+        slopeScaled: r2(slopeScaled),
+        afterPar: r2(afterPar),
+        courseHandicap: y.course_handicap,
+    };
+});
+
 // WHS short-record table (see HANDICAP_RULES.md).
 const shortRecord = [
     { rounds: '3', lowest: 1, adj: '−2.0' },
@@ -273,38 +301,82 @@ const faqs = [
 
             <!-- Worked example -->
             <section>
-                <h2 class="font-display text-2xl font-semibold text-pine">A worked example</h2>
-                <p class="mt-2 text-sm text-ink/60">A Black League golfer (9 holes · rating 31.5 · slope 104 · par 33).</p>
+                <!-- Personalized: build it from the viewer's own numbers. -->
+                <template v-if="example">
+                    <h2 class="font-display text-2xl font-semibold text-pine">Your number, step by step</h2>
+                    <p class="mt-2 text-sm text-ink/60">
+                        How your Index of {{ example.idx }} becomes your Course Handicap at
+                        {{ example.league }} ({{ example.holes }} holes · rating {{ example.cr }} ·
+                        slope {{ example.slope }} · par {{ example.par }}).
+                    </p>
 
-                <ol class="mt-4 space-y-3">
-                    <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
-                        <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">1</span>
-                        <p class="text-sm text-ink/80">
-                            Their best 8 nine-hole differentials average about
-                            <span class="font-display font-semibold text-pine">8.4</span>.
-                        </p>
-                    </li>
-                    <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
-                        <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">2</span>
-                        <p class="text-sm text-ink/80">
-                            Doubled to the 18-hole scale → a Handicap
-                            <span class="font-display font-semibold text-pine">Index of 16.8</span>.
-                        </p>
-                    </li>
-                    <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
-                        <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">3</span>
-                        <p class="text-sm text-ink/80">
-                            Course Handicap = round( (16.8 ÷ 2) × 104 ÷ 113 + (31.5 − 33) )
-                            = round( 7.73 − 1.5 ) =
-                            <span class="font-display font-semibold text-pine">6</span>.
-                        </p>
-                    </li>
-                </ol>
-                <p class="mt-3 text-xs text-ink/50">
-                    So the headline 6 is lower than the old 8.4: the slope (104, below 113) and the
-                    rating sitting under par both trim the strokes — that’s the course doing the
-                    adjusting, not a change in skill.
-                </p>
+                    <ol class="mt-4 space-y-3">
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">1</span>
+                            <p v-if="example.nine" class="text-sm text-ink/80">
+                                Your Index <span class="font-display font-semibold text-pine">{{ example.idx }}</span>
+                                is an 18-hole number, and {{ example.league }} plays 9 holes — so we use half:
+                                {{ example.idx }} ÷ 2 = <span class="font-display font-semibold text-pine">{{ example.hi }}</span>.
+                            </p>
+                            <p v-else class="text-sm text-ink/80">
+                                Start from your Index:
+                                <span class="font-display font-semibold text-pine">{{ example.idx }}</span>.
+                            </p>
+                        </li>
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">2</span>
+                            <p class="text-sm text-ink/80">
+                                Apply the course’s slope: {{ example.hi }} × {{ example.slope }} ÷ 113 =
+                                <span class="font-display font-semibold text-pine">{{ example.slopeScaled }}</span>.
+                            </p>
+                        </li>
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">3</span>
+                            <p class="text-sm text-ink/80">
+                                Adjust for rating vs par: {{ example.slopeScaled }} + ({{ example.cr }} − {{ example.par }}) =
+                                <span class="font-display font-semibold text-pine">{{ example.afterPar }}</span>.
+                            </p>
+                        </li>
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">4</span>
+                            <p class="text-sm text-ink/80">
+                                Rounded, your Course Handicap at {{ example.league }} is
+                                <span class="font-display font-semibold text-pine">{{ example.courseHandicap }}</span>.
+                            </p>
+                        </li>
+                    </ol>
+                </template>
+
+                <!-- Fallback when the viewer has no Index yet. -->
+                <template v-else>
+                    <h2 class="font-display text-2xl font-semibold text-pine">A worked example</h2>
+                    <p class="mt-2 text-sm text-ink/60">A Black League golfer (9 holes · rating 31.5 · slope 104 · par 33).</p>
+
+                    <ol class="mt-4 space-y-3">
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">1</span>
+                            <p class="text-sm text-ink/80">
+                                Their best 8 nine-hole differentials average about
+                                <span class="font-display font-semibold text-pine">8.4</span>.
+                            </p>
+                        </li>
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">2</span>
+                            <p class="text-sm text-ink/80">
+                                Doubled to the 18-hole scale → a Handicap
+                                <span class="font-display font-semibold text-pine">Index of 16.8</span>.
+                            </p>
+                        </li>
+                        <li class="flex items-start gap-4 rounded-2xl border border-parchment-dark bg-cream p-5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pine/10 font-display text-sm font-semibold text-pine">3</span>
+                            <p class="text-sm text-ink/80">
+                                Course Handicap = round( (16.8 ÷ 2) × 104 ÷ 113 + (31.5 − 33) )
+                                = round( 7.73 − 1.5 ) =
+                                <span class="font-display font-semibold text-pine">6</span>.
+                            </p>
+                        </li>
+                    </ol>
+                </template>
             </section>
 
             <!-- FAQ -->
