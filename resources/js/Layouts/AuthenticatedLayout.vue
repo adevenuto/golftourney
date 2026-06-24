@@ -1,11 +1,27 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+// The hamburger/mobile menu only exists below the `md` breakpoint (768px).
+// Once the viewport grows past it, close the menu so it can't linger on desktop.
+let desktopQuery = null;
+function closeNavOnDesktop(event) {
+    if (event.matches) {
+        showingNavigationDropdown.value = false;
+    }
+}
+onMounted(() => {
+    desktopQuery = window.matchMedia('(min-width: 768px)');
+    desktopQuery.addEventListener('change', closeNavOnDesktop);
+});
+onBeforeUnmount(() => {
+    desktopQuery?.removeEventListener('change', closeNavOnDesktop);
+});
 
 const user = computed(() => usePage().props.auth.user);
 const leagues = computed(() => user.value?.leagues ?? []);
