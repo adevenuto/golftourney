@@ -60,6 +60,55 @@ class Course extends Model
     }
 
     /**
+     * The course's hole count (9 or 18) from layout_data, or null if unknown.
+     */
+    public function holeCount(): ?int
+    {
+        $count = is_array($this->layout_data) ? ($this->layout_data['hole_count'] ?? null) : null;
+
+        return in_array($count, [9, 18], true) ? (int) $count : null;
+    }
+
+    /**
+     * Total par for a teebox — matched by name, else by slope, else the first.
+     * Sums the per-hole pars (stored as strings). Null if unavailable.
+     */
+    public function parForTeebox(?string $name, ?int $slope = null): ?int
+    {
+        $teeboxes = $this->teeboxes();
+        $match = null;
+
+        foreach ($teeboxes as $tee) {
+            if ($name && strcasecmp((string) ($tee['name'] ?? ''), $name) === 0) {
+                $match = $tee;
+                break;
+            }
+        }
+
+        if (! $match && $slope) {
+            foreach ($teeboxes as $tee) {
+                if (isset($tee['slope']) && (int) $tee['slope'] === $slope) {
+                    $match = $tee;
+                    break;
+                }
+            }
+        }
+
+        $match ??= $teeboxes[0] ?? null;
+
+        if (! $match || ! is_array($match['holes'] ?? null)) {
+            return null;
+        }
+
+        $par = 0;
+        foreach ($match['holes'] as $hole) {
+            $par += (int) ($hole['par'] ?? 0);
+        }
+
+        return $par ?: null;
+    }
+
+    /**
      * Normalize a stored course rating to the scale matching its par.
      * The source API doubled 9-hole ratings onto the 18-hole scale; par is the
      * anchor — whichever of {par, 2*par} the rating is closer to reveals its

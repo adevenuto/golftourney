@@ -26,13 +26,13 @@ class DatabaseSeeder extends Seeder
             'name' => 'The Black League',
             'owner_id' => $admin->id,
         ]);
-        $league->members()->attach($admin->id, ['role' => 'admin', 'handicap' => 0]);
+        $league->members()->attach($admin->id, ['role' => 'admin']);
         $admin->update(['current_league_id' => $league->id]);
 
         User::factory(25)->roster()->create()->each(function (User $user) use ($league, $handicaps) {
-            $user->leagues()->attach($league->id, ['role' => 'player', 'handicap' => 0]);
+            $user->leagues()->attach($league->id, ['role' => 'player']);
             Round::factory(random_int(5, 25))->for($user)->create(['league_id' => $league->id]);
-            $handicaps->recalculateFor($user, $league);
+            $handicaps->recalculateFor($user);
         });
     }
 }

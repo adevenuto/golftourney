@@ -6,6 +6,7 @@ use App\Http\Requests\StoreGolfersRequest;
 use App\Http\Requests\UpdateGolferRequest;
 use App\Models\League;
 use App\Models\User;
+use App\Services\HandicapService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class GolfersController extends Controller
 {
-    public function __construct()
+    public function __construct(private HandicapService $handicaps)
     {
         $this->middleware('auth');
     }
@@ -37,7 +38,7 @@ class GolfersController extends Controller
             'golfers' => $league
                 ? Cache::rememberForever(
                     $league->rosterCacheKey(),
-                    fn () => $this->rosterQuery($league)->orderByDesc('number_of_rounds')->get()
+                    fn () => collect($this->rosterFor($league))->sortByDesc('number_of_rounds')->values()->all()
                 )
                 : [],
         ]);
@@ -51,32 +52,29 @@ class GolfersController extends Controller
         $league = $request->user()->currentLeague;
         abort_unless((bool) $league, 404);
 
-        $allowedSorts = ['last_name', 'handicap', 'number_of_rounds'];
+        $allowedSorts = ['last_name', 'course_handicap', 'index_value', 'number_of_rounds'];
         $sort = in_array($request->query('sort'), $allowedSorts, true)
             ? $request->query('sort')
             : 'last_name';
-        $direction = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+        $descending = $request->query('dir') === 'desc';
         $search = trim((string) $request->query('search', ''));
 
-        $query = $this->rosterQuery($league);
+        $roster = collect($this->rosterFor($league));
 
         foreach (array_filter(preg_split('/\s+/', $search)) as $token) {
-            $query->where(function (Builder $q) use ($token) {
-                $like = '%'.$token.'%';
-                $q->where('u.first_name', 'like', $like)
-                    ->orWhere('u.last_name', 'like', $like)
-                    ->orWhere('u.email', 'like', $like)
-                    ->orWhere('u.phone', 'like', $like);
-            });
+            $needle = mb_strtolower($token);
+            $roster = $roster->filter(fn (array $g): bool => str_contains(
+                mb_strtolower($g['first_name'].' '.$g['last_name'].' '.($g['email'] ?? '').' '.($g['phone'] ?? '')),
+                $needle
+            ));
         }
 
-        $query->orderBy($sort, $direction);
-        if ($sort === 'last_name') {
-            $query->orderBy('u.first_name', $direction);
-        }
+        $roster = $roster
+            ->sortBy($sort === 'last_name' ? 'last_name' : fn (array $g) => $g[$sort] ?? -INF, SORT_REGULAR, $descending)
+            ->values();
 
         return Pdf::loadView('pdf.golfers', [
-            'golfers' => $query->get(),
+            'golfers' => $roster,
             'league' => $league,
             'generatedAt' => now(),
             'search' => $search,
@@ -157,7 +155,7 @@ class GolfersController extends Controller
                 }
 
                 $golfer->leagues()->syncWithoutDetaching([
-                    $league->id => ['role' => 'player', 'handicap' => 0],
+                    $league->id => ['role' => 'player'],
                 ]);
                 $added++;
             }
@@ -248,14 +246,18 @@ class GolfersController extends Controller
     {
         $this->authorizeUser($request, $user);
 
+        $manual = $request->input('manual_handicap_index');
+
         $user->update([
             'first_name' => strtolower($request->input('first_name')),
             'last_name' => strtolower($request->input('last_name')),
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
+            // Blank clears the override and reverts to the computed index.
+            'manual_handicap_index' => ($manual === null || $manual === '') ? null : $manual,
         ]);
 
-        // Name/email/phone live on the user, so every league they're in is stale.
+        // Name/email/phone/override live on the user, so every league is stale.
         $user->leagues()->get()->each->forgetRosterCache();
 
         return back()->with('success', 'Golfer updated.');
@@ -282,21 +284,43 @@ class GolfersController extends Controller
     }
 
     /**
-     * Roster query for a league: member fields + pivot handicap + per-league round count.
+     * The league roster: each member with their per-league round count, portable
+     * Handicap Index (formatted + raw for sorting), and derived Course Handicap.
+     *
+     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, course_handicap: ?int}>
      */
-    private function rosterQuery(League $league): Builder
+    private function rosterFor(League $league): array
     {
-        return DB::table('users as u')
+        $rows = DB::table('users as u')
             ->join('league_user as lu', 'lu.user_id', '=', 'u.id')
             ->where('lu.league_id', $league->id)
-            ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'lu.handicap')
+            ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'u.handicap_index', 'u.manual_handicap_index')
             ->selectSub(
                 DB::table('rounds')
                     ->selectRaw('count(*)')
                     ->whereColumn('rounds.user_id', 'u.id')
                     ->where('rounds.league_id', $league->id),
                 'number_of_rounds'
-            );
+            )
+            ->get();
+
+        return $rows->map(function (object $r) use ($league): array {
+            $effective = $r->manual_handicap_index ?? $r->handicap_index;
+            $effective = is_null($effective) ? null : (float) $effective;
+
+            return [
+                'id' => (int) $r->id,
+                'first_name' => (string) $r->first_name,
+                'last_name' => (string) $r->last_name,
+                'email' => $r->email === null ? null : (string) $r->email,
+                'phone' => $r->phone === null ? null : (string) $r->phone,
+                'number_of_rounds' => (int) $r->number_of_rounds,
+                'index' => $this->handicaps->formatIndex($effective),
+                'index_value' => $effective,
+                'manual_handicap_index' => is_null($r->manual_handicap_index) ? null : (float) $r->manual_handicap_index,
+                'course_handicap' => $this->handicaps->courseHandicapForIndex($effective, $league),
+            ];
+        })->values()->all();
     }
 
     /**

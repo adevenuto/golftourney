@@ -21,6 +21,8 @@ class League extends Model
         'owner_id',
         'course_id',
         'teebox',
+        'holes',
+        'par',
         'course_rating',
         'slope_rating',
         'recent_rounds',
@@ -33,6 +35,8 @@ class League extends Model
     protected $casts = [
         'course_rating' => 'decimal:2',
         'slope_rating' => 'integer',
+        'holes' => 'integer',
+        'par' => 'integer',
         'recent_rounds' => 'integer',
         'counting_rounds' => 'integer',
     ];
@@ -58,7 +62,7 @@ class League extends Model
     }
 
     /**
-     * Users on this league's roster, with their per-league role and handicap.
+     * Users on this league's roster, with their per-league role.
      * (Every member is a golfer; the 4 admins included.)
      *
      * @return BelongsToMany<User, $this>
@@ -66,7 +70,7 @@ class League extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'league_user')
-            ->withPivot('role', 'handicap')
+            ->withPivot('role')
             ->withTimestamps();
     }
 

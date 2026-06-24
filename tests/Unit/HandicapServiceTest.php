@@ -4,47 +4,160 @@ namespace Tests\Unit;
 
 use App\Models\League;
 use App\Models\Round;
+use App\Models\User;
 use App\Services\HandicapService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithLeague;
 use Tests\TestCase;
 
 class HandicapServiceTest extends TestCase
 {
-    private HandicapService $service;
+    use RefreshDatabase, WithLeague;
 
-    private League $league;
+    private HandicapService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->service = new HandicapService;
-        // In-memory league with the Black League's course numbers (no DB needed).
-        $this->league = new League([
-            'course_rating' => 31.5,
-            'slope_rating' => 104,
-            'recent_rounds' => 20,
-            'counting_rounds' => 8,
-        ]);
     }
 
-    public function test_score_differential_uses_the_leagues_course_and_slope(): void
+    /** A 9-hole course with the Black League numbers (CR 31.5 / slope 104 / par 33). */
+    private function nineHoleLeague(): League
     {
-        // (45 - 31.5) * 113 / 104
-        $this->assertEqualsWithDelta(14.6683, $this->service->scoreDifferential(45, $this->league), 0.0001);
+        return new League(['holes' => 9, 'course_rating' => 31.5, 'slope_rating' => 104, 'par' => 33]);
     }
 
-    public function test_calculate_returns_zero_for_no_rounds(): void
+    /** A standard 18-hole course of par 72 on the standard slope. */
+    private function eighteenHoleLeague(): League
     {
-        $this->assertSame(0.00, $this->service->calculate(collect(), $this->league));
+        return new League(['holes' => 18, 'course_rating' => 72.0, 'slope_rating' => 113, 'par' => 72]);
     }
 
-    public function test_calculate_averages_the_differentials(): void
+    private function roundWith(int $score, League $league): Round
     {
-        $rounds = collect([
-            new Round(['score' => 40]),
-            new Round(['score' => 50]),
-        ]);
+        $round = new Round(['score' => $score]);
+        $round->setRelation('league', $league);
 
-        // avg of 9.2356 and 20.1010 = 14.67 (rounded to 2dp)
-        $this->assertSame(14.67, $this->service->calculate($rounds, $this->league));
+        return $round;
+    }
+
+    public function test_differential_for_an_18_hole_round(): void
+    {
+        // (90 - 72) * 113 / 113 = 18.0
+        $this->assertEqualsWithDelta(18.0, $this->service->differentialFor($this->roundWith(90, $this->eighteenHoleLeague())), 0.001);
+    }
+
+    public function test_nine_hole_differential_is_doubled_to_18_hole_equivalent(): void
+    {
+        // 2 * (45 - 31.5) * 113 / 104 = 29.3365
+        $this->assertEqualsWithDelta(29.3365, $this->service->differentialFor($this->roundWith(45, $this->nineHoleLeague())), 0.001);
+    }
+
+    public function test_differential_is_null_without_par(): void
+    {
+        $league = new League(['holes' => 9, 'course_rating' => 31.5, 'slope_rating' => 104, 'par' => null]);
+
+        $this->assertNull($this->service->differentialFor($this->roundWith(45, $league)));
+    }
+
+    public function test_course_handicap_for_a_nine_hole_course_uses_half_the_index(): void
+    {
+        // hi = 18.5/2 = 9.25; round(9.25 * 104/113 + (31.5 - 33)) = round(7.01) = 7
+        $this->assertSame(7, $this->service->courseHandicapForIndex(18.5, $this->nineHoleLeague()));
+    }
+
+    public function test_course_handicap_for_an_18_hole_course(): void
+    {
+        // round(10.0 * 113/113 + (72 - 72)) = 10
+        $this->assertSame(10, $this->service->courseHandicapForIndex(10.0, $this->eighteenHoleLeague()));
+    }
+
+    public function test_course_handicap_is_null_without_an_index(): void
+    {
+        $this->assertNull($this->service->courseHandicapForIndex(null, $this->nineHoleLeague()));
+    }
+
+    public function test_format_index(): void
+    {
+        $this->assertSame('N/A', $this->service->formatIndex(null));
+        $this->assertSame('12.3', $this->service->formatIndex(12.3));
+        $this->assertSame('+2.1', $this->service->formatIndex(-2.1));
+    }
+
+    public function test_index_is_null_below_the_three_round_minimum(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league);
+        $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 40]);
+
+        $this->assertNull($this->service->indexFor($golfer));
+    }
+
+    public function test_index_uses_the_short_record_table_at_three_rounds(): void
+    {
+        // 3 rounds -> lowest 1, adjustment -2.0. Best is 40: D=18.4712 -> 16.5.
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league);
+        foreach ([40, 60, 60] as $score) {
+            $this->roundFor($golfer, $league, ['score' => $score]);
+        }
+
+        $this->assertSame(16.5, $this->service->indexFor($golfer));
+    }
+
+    public function test_index_uses_best_eight_of_the_most_recent_twenty(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league);
+
+        // 20 recent rounds: eight 40s, twelve 60s.
+        foreach (range(0, 19) as $i) {
+            $this->roundFor($golfer, $league, ['score' => $i < 8 ? 40 : 60, 'created_at' => now()->subDays($i)]);
+        }
+        // Older great scores, outside the recent-20 window.
+        foreach (range(0, 4) as $i) {
+            $this->roundFor($golfer, $league, ['score' => 30, 'created_at' => now()->subYears(5)->subDays($i)]);
+        }
+
+        // avg of eight D(40)=18.4712, adjustment 0 -> 18.5
+        $this->assertSame(18.5, $this->service->indexFor($golfer));
+    }
+
+    public function test_index_pools_rounds_across_leagues(): void
+    {
+        $a = League::factory()->create();
+        $b = League::factory()->create();
+        $golfer = $this->golferIn($a);
+        $golfer->leagues()->attach($b->id, ['role' => 'player']);
+
+        $this->roundFor($golfer, $a, ['score' => 40]);
+        $this->roundFor($golfer, $b, ['score' => 40]);
+        $this->roundFor($golfer, $b, ['score' => 40]);
+
+        // 3 pooled rounds of 40 -> 16.5
+        $this->assertSame(16.5, $this->service->indexFor($golfer));
+    }
+
+    public function test_used_round_ids_are_the_selected_lowest(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league);
+        $best = $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 60]);
+        $this->roundFor($golfer, $league, ['score' => 60]);
+
+        // n=3 -> lowest 1 used: the 40.
+        $this->assertSame([$best->id], $this->service->usedRoundIds($golfer));
+    }
+
+    public function test_effective_index_prefers_the_manual_override(): void
+    {
+        $user = User::factory()->create(['handicap_index' => 12.0, 'manual_handicap_index' => 8.5]);
+        $this->assertSame(8.5, $user->effectiveHandicapIndex());
+
+        $user->update(['manual_handicap_index' => null]);
+        $this->assertSame(12.0, $user->fresh()->effectiveHandicapIndex());
     }
 }

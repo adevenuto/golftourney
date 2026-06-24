@@ -220,7 +220,7 @@ class LeagueManagementTest extends TestCase
         // A golfer also on another league must survive (just detached).
         $other = League::factory()->create();
         $shared = $this->golferIn($league);
-        $shared->leagues()->attach($other->id, ['role' => 'player', 'handicap' => 0]);
+        $shared->leagues()->attach($other->id, ['role' => 'player']);
 
         $this->actingAs($admin)
             ->delete(route('leagues.destroy', $league))

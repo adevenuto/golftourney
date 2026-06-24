@@ -24,6 +24,8 @@ class UpdateGolferRequest extends FormRequest
             'last_name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
+            // Optional admin-entered USGA index override (blank = use computed).
+            'manual_handicap_index' => 'nullable|numeric|between:-9.9,54.0',
         ];
     }
 }

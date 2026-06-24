@@ -28,6 +28,8 @@ class User extends Authenticatable
         'current_league_id',
         'email',
         'phone',
+        'handicap_index',
+        'manual_handicap_index',
         'password',
         'created_at',
         'updated_at',
@@ -51,17 +53,30 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'handicap_index' => 'decimal:1',
+        'manual_handicap_index' => 'decimal:1',
     ];
 
     /**
-     * Leagues this user belongs to, with their per-league role and handicap.
+     * The player's effective WHS Handicap Index: an admin-entered override
+     * (e.g. a known USGA index) wins over the computed value; null = N/A.
+     */
+    public function effectiveHandicapIndex(): ?float
+    {
+        $value = $this->manual_handicap_index ?? $this->handicap_index;
+
+        return is_null($value) ? null : (float) $value;
+    }
+
+    /**
+     * Leagues this user belongs to, with their per-league role.
      *
      * @return BelongsToMany<League, $this>
      */
     public function leagues(): BelongsToMany
     {
         return $this->belongsToMany(League::class, 'league_user')
-            ->withPivot('role', 'handicap')
+            ->withPivot('role')
             ->withTimestamps();
     }
 

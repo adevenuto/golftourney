@@ -21,7 +21,7 @@ import {
 const props = defineProps({
     golfer: { type: Object, required: true },
     rounds: { type: Array, default: () => [] },
-    countingRoundIds: { type: Array, default: () => [] },
+    usedRoundIds: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -30,7 +30,7 @@ const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 const fullName = computed(
     () => `${props.golfer.first_name} ${props.golfer.last_name}`,
 );
-const countingSet = computed(() => new Set(props.countingRoundIds));
+const countingSet = computed(() => new Set(props.usedRoundIds));
 const counts = (id) => countingSet.value.has(id);
 
 /* ---------- sort toggles + pagination ---------- */
@@ -164,9 +164,15 @@ function submitDelete() {
             <template #actions>
                 <dl class="flex items-end gap-8">
                     <div>
-                        <dt class="text-xs uppercase tracking-widest text-cream/50">Handicap</dt>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Index</dt>
                         <dd class="font-display text-4xl font-semibold tabular-nums text-brass-light">
-                            {{ golfer.handicap }}
+                            {{ golfer.index }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-widest text-cream/50">Course Hcp</dt>
+                        <dd class="font-display text-4xl font-semibold tabular-nums">
+                            {{ golfer.course_handicap ?? '—' }}
                         </dd>
                     </div>
                     <div>
@@ -178,10 +184,15 @@ function submitDelete() {
 
             <template #below>
                 <p class="mt-4 text-sm text-cream/60">
-                    Handicap is the average of the best
-                    <span class="text-cream">8</span> of the last
-                    <span class="text-cream">20</span> rounds — those rounds are marked
-                    <span class="text-brass-light">●</span> below.
+                    The <span class="text-cream">Index</span> is a portable handicap from this golfer's
+                    lowest differentials over their most recent
+                    <span class="text-cream">20</span> rounds — those that count are marked
+                    <span class="text-brass-light">●</span> below. The
+                    <span class="text-cream">Course Handicap</span> applies it to this course's
+                    rating, slope, and par.
+                    <Link :href="route('handicaps')" class="text-brass-light underline-offset-2 hover:underline">
+                        How this is calculated →
+                    </Link>
                 </p>
             </template>
         </PageHeader>

@@ -30,7 +30,7 @@ class GolferManagementTest extends TestCase
         $this->assertDatabaseHas('users', ['first_name' => 'john', 'last_name' => 'milne', 'email' => 'john@example.com']);
         $this->assertDatabaseHas('users', ['first_name' => 'jane', 'last_name' => 'doe']);
         $this->assertSame(2, $league->members()->wherePivot('role', 'player')->count());
-        $this->assertDatabaseHas('league_user', ['league_id' => $league->id, 'role' => 'player', 'handicap' => 0]);
+        $this->assertDatabaseHas('league_user', ['league_id' => $league->id, 'role' => 'player']);
     }
 
     public function test_each_batch_row_requires_a_name_or_existing_golfer(): void
@@ -196,7 +196,7 @@ class GolferManagementTest extends TestCase
 
         // A login-capable member (has a password), not just a roster golfer.
         $member = User::factory()->create();
-        $member->leagues()->attach($league->id, ['role' => 'player', 'handicap' => 0]);
+        $member->leagues()->attach($league->id, ['role' => 'player']);
 
         $this->actingAs($this->adminOf($league))
             ->delete(route('golfers.destroy', $member))

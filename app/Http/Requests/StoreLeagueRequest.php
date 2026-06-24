@@ -23,6 +23,7 @@ class StoreLeagueRequest extends FormRequest
             'name' => 'required|string|max:255',
             'course_id' => 'nullable|integer|exists:courses,id',
             'teebox' => 'nullable|string|max:255',
+            'holes' => 'nullable|integer|in:9,18',
             'course_rating' => 'required|numeric|min:0|max:100',
             'slope_rating' => 'required|integer|min:55|max:155',
             'recent_rounds' => 'required|integer|min:1|max:100',

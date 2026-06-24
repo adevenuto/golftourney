@@ -30,6 +30,7 @@ const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 const navLinks = [
     { label: 'Dashboard', route: 'dashboard' },
     { label: 'Golfers', route: 'golfers.index' },
+    { label: 'Handicaps', route: 'handicaps' },
     { label: 'Profile', route: 'profile.edit' },
 ];
 

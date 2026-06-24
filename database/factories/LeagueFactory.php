@@ -20,6 +20,8 @@ class LeagueFactory extends Factory
         return [
             'name' => fake()->unique()->lastName().' League',
             'owner_id' => User::factory(),
+            'holes' => 9,
+            'par' => 33,
             'course_rating' => 31.5,
             'slope_rating' => 104,
             'recent_rounds' => 20,

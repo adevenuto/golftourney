@@ -14,8 +14,11 @@ class RoundManagementTest extends TestCase
 
     public function test_admin_can_create_a_round_and_handicap_is_recalculated(): void
     {
-        $league = League::factory()->create(); // Black League numbers: 31.5 / 104
+        $league = League::factory()->create(); // Black League numbers: 31.5 / 104 / par 33
         $golfer = $this->golferIn($league);
+        // Two existing rounds so the third reaches the 3-round minimum.
+        $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 40]);
 
         $this->actingAs($this->adminOf($league))
             ->post(route('rounds.store', $golfer), [
@@ -29,12 +32,8 @@ class RoundManagementTest extends TestCase
             'league_id' => $league->id,
             'score' => 40,
         ]);
-        // (40 - 31.5) * 113 / 104 = 9.24 — stored on the pivot.
-        $this->assertDatabaseHas('league_user', [
-            'user_id' => $golfer->id,
-            'league_id' => $league->id,
-            'handicap' => 9.24,
-        ]);
+        // 3 rounds of 40: D = 2*(40-31.5)*113/104 = 18.47, lowest 1 with -2.0 -> 16.5.
+        $this->assertEquals(16.5, $golfer->fresh()->handicap_index);
     }
 
     public function test_storing_a_round_for_a_golfer_outside_the_league_404s(): void
@@ -69,6 +68,8 @@ class RoundManagementTest extends TestCase
         $league = League::factory()->create();
         $golfer = $this->golferIn($league);
         $round = $this->roundFor($golfer, $league, ['score' => 60, 'created_at' => now()]);
+        $this->roundFor($golfer, $league, ['score' => 60]);
+        $this->roundFor($golfer, $league, ['score' => 60]);
 
         $this->actingAs($this->adminOf($league))
             ->put(route('rounds.update', $round), [
@@ -78,30 +79,27 @@ class RoundManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('rounds', ['id' => $round->id, 'score' => 40]);
-        $this->assertDatabaseHas('league_user', [
-            'user_id' => $golfer->id,
-            'league_id' => $league->id,
-            'handicap' => 9.24,
-        ]);
+        // Now rounds are 40/60/60: lowest 1 is the 40 -> 16.5.
+        $this->assertEquals(16.5, $golfer->fresh()->handicap_index);
     }
 
     public function test_admin_can_delete_a_round_and_handicap_is_recalculated(): void
     {
         $league = League::factory()->create();
-        $golfer = $this->golferIn($league, [], 9.24);
+        $golfer = $this->golferIn($league);
+        // Four rounds of 40 (index 17.5); deleting one leaves three (index 16.5).
         $round = $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 40]);
+        $this->roundFor($golfer, $league, ['score' => 40]);
 
         $this->actingAs($this->adminOf($league))
             ->delete(route('rounds.destroy', $round))
             ->assertRedirect();
 
         $this->assertDatabaseMissing('rounds', ['id' => $round->id]);
-        // No rounds left -> handicap resets to 0.
-        $this->assertDatabaseHas('league_user', [
-            'user_id' => $golfer->id,
-            'league_id' => $league->id,
-            'handicap' => 0,
-        ]);
+        // 3 rounds of 40 left -> index recalculated to 16.5.
+        $this->assertEquals(16.5, $golfer->fresh()->handicap_index);
     }
 
     public function test_index_renders_inertia_with_rounds_and_counting_ids(): void
@@ -118,7 +116,7 @@ class RoundManagementTest extends TestCase
                 ->component('Rounds/Index')
                 ->where('golfer.id', $golfer->id)
                 ->has('rounds', 5)
-                ->has('countingRoundIds')
+                ->has('usedRoundIds')
             );
     }
 }

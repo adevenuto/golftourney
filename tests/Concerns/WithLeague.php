@@ -31,12 +31,18 @@ trait WithLeague
     }
 
     /**
-     * A login-less roster user on the given league (with an optional handicap).
+     * A login-less roster user on the given league, optionally seeded with a
+     * known Handicap Index (set directly on the user).
      */
-    protected function golferIn(League $league, array $attributes = [], float $handicap = 0): User
+    protected function golferIn(League $league, array $attributes = [], ?float $index = null): User
     {
         $user = User::factory()->roster()->create($attributes);
-        $user->leagues()->attach($league->id, ['role' => 'player', 'handicap' => $handicap]);
+
+        if (! is_null($index)) {
+            $user->update(['handicap_index' => $index]);
+        }
+
+        $user->leagues()->attach($league->id, ['role' => 'player']);
 
         return $user;
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeagueRequest;
+use App\Models\Course;
 use App\Models\League;
 use App\Models\Round;
 use App\Models\User;
@@ -24,11 +25,27 @@ class LeaguesController extends Controller
     {
         $user = $request->user();
 
+        // Holes + par drive the Course Handicap; derive par (and prefer the
+        // course's hole count) from the linked catalog course when present.
+        $holes = (int) $request->input('holes', 18);
+        $par = null;
+
+        if ($courseId = $request->input('course_id')) {
+            $course = Course::find($courseId);
+
+            if ($course) {
+                $holes = $course->holeCount() ?? $holes;
+                $par = $course->parForTeebox($request->input('teebox'), (int) $request->input('slope_rating'));
+            }
+        }
+
         $league = League::create([
             'name' => $request->input('name'),
             'owner_id' => $user->id,
             'course_id' => $request->input('course_id'),
             'teebox' => $request->input('teebox'),
+            'holes' => $holes,
+            'par' => $par,
             'course_rating' => $request->input('course_rating'),
             'slope_rating' => $request->input('slope_rating'),
             'recent_rounds' => $request->input('recent_rounds'),

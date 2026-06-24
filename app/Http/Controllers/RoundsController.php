@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Services\HandicapService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,23 +27,19 @@ class RoundsController extends Controller
     {
         $league = $this->leagueFor($request, $user);
 
-        $handicap = DB::table('league_user')
-            ->where('user_id', $user->id)
-            ->where('league_id', $league->id)
-            ->value('handicap');
-
         return Inertia::render('Rounds/Index', [
             'golfer' => [
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
-                'handicap' => $handicap,
+                'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
+                'course_handicap' => $this->handicaps->courseHandicap($user, $league),
             ],
             'rounds' => $user->rounds()
                 ->where('league_id', $league->id)
                 ->orderByDesc('created_at')
                 ->get(),
-            'countingRoundIds' => $this->handicaps->countingRounds($user, $league)->pluck('id'),
+            'usedRoundIds' => $this->handicaps->usedRoundIds($user),
         ]);
     }
 
@@ -61,7 +56,7 @@ class RoundsController extends Controller
             'created_at' => $request->date('created_at'),
         ]);
 
-        $this->handicaps->recalculateFor($user, $league);
+        $this->handicaps->recalculateFor($user);
 
         return back()->with('success', 'Round added.');
     }
@@ -71,14 +66,14 @@ class RoundsController extends Controller
      */
     public function update(UpdateRoundRequest $request, Round $round): RedirectResponse
     {
-        $league = $this->leagueForRound($request, $round);
+        $this->leagueForRound($request, $round); // authorize: round is in the current league
 
         $round->update([
             'score' => $request->integer('score'),
             'created_at' => $request->date('created_at'),
         ]);
 
-        $this->handicaps->recalculateFor($round->user, $league);
+        $this->handicaps->recalculateFor($round->user);
 
         return back()->with('success', 'Round updated.');
     }
@@ -88,11 +83,11 @@ class RoundsController extends Controller
      */
     public function destroy(Request $request, Round $round): RedirectResponse
     {
-        $league = $this->leagueForRound($request, $round);
+        $this->leagueForRound($request, $round); // authorize: round is in the current league
         $user = $round->user;
         $round->delete();
 
-        $this->handicaps->recalculateFor($user, $league);
+        $this->handicaps->recalculateFor($user);
 
         return back()->with('success', 'Round removed.');
     }

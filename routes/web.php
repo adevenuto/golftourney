@@ -3,6 +3,7 @@
 use App\Http\Controllers\CoursesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GolfersController;
+use App\Http\Controllers\HandicapsController;
 use App\Http\Controllers\LeaguesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoundsController;
@@ -30,6 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/golfers', [GolfersController::class, 'index'])->name('golfers.index');
     Route::get('/golfers/export/pdf', [GolfersController::class, 'exportPdf'])->name('golfers.export');
     Route::get('/golfers/{user}/rounds', [RoundsController::class, 'index'])->name('golfers.rounds');
+
+    // How handicaps work (explainer).
+    Route::get('/handicaps', [HandicapsController::class, 'show'])->name('handicaps');
 
     // Profile (Breeze).
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

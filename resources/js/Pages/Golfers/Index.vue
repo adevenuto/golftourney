@@ -22,7 +22,8 @@ const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 /* ---------- search + sort + pagination ---------- */
 const sortable = [
     { key: 'last_name', label: 'Golfer' },
-    { key: 'handicap', label: 'Handicap' },
+    { key: 'index_value', label: 'Index' },
+    { key: 'course_handicap', label: 'Course Hcp' },
     { key: 'number_of_rounds', label: 'Rounds' },
 ];
 
@@ -43,7 +44,8 @@ const {
     searchFields: ['first_name', 'last_name', 'email', 'phone'],
     sortAccessors: {
         last_name: (g) => `${g.last_name} ${g.first_name}`.toLowerCase(),
-        handicap: (g) => Number(g.handicap),
+        index_value: (g) => (g.index_value ?? -Infinity),
+        course_handicap: (g) => (g.course_handicap ?? -Infinity),
         number_of_rounds: (g) => Number(g.number_of_rounds),
     },
     initialSort: { key: 'number_of_rounds', dir: 'desc' },
@@ -82,6 +84,7 @@ const editForm = useForm({
     last_name: '',
     email: '',
     phone: '',
+    manual_handicap_index: '',
 });
 function openEdit(golfer) {
     editing.value = golfer;
@@ -90,6 +93,7 @@ function openEdit(golfer) {
     editForm.last_name = golfer.last_name;
     editForm.email = golfer.email ?? '';
     editForm.phone = golfer.phone ?? '';
+    editForm.manual_handicap_index = golfer.manual_handicap_index ?? '';
     showEdit.value = true;
 }
 function submitEdit() {
@@ -268,12 +272,13 @@ function toggleExpand(id) {
                                         class="inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/10 px-3 py-1 font-display text-sm font-semibold tabular-nums text-pine transition hover:border-brass hover:bg-brass/20"
                                         title="View rounds"
                                     >
-                                        {{ g.handicap }}
+                                        {{ g.index }}
                                         <svg class="h-3.5 w-3.5 text-brass-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                                         </svg>
                                     </Link>
                                 </td>
+                                <td class="px-5 py-3.5 font-display tabular-nums text-ink/80">{{ g.course_handicap ?? '—' }}</td>
                                 <td class="px-5 py-3.5 tabular-nums text-ink/80">{{ g.number_of_rounds }}</td>
                                 <td class="px-5 py-3.5 text-ink/70">{{ g.email || '—' }}</td>
                                 <td class="px-5 py-3.5 tabular-nums text-ink/70">{{ g.phone || '—' }}</td>
@@ -304,7 +309,7 @@ function toggleExpand(id) {
                             </tr>
 
                             <tr v-if="total === 0">
-                                <td :colspan="isAdmin ? 6 : 5" class="px-5 py-16 text-center">
+                                <td :colspan="isAdmin ? 7 : 6" class="px-5 py-16 text-center">
                                     <p class="text-xl font-display text-pine/70">No golfers found</p>
                                     <p class="mt-1 text-sm text-ink/50">
                                         {{ search ? 'Try a different search.' : 'The roster is empty.' }}
@@ -349,8 +354,9 @@ function toggleExpand(id) {
                         <Link
                             :href="route('golfers.rounds', g.id)"
                             class="inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold border rounded-full shrink-0 border-brass/40 bg-brass/10 font-display tabular-nums text-pine"
+                            title="Handicap Index"
                         >
-                            {{ g.handicap }}
+                            {{ g.index }}
                             <svg class="h-3.5 w-3.5 text-brass-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
@@ -362,6 +368,10 @@ function toggleExpand(id) {
                         class="px-4 py-3 text-sm border-t border-parchment-dark"
                     >
                         <dl class="space-y-2">
+                            <div class="flex justify-between gap-3">
+                                <dt class="text-ink/50">Course Handicap</dt>
+                                <dd class="font-display tabular-nums text-ink/80">{{ g.course_handicap ?? '—' }}</dd>
+                            </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-ink/50">Email</dt>
                                 <dd class="min-w-0 truncate text-ink/80">{{ g.email || '—' }}</dd>
@@ -465,6 +475,24 @@ function toggleExpand(id) {
                         <TextInput id="e_email" v-model="editForm.email" type="email" class="block w-full mt-1" />
                         <InputError :message="editForm.errors.email" class="mt-1" />
                     </div>
+                </div>
+
+                <div class="mt-4">
+                    <InputLabel for="e_index" value="Established Index (USGA)" />
+                    <TextInput
+                        id="e_index"
+                        v-model="editForm.manual_handicap_index"
+                        type="number"
+                        step="0.1"
+                        min="-9.9"
+                        max="54.0"
+                        class="block w-full mt-1 tabular-nums"
+                        placeholder="e.g. 12.3"
+                    />
+                    <p class="mt-1 text-xs text-ink/50">
+                        Overrides the computed index. Leave blank to use the index calculated from rounds.
+                    </p>
+                    <InputError :message="editForm.errors.manual_handicap_index" class="mt-1" />
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">

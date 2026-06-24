@@ -38,16 +38,18 @@
         <thead>
             <tr>
                 <th>Golfer</th>
-                <th class="num">Handicap</th>
+                <th class="num">Index</th>
+                <th class="num">Course Hcp</th>
                 <th class="num">Rounds</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($golfers as $golfer)
                 <tr>
-                    <td class="name">{{ $golfer->first_name }} {{ $golfer->last_name }}</td>
-                    <td class="num handicap">{{ number_format((float) $golfer->handicap, 2) }}</td>
-                    <td class="num">{{ $golfer->number_of_rounds }}</td>
+                    <td class="name">{{ $golfer['first_name'] }} {{ $golfer['last_name'] }}</td>
+                    <td class="num handicap">{{ $golfer['index'] }}</td>
+                    <td class="num">{{ $golfer['course_handicap'] ?? '—' }}</td>
+                    <td class="num">{{ $golfer['number_of_rounds'] }}</td>
                 </tr>
             @endforeach
         </tbody>

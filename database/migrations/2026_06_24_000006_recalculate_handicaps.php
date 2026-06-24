@@ -26,7 +26,7 @@ return new class extends Migration
             $league = League::find($row->league_id);
 
             if ($user && $league) {
-                $handicaps->recalculateFor($user, $league);
+                $handicaps->recalculateFor($user);
             }
         });
     }
