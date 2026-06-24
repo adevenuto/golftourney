@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\League;
 use App\Models\User;
 use App\Notifications\PlayerInvitation;
+use Illuminate\Contracts\Mail\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -26,6 +27,26 @@ class InviteTest extends TestCase
             ->assertRedirect();
 
         Notification::assertSentTo($player, PlayerInvitation::class);
+    }
+
+    public function test_invite_still_returns_the_link_when_email_delivery_fails(): void
+    {
+        $league = League::factory()->create();
+        $player = $this->golferIn($league, ['email' => 'player@example.com']);
+
+        // Simulate a misconfigured/unreachable mailer: resolving it blows up.
+        $this->app->instance(Factory::class, new class implements Factory
+        {
+            public function mailer($name = null)
+            {
+                throw new \RuntimeException('mail down');
+            }
+        });
+
+        $this->actingAs($this->adminOf($league))
+            ->post(route('golfers.invite', $player))
+            ->assertRedirect()           // not a 500
+            ->assertSessionHas('invite_link'); // copyable fallback still provided
     }
 
     public function test_cannot_invite_a_player_without_a_real_email(): void

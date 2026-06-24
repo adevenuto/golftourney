@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -365,10 +366,25 @@ class GolfersController extends Controller
         }
 
         $token = Password::broker('invites')->createToken($user);
-        $user->notify(new PlayerInvitation($token));
+
+        // Email delivery isn't essential — the copyable invite link below is the
+        // fallback — so a mailer hiccup must never fail the whole invite.
+        $delivered = true;
+
+        try {
+            $user->notify(new PlayerInvitation($token));
+        } catch (\Throwable $e) {
+            $delivered = false;
+            Log::warning('Player invitation email failed to send; link fallback returned.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return back()
-            ->with('success', "Invitation sent to {$user->email}.")
+            ->with('success', $delivered
+                ? "Invitation sent to {$user->email}."
+                : 'Invite link ready — copy it below (email delivery is unavailable).')
             ->with('invite_link', route('invite.accept', ['token' => $token, 'email' => $user->email]));
     }
 
