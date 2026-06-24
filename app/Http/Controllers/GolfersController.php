@@ -69,16 +69,25 @@ class GolfersController extends Controller
             ));
         }
 
-        $roster = $roster
-            ->sortBy($sort === 'last_name' ? 'last_name' : fn (array $g) => $g[$sort] ?? -INF, SORT_REGULAR, $descending)
-            ->values();
+        if ($sort === 'last_name') {
+            $roster = $roster
+                ->sortBy(fn (array $g) => mb_strtolower($g['last_name'].' '.$g['first_name']), SORT_REGULAR, $descending)
+                ->values();
+        } else {
+            // Mirror the table: empty Index / Course Handicap always sort last.
+            [$withValue, $empty] = $roster->partition(fn (array $g) => ! is_null($g[$sort]));
+            $roster = $withValue
+                ->sortBy($sort, SORT_REGULAR, $descending)
+                ->concat($empty)
+                ->values();
+        }
 
         return Pdf::loadView('pdf.golfers', [
             'golfers' => $roster,
             'league' => $league,
             'generatedAt' => now(),
             'search' => $search,
-        ])->download(Str::slug($league->name).'-handicaps.pdf');
+        ])->setPaper('letter', 'landscape')->download(Str::slug($league->name).'-handicaps.pdf');
     }
 
     /**

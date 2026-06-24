@@ -44,8 +44,9 @@ const {
     searchFields: ['first_name', 'last_name', 'email', 'phone'],
     sortAccessors: {
         last_name: (g) => `${g.last_name} ${g.first_name}`.toLowerCase(),
-        index_value: (g) => (g.index_value ?? -Infinity),
-        course_handicap: (g) => (g.course_handicap ?? -Infinity),
+        // null (N/A index / no course handicap) sorts to the bottom either way.
+        index_value: (g) => g.index_value,
+        course_handicap: (g) => g.course_handicap,
         number_of_rounds: (g) => Number(g.number_of_rounds),
     },
     initialSort: { key: 'number_of_rounds', dir: 'desc' },

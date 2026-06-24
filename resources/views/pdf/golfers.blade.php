@@ -41,6 +41,8 @@
                 <th class="num">Index</th>
                 <th class="num">Course Hcp</th>
                 <th class="num">Rounds</th>
+                <th>Email</th>
+                <th>Phone</th>
             </tr>
         </thead>
         <tbody>
@@ -50,6 +52,8 @@
                     <td class="num handicap">{{ $golfer['index'] }}</td>
                     <td class="num">{{ $golfer['course_handicap'] ?? '—' }}</td>
                     <td class="num">{{ $golfer['number_of_rounds'] }}</td>
+                    <td>{{ $golfer['email'] ?? '—' }}</td>
+                    <td>{{ $golfer['phone'] ?? '—' }}</td>
                 </tr>
             @endforeach
         </tbody>

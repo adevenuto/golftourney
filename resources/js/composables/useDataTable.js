@@ -55,6 +55,15 @@ export function useDataTable(source, options = {}) {
         return [...filtered.value].sort((a, b) => {
             const av = accessor(a);
             const bv = accessor(b);
+
+            // Empty values (null/undefined) always sort to the bottom,
+            // regardless of sort direction.
+            const aEmpty = av === null || av === undefined;
+            const bEmpty = bv === null || bv === undefined;
+            if (aEmpty || bEmpty) {
+                return aEmpty === bEmpty ? 0 : aEmpty ? 1 : -1;
+            }
+
             if (typeof av === 'number' && typeof bv === 'number') {
                 return (av - bv) * dir;
             }
