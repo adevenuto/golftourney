@@ -249,6 +249,28 @@ const faqs = [
                 </div>
             </section>
 
+            <!-- One index, every course -->
+            <section class="overflow-hidden rounded-2xl bg-pine text-cream shadow-sm">
+                <div class="p-6 sm:p-8">
+                    <p class="text-xs uppercase tracking-[0.3em] text-brass-light">The big idea</p>
+                    <h2 class="mt-2 font-display text-2xl font-semibold">One Index, every course</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-cream/70">
+                        Your Index is built from <span class="text-cream">all</span> your rounds — every
+                        league you play and any casual rounds — not just one course. Because each round’s
+                        differential already cancels out that course’s difficulty (the
+                        <span class="text-cream">× 113 ÷ slope</span> step), rounds from anywhere sit on
+                        the same scale and pool into a single number.
+                    </p>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-cream/70">
+                        Each league then converts that one Index into a Course Handicap for
+                        <span class="text-cream">its</span> course. So a strong round anywhere lowers your
+                        handicap <span class="text-cream">everywhere</span>; a harder course simply turns
+                        your Index into more strokes. Rounds aren’t locked to the course you’re viewing —
+                        they all count toward the same portable Index.
+                    </p>
+                </div>
+            </section>
+
             <!-- Worked example -->
             <section>
                 <h2 class="font-display text-2xl font-semibold text-pine">A worked example</h2>
@@ -298,6 +320,73 @@ const faqs = [
                         <p class="mt-1.5 text-sm leading-relaxed text-ink/70">{{ faq.a }}</p>
                     </div>
                 </div>
+            </section>
+
+            <!-- Does play elsewhere count here? (the flow) -->
+            <section class="rounded-2xl border border-parchment-dark bg-parchment/50 p-6 sm:p-8">
+                <p class="text-xs uppercase tracking-[0.3em] text-brass-dark">The honest answer</p>
+                <h2 class="mt-2 font-display text-2xl font-semibold text-pine">
+                    “Do rounds from other courses count here?”
+                </h2>
+                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">
+                    Yes — and that’s on purpose. Your handicap here isn’t built from only this
+                    course’s rounds. Every round you post follows one path:
+                </p>
+
+                <!-- Flow: sources -> differentials -> one index -> this course -->
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                    <!-- 1. Every round, anywhere -->
+                    <div class="flex-1 rounded-xl border border-parchment-dark bg-cream p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-pine/50">Every round</p>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <span class="rounded-full bg-pine/10 px-2 py-0.5 text-xs text-pine">This league</span>
+                            <span class="rounded-full bg-pine/10 px-2 py-0.5 text-xs text-pine">Other leagues</span>
+                            <span class="rounded-full bg-pine/10 px-2 py-0.5 text-xs text-pine">Casual</span>
+                        </div>
+                        <p class="mt-2 text-xs text-ink/60">
+                            Each becomes a differential, with its own course’s difficulty
+                            <span class="text-pine">cancelled out</span> (× 113 ÷ slope).
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-center text-brass" aria-hidden="true">
+                        <svg class="h-5 w-5 rotate-90 sm:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+
+                    <!-- 2. One Index -->
+                    <div class="flex-1 rounded-xl border border-brass/40 bg-pine p-4 text-cream">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-brass-light">Pooled into</p>
+                        <p class="mt-1 font-display text-xl font-semibold text-cream">One Handicap Index</p>
+                        <p class="mt-2 text-xs text-cream/70">
+                            The lowest of your most recent 20 — the same number in every league.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-center text-brass" aria-hidden="true">
+                        <svg class="h-5 w-5 rotate-90 sm:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+
+                    <!-- 3. This course's handicap -->
+                    <div class="flex-1 rounded-xl border border-parchment-dark bg-cream p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-pine/50">Localized here</p>
+                        <p class="mt-1 font-display text-xl font-semibold text-pine">Course Handicap</p>
+                        <p class="mt-2 text-xs text-ink/60">
+                            Only now does <span class="text-pine">this</span> course re-enter — converting your
+                            Index with its slope &amp; par.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="mt-5 text-sm leading-relaxed text-ink/70">
+                    So a great round <span class="font-medium text-pine">anywhere</span> lowers your handicap
+                    <span class="font-medium text-pine">everywhere</span> — and a casual round at another course
+                    will nudge your number here too. This course only decides how many strokes that one Index is
+                    worth; it never restricts which rounds count.
+                </p>
             </section>
 
             <p class="pt-2 text-center text-sm text-ink/50">

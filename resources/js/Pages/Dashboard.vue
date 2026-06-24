@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import CourseSearch from '@/Components/CourseSearch.vue';
+import Collapsible from '@/Components/Collapsible.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 
 defineProps({
@@ -131,9 +132,7 @@ function submitDelete() {
 
         <div class="max-w-5xl px-4 py-8 mx-auto space-y-10 sm:px-6 lg:px-8">
             <!-- Leagues -->
-            <section>
-                <h2 class="mb-4 text-2xl font-semibold font-display text-pine">Leagues</h2>
-
+            <Collapsible title="Leagues">
                 <div v-if="leagues.length" class="grid gap-3 sm:grid-cols-2">
                     <div
                         v-for="league in leagues"
@@ -209,12 +208,10 @@ function submitDelete() {
                 <p v-else class="px-5 py-8 text-sm text-center border rounded-2xl border-parchment-dark bg-cream text-ink/50">
                     You're not in any leagues yet — create one below.
                 </p>
-            </section>
+            </Collapsible>
 
             <!-- Create a league -->
-            <section>
-                <h2 class="mb-4 text-2xl font-semibold font-display text-pine">Create a league</h2>
-
+            <Collapsible title="Create a league">
                 <form
                     @submit.prevent="submit"
                     class="p-6 space-y-5 border shadow-sm rounded-2xl border-parchment-dark bg-cream sm:p-8"
@@ -302,7 +299,7 @@ function submitDelete() {
                         </button>
                     </div>
                 </form>
-            </section>
+            </Collapsible>
         </div>
 
         <!-- Rename league modal -->
