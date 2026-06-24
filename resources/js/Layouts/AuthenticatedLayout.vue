@@ -29,7 +29,8 @@ const currentLeagueId = computed(() => user.value?.current_league?.id ?? null);
 
 const navLinks = computed(() => [
     { label: 'Leagues', route: 'leagues' },
-    { label: 'Golfers', route: 'golfers.index' },
+    // The roster is league-scoped — only show it once the user is in a league.
+    ...(currentLeagueId.value ? [{ label: 'Golfers', route: 'golfers.index' }] : []),
     { label: 'Handicaps', route: 'handicaps' },
     { label: 'Profile', route: 'profile.edit' },
 ]);
@@ -54,7 +55,7 @@ function switchLeague(id) {
                     <div class="flex">
                         <!-- Brand -->
                         <Link
-                            :href="route('golfers.index')"
+                            :href="currentLeagueId ? route('golfers.index') : route('leagues')"
                             class="flex shrink-0 items-center gap-2.5"
                         >
                             <img
@@ -146,7 +147,7 @@ function switchLeague(id) {
                                       <span
                                           class="rounded-full bg-brass/20 px-2 py-0.5 text-[10px] uppercase tracking-widest text-brass-light"
                                       >
-                                          {{ user.role }}
+                                          {{ user.role || 'player' }}
                                       </span>
                                   </button>
                               </template>

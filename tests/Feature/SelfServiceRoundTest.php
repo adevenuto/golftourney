@@ -50,17 +50,39 @@ class SelfServiceRoundTest extends TestCase
         ]);
     }
 
-    public function test_player_cannot_add_a_league_round(): void
+    public function test_player_can_add_a_round_for_a_league_they_are_in(): void
     {
         $league = League::factory()->create();
         $player = $this->playerOf($league);
 
         $this->actingAs($player)
-            ->post(route('rounds.store', $player), [ // no course_id => league round
+            ->post(route('rounds.store', $player), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
+                'league_id' => $league->id,
             ])
-            ->assertForbidden();
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('rounds', [
+            'user_id' => $player->id,
+            'league_id' => $league->id,
+            'score' => 40,
+        ]);
+    }
+
+    public function test_player_cannot_add_a_round_for_a_league_they_are_not_in(): void
+    {
+        $league = League::factory()->create();
+        $player = $this->playerOf($league);
+        $other = League::factory()->create();
+
+        $this->actingAs($player)
+            ->post(route('rounds.store', $player), [
+                'score' => 40,
+                'created_at' => now()->toDateString(),
+                'league_id' => $other->id,
+            ])
+            ->assertNotFound();
     }
 
     public function test_player_cannot_manage_another_players_rounds(): void
@@ -101,7 +123,7 @@ class SelfServiceRoundTest extends TestCase
         $this->assertDatabaseMissing('rounds', ['id' => $round->id]);
     }
 
-    public function test_player_cannot_edit_their_own_league_round(): void
+    public function test_player_can_edit_their_own_league_round(): void
     {
         $league = League::factory()->create();
         $player = $this->playerOf($league);
@@ -109,6 +131,8 @@ class SelfServiceRoundTest extends TestCase
 
         $this->actingAs($player)
             ->put(route('rounds.update', $round), ['score' => 50, 'created_at' => now()->toDateString()])
-            ->assertForbidden();
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('rounds', ['id' => $round->id, 'score' => 50]);
     }
 }

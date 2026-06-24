@@ -28,6 +28,12 @@ class MyHandicapController extends Controller
             'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
             'userId' => $user->id,
             'recentWindow' => $this->handicaps->recentWindowSize($user),
+            // The leagues this player can attribute a round to (plus casual).
+            'leagues' => $user->leagues()
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($l): array => ['id' => $l->id, 'name' => $l->name])
+                ->all(),
             'rounds' => $user->rounds()
                 ->with(['league:id,name', 'course:id,club_name,course_name'])
                 ->orderByDesc('created_at')

@@ -21,17 +21,20 @@ class HandicapsController extends Controller
     {
         $user = $request->user();
         $league = $user->currentLeague;
+        $index = $user->effectiveHandicapIndex();
 
-        $you = $league ? [
-            'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
-            'index_value' => $user->effectiveHandicapIndex(),
-            'course_handicap' => $this->handicaps->courseHandicap($user, $league),
-            'league' => $league->name,
-            'holes' => $league->holes,
-            'course_rating' => (float) $league->course_rating,
-            'slope_rating' => $league->slope_rating,
-            'par' => $league->par,
-        ] : null;
+        // The Index is portable — it comes from the player's rounds and needs no
+        // league. Only the Course Handicap depends on a league's rating/slope/par.
+        $you = [
+            'index' => $this->handicaps->formatIndex($index),
+            'index_value' => $index,
+            'course_handicap' => $league ? $this->handicaps->courseHandicap($user, $league) : null,
+            'league' => $league?->name,
+            'holes' => $league?->holes,
+            'course_rating' => $league ? (float) $league->course_rating : null,
+            'slope_rating' => $league?->slope_rating,
+            'par' => $league?->par,
+        ];
 
         return Inertia::render('Handicaps', [
             'you' => $you,

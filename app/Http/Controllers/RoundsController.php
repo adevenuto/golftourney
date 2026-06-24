@@ -36,6 +36,7 @@ class RoundsController extends Controller
                 'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
                 'course_handicap' => $this->handicaps->courseHandicap($user, $league),
                 'league' => $league->name,
+                'league_id' => $league->id,
                 'recent_window' => $this->handicaps->recentWindowSize($user),
             ],
             'rounds' => $user->rounds()
@@ -54,43 +55,43 @@ class RoundsController extends Controller
     }
 
     /**
-     * Store a round for the golfer — a league round (current league) or, when a
-     * course is chosen, a casual round outside league play. Either way the
-     * course context is snapshotted onto the round.
+     * Store a round for the golfer — a league round (a league they belong to) or,
+     * when a course is chosen, a casual round outside league play. Either way the
+     * course context is snapshotted onto the round. A golfer may log their own
+     * rounds; an admin may log them for any member of their current league.
      */
     public function store(StoreRoundRequest $request, User $user): RedirectResponse
     {
         $actor = $request->user();
-        $courseId = $request->integer('course_id');
-        $casual = $courseId > 0;
+        $isSelf = $actor->id === $user->id;
 
-        $teebox = is_string($t = $request->input('teebox')) ? $t : null;
         $attributes = [
             'score' => $request->integer('score'),
             'created_at' => $request->date('created_at'),
         ];
 
-        if ($casual && $actor->id === $user->id) {
-            // A player logging their OWN casual round — no league context needed.
-            $this->storeCasualRound($user, $courseId, $teebox, $attributes);
-        } else {
-            // League rounds, or managing another player, are admin-only.
-            $league = $this->leagueFor($request, $user);
-            abort_unless($actor->isAdminOf($league), 403);
+        if (($leagueId = $request->integer('league_id')) > 0) {
+            // A league round: the golfer must belong to the league, and the actor
+            // must be that golfer or an admin of it.
+            $league = League::findOrFail($leagueId);
+            abort_unless($user->leagues()->whereKey($league->id)->exists(), 404);
+            abort_unless($isSelf || $actor->isAdminOf($league), 403);
 
-            if ($casual) {
-                $this->storeCasualRound($user, $courseId, $teebox, $attributes);
-            } else {
-                $user->rounds()->create($attributes + [
-                    'league_id' => $league->id,
-                    'course_id' => $league->course_id,
-                    'teebox' => $league->teebox,
-                    'course_rating' => $league->course_rating,
-                    'slope_rating' => $league->slope_rating,
-                    'par' => $league->par,
-                    'holes' => $league->holes,
-                ]);
-            }
+            $user->rounds()->create($attributes + [
+                'league_id' => $league->id,
+                'course_id' => $league->course_id,
+                'teebox' => $league->teebox,
+                'course_rating' => $league->course_rating,
+                'slope_rating' => $league->slope_rating,
+                'par' => $league->par,
+                'holes' => $league->holes,
+            ]);
+        } else {
+            // A casual round at a catalog course.
+            abort_unless($isSelf || $this->actorAdminsMemberOf($actor, $user), 403);
+
+            $teebox = is_string($t = $request->input('teebox')) ? $t : null;
+            $this->storeCasualRound($user, $request->integer('course_id'), $teebox, $attributes);
         }
 
         $this->handicaps->recalculateFor($user);
@@ -159,18 +160,28 @@ class RoundsController extends Controller
     }
 
     /**
-     * Authorize editing/deleting a round: an admin may manage any round of a
-     * member of their current league; a player may manage only their OWN casual
-     * rounds (league rounds stay admin-entered).
+     * Authorize editing/deleting a round: a golfer may manage any of their OWN
+     * rounds (league or casual); an admin may manage any round of a member of
+     * their current league.
      */
     private function authorizeManage(User $actor, Round $round): void
     {
-        $league = $actor->currentLeague;
-        $isAdmin = $league
-            && $actor->isAdminOf($league)
-            && $round->user->leagues()->whereKey($league->id)->exists();
-        $isOwnCasual = is_null($round->league_id) && $round->user_id === $actor->id;
+        abort_unless(
+            $round->user_id === $actor->id || $this->actorAdminsMemberOf($actor, $round->user),
+            403
+        );
+    }
 
-        abort_unless($isAdmin || $isOwnCasual, 403);
+    /**
+     * Whether the actor is an admin of their current league and the given user
+     * is a member of it — the gate for managing another player's rounds.
+     */
+    private function actorAdminsMemberOf(User $actor, User $user): bool
+    {
+        $league = $actor->currentLeague;
+
+        return $league
+            && $actor->isAdminOf($league)
+            && $user->leagues()->whereKey($league->id)->exists();
     }
 }

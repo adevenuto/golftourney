@@ -24,9 +24,8 @@ const props = defineProps({
     userId: { type: Number, required: true },
     // Show the add/edit/delete controls at all.
     canManage: { type: Boolean, default: false },
-    // Offer the "this league" option (admins); players log casual rounds only.
-    allowLeagueRound: { type: Boolean, default: false },
-    leagueName: { type: String, default: '' },
+    // Leagues a round can be attributed to ([{ id, name }]). Empty ⇒ casual only.
+    leagues: { type: Array, default: () => [] },
     // Optional subtitle on the create modal, e.g. "For john milne".
     forLabel: { type: String, default: '' },
 });
@@ -35,8 +34,6 @@ const page = usePage();
 
 const countingSet = computed(() => new Set(props.usedRoundIds));
 const counts = (id) => countingSet.value.has(id);
-const canManageRound = (round) =>
-    props.canManage && (props.allowLeagueRound || round.is_casual);
 
 /* ---------- sort toggles + pagination ---------- */
 const sortBy = ref('date'); // 'date' | 'score'
@@ -101,8 +98,9 @@ watch(
 
 /* ---------- create ---------- */
 const showCreate = ref(false);
-const createForm = useForm({ score: '', created_at: today(), course_id: null, teebox: '' });
+const createForm = useForm({ score: '', created_at: today(), course_id: null, teebox: '', league_id: null });
 const where = ref('league'); // 'league' | 'casual'
+const selectedLeagueId = ref(null);
 const casualCourse = ref(null);
 const casualTeeboxes = computed(() => casualCourse.value?.teeboxes ?? []);
 
@@ -110,9 +108,19 @@ function openCreate() {
     createForm.reset();
     createForm.created_at = today();
     createForm.clearErrors();
-    where.value = props.allowLeagueRound ? 'league' : 'casual';
+    if (props.leagues.length) {
+        where.value = 'league';
+        selectedLeagueId.value = props.leagues[0].id;
+    } else {
+        where.value = 'casual';
+        selectedLeagueId.value = null;
+    }
     casualCourse.value = null;
     showCreate.value = true;
+}
+function chooseLeague(id) {
+    where.value = 'league';
+    selectedLeagueId.value = id;
 }
 function onCasualCourse(course) {
     casualCourse.value = course;
@@ -123,8 +131,8 @@ function submitCreate() {
     createForm
         .transform((data) =>
             where.value === 'casual'
-                ? data
-                : { score: data.score, created_at: data.created_at },
+                ? { score: data.score, created_at: data.created_at, course_id: data.course_id, teebox: data.teebox }
+                : { score: data.score, created_at: data.created_at, league_id: selectedLeagueId.value },
         )
         .post(route('rounds.store', props.userId), {
             preserveScroll: true,
@@ -245,7 +253,7 @@ defineExpose({ openCreate });
                     </div>
 
                     <div
-                        v-if="canManageRound(round)"
+                        v-if="canManage"
                         class="flex items-center gap-1 opacity-60 transition group-hover:opacity-100"
                     >
                         <button
@@ -310,17 +318,19 @@ defineExpose({ openCreate });
                 <p v-if="forLabel" class="mt-1 text-sm text-ink/60">{{ forLabel }}.</p>
 
                 <div class="mt-5 space-y-4">
-                    <!-- Where: this league vs another (casual) course (admins only) -->
-                    <div v-if="allowLeagueRound">
+                    <!-- Where: a league you're in, or another (casual) course -->
+                    <div v-if="leagues.length">
                         <InputLabel value="Where" />
-                        <div class="mt-1 grid grid-cols-2 gap-2">
+                        <div class="mt-1 flex flex-wrap gap-2">
                             <button
+                                v-for="l in leagues"
+                                :key="l.id"
                                 type="button"
-                                @click="where = 'league'"
+                                @click="chooseLeague(l.id)"
                                 class="rounded-lg border px-3 py-2 text-sm font-medium transition"
-                                :class="where === 'league' ? 'border-pine bg-pine text-cream' : 'border-pine/20 text-pine hover:border-brass'"
+                                :class="where === 'league' && selectedLeagueId === l.id ? 'border-pine bg-pine text-cream' : 'border-pine/20 text-pine hover:border-brass'"
                             >
-                                {{ leagueName }}
+                                {{ l.name }}
                             </button>
                             <button
                                 type="button"

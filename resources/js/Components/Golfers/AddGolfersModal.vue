@@ -36,7 +36,9 @@ function addExisting(golfer) {
         golfer_id: golfer.id,
         first_name: golfer.first_name,
         last_name: golfer.last_name,
+        email: golfer.email ?? '',
         via: golfer.via,
+        external: !!golfer.external,
     });
 }
 
@@ -79,7 +81,7 @@ function fullName(r) {
 function submit() {
     form.golfers = rows.value.map((r) =>
         r.type === 'existing'
-            ? { golfer_id: r.golfer_id }
+            ? { golfer_id: r.golfer_id, ...(r.email ? { email: r.email } : {}) }
             : {
                   first_name: r.first_name,
                   last_name: r.last_name,
@@ -124,7 +126,7 @@ watch(
                 <div>
                     <h2 class="font-display text-2xl font-semibold text-pine">Add golfers</h2>
                     <p class="mt-1 text-sm text-ink/60">
-                        Search to reuse someone from your other leagues, or type a new name. Add as many as you like, then save them all at once.
+                        Search to reuse someone from your other leagues, enter a full email to link an existing account, or type a new name. Add as many as you like, then save them all at once.
                     </p>
                 </div>
                 <button
@@ -185,9 +187,10 @@ watch(
                             <div class="min-w-0">
                                 <p class="truncate font-medium capitalize text-ink">{{ fullName(r) }}</p>
                                 <p v-if="r.via" class="truncate text-xs text-ink/50">in {{ r.via }}</p>
+                                <p v-else-if="r.external && r.email" class="truncate text-xs text-ink/50">{{ r.email }}</p>
                             </div>
                             <div class="flex shrink-0 items-center gap-2">
-                                <span class="rounded-full bg-brass/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brass-dark">Reused</span>
+                                <span class="rounded-full bg-brass/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brass-dark">{{ r.external ? 'Linked' : 'Reused' }}</span>
                                 <button type="button" @click="removeRow(i)" :aria-label="`Remove ${fullName(r)}`" class="rounded-full p-1 text-ink/40 transition hover:bg-pine/10 hover:text-ink">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />

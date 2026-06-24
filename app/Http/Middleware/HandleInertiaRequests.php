@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
@@ -42,7 +43,8 @@ class HandleInertiaRequests extends Middleware
                     'last_name' => $user->last_name,
                     'email' => $user->email,
                     // Role is per-league: the user's role in their current league.
-                    'role' => $user->roleIn($league),
+                    // A user with no league yet is shown as a plain player.
+                    'role' => $user->roleIn($league) ?? Role::Player->value,
                     'current_league' => $league ? [
                         'id' => $league->id,
                         'name' => $league->name,

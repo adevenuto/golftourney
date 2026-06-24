@@ -12,15 +12,16 @@ const props = defineProps({
     },
 });
 
-// "Your numbers" callout state.
+// "Your numbers" callout state. The Index is portable (needs only rounds); the
+// Course Handicap additionally needs a current league.
 const hasIndex = computed(() => !!props.you && props.you.index !== 'N/A');
-const needsRounds = computed(() => !!props.you && props.you.index === 'N/A');
+const hasLeague = computed(() => !!props.you?.league);
 
 // A worked example built from the viewer's own numbers (null → use the generic
 // one). Shows how their Index becomes their Course Handicap, step by step.
 const example = computed(() => {
     const y = props.you;
-    if (!y || y.index_value === null || y.index_value === undefined) return null;
+    if (!y || y.index_value === null || y.index_value === undefined || !y.league) return null;
 
     const idx = Number(y.index_value);
     const nine = y.holes === 9;
@@ -115,31 +116,38 @@ const faqs = [
                             <p class="mt-1 text-xs text-cream/50">Travels to every course.</p>
                         </div>
 
-                        <svg class="mb-4 hidden h-6 w-6 text-cream/30 sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <template v-if="hasLeague">
+                            <svg class="mb-4 hidden h-6 w-6 text-cream/30 sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
 
-                        <div>
-                            <p class="text-xs uppercase tracking-widest text-cream/50">
-                                Course Handicap · {{ you.league }}
-                            </p>
-                            <p class="font-display text-5xl font-semibold tabular-nums">
-                                {{ you.course_handicap ?? '—' }}
-                            </p>
-                            <p class="mt-1 text-xs text-cream/50">
-                                Strokes you get on this {{ you.holes }}-hole course.
-                            </p>
-                        </div>
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-cream/50">
+                                    Course Handicap · {{ you.league }}
+                                </p>
+                                <p class="font-display text-5xl font-semibold tabular-nums">
+                                    {{ you.course_handicap ?? '—' }}
+                                </p>
+                                <p class="mt-1 text-xs text-cream/50">
+                                    Strokes you get on this {{ you.holes }}-hole course.
+                                </p>
+                            </div>
+                        </template>
+
+                        <p v-else class="mb-2 max-w-xs text-sm text-cream/60">
+                            Join or switch to a league to also see your
+                            <span class="text-cream">Course Handicap</span>.
+                        </p>
                     </div>
 
-                    <p v-else-if="needsRounds" class="mt-3 max-w-xl text-sm text-cream/70">
-                        You need at least
-                        <span class="text-cream">{{ constants.minimumRounds }}</span> rounds before we
-                        can calculate your Index. Keep posting scores and it’ll show up here.
-                    </p>
-
                     <p v-else class="mt-3 max-w-xl text-sm text-cream/70">
-                        Join or switch to a league to see your own Index and Course Handicap.
+                        You need at least
+                        <span class="text-cream">{{ constants.minimumRounds }}</span> rounds before we can
+                        calculate your Index. Log the rounds you play on your
+                        <Link :href="route('my-handicap')" class="text-brass-light underline-offset-2 hover:underline">
+                            My Handicap
+                        </Link>
+                        page and it’ll show up here.
                     </p>
                 </div>
             </section>

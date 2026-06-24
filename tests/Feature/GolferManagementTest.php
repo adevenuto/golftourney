@@ -97,6 +97,79 @@ class GolferManagementTest extends TestCase
         $this->assertDatabaseHas('league_user', ['user_id' => $existing->id, 'league_id' => $current->id]);
     }
 
+    public function test_search_finds_an_outside_account_by_exact_email_only(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+        // A self-registered account in no league of the admin's.
+        $outsider = User::factory()->create([
+            'first_name' => 'tester', 'last_name' => 'tester', 'email' => 'tuser@gmail.com',
+        ]);
+
+        // A partial term must NOT reveal the outside account (no enumeration).
+        $this->actingAs($admin)
+            ->getJson(route('golfers.search', ['q' => 'tuse']))
+            ->assertOk()
+            ->assertJsonCount(0, 'golfers');
+
+        // The full, exact email links the existing account.
+        $this->actingAs($admin)
+            ->getJson(route('golfers.search', ['q' => 'tuser@gmail.com']))
+            ->assertOk()
+            ->assertJsonCount(1, 'golfers')
+            ->assertJsonPath('golfers.0.id', $outsider->id)
+            ->assertJsonPath('golfers.0.external', true);
+    }
+
+    public function test_adding_links_an_outside_account_by_exact_email(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+        $outsider = User::factory()->create(['email' => 'tuser@gmail.com']);
+
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['golfer_id' => $outsider->id, 'email' => 'tuser@gmail.com']],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('league_user', ['user_id' => $outsider->id, 'league_id' => $current->id]);
+    }
+
+    public function test_linking_an_outside_account_requires_the_matching_email(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+        $outsider = User::factory()->create(['email' => 'tuser@gmail.com']);
+
+        // golfer_id alone (no email) can't attach an outside account.
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['golfer_id' => $outsider->id]],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('league_user', ['user_id' => $outsider->id, 'league_id' => $current->id]);
+    }
+
+    public function test_new_golfer_email_dedups_against_an_outside_account(): void
+    {
+        $current = League::factory()->create();
+        $admin = $this->adminOf($current);
+        $outsider = User::factory()->create(['email' => 'tuser@gmail.com']);
+        $before = User::count();
+
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['first_name' => 'New', 'last_name' => 'Person', 'email' => 'tuser@gmail.com']],
+            ])
+            ->assertRedirect();
+
+        // No duplicate created; the existing account is attached.
+        $this->assertSame($before, User::count());
+        $this->assertDatabaseHas('league_user', ['user_id' => $outsider->id, 'league_id' => $current->id]);
+    }
+
     public function test_search_returns_in_scope_golfers_excluding_current_league_members(): void
     {
         $current = League::factory()->create();

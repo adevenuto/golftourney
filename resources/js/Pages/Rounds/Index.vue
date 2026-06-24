@@ -31,7 +31,7 @@ const showMyHandicapLink = computed(() => isSelf.value && !isAdmin.value);
                     :href="route('golfers.index')"
                     class="inline-flex items-center gap-1.5 text-sm text-cream/70 transition hover:text-brass-light"
                 >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                     All golfers
@@ -41,20 +41,20 @@ const showMyHandicapLink = computed(() => isSelf.value && !isAdmin.value);
             <template #actions>
                 <dl class="flex items-end gap-8">
                     <div>
-                        <dt class="text-xs uppercase tracking-widest text-cream/50">Index</dt>
-                        <dd class="font-display text-4xl font-semibold tabular-nums text-brass-light">
+                        <dt class="text-xs tracking-widest uppercase text-cream/50">Index</dt>
+                        <dd class="text-4xl font-semibold font-display tabular-nums text-brass-light">
                             {{ golfer.index }}
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-widest text-cream/50">Course Hcp</dt>
-                        <dd class="font-display text-4xl font-semibold tabular-nums">
+                        <dt class="text-xs tracking-widest uppercase text-cream/50">Course Hcp</dt>
+                        <dd class="text-4xl font-semibold font-display tabular-nums">
                             {{ golfer.course_handicap ?? '—' }}
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-widest text-cream/50">Rounds</dt>
-                        <dd class="font-display text-4xl font-semibold tabular-nums">{{ rounds.length }}</dd>
+                        <dt class="text-xs tracking-widest uppercase text-cream/50">Rounds</dt>
+                        <dd class="text-4xl font-semibold font-display tabular-nums">{{ rounds.length }}</dd>
                     </div>
                 </dl>
             </template>
@@ -75,14 +75,13 @@ const showMyHandicapLink = computed(() => isSelf.value && !isAdmin.value);
             </template>
         </PageHeader>
 
-        <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="max-w-5xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
             <RoundHistory
                 :rounds="rounds"
                 :used-round-ids="usedRoundIds"
                 :user-id="golfer.id"
                 :can-manage="isAdmin"
-                :allow-league-round="isAdmin"
-                :league-name="golfer.league"
+                :leagues="isAdmin ? [{ id: golfer.league_id, name: golfer.league }] : []"
                 :for-label="`For ${fullName}`"
             >
                 <template v-if="showMyHandicapLink" #empty>
@@ -91,7 +90,7 @@ const showMyHandicapLink = computed(() => isSelf.value && !isAdmin.value);
                     </p>
                     <Link
                         :href="route('my-handicap')"
-                        class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brass px-4 py-1.5 text-sm font-medium text-pine transition hover:bg-brass-light"
+                        class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brass px-4 py-1.5 text-sm font-medium text-white transition hover:bg-brass-light"
                     >
                         Log your rounds on My Handicap
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

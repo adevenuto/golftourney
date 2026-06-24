@@ -134,16 +134,46 @@ class GolfersController extends Controller
             ->limit(12)
             ->get(['u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone']);
 
-        return response()->json([
-            'golfers' => $golfers->map(fn ($g): array => [
-                'id' => $g->id,
-                'first_name' => $g->first_name,
-                'last_name' => $g->last_name,
-                'email' => $g->email,
-                'phone' => $g->phone,
-                'via' => $this->viaLeagueName((int) $g->id, $leagueIds, $currentId),
-            ])->all(),
-        ]);
+        $results = $golfers->map(fn ($g): array => [
+            'id' => $g->id,
+            'first_name' => $g->first_name,
+            'last_name' => $g->last_name,
+            'email' => $g->email,
+            'phone' => $g->phone,
+            'via' => $this->viaLeagueName((int) $g->id, $leagueIds, $currentId),
+            'external' => false,
+        ])->all();
+
+        // Cross-account link: a full, exact email reveals an existing account
+        // outside your leagues so you can add it. This is a deliberate privacy
+        // gate — there is no fuzzy global search, so accounts can't be harvested.
+        if (filter_var($term, FILTER_VALIDATE_EMAIL)) {
+            $foundIds = array_column($results, 'id');
+
+            $external = DB::table('users as u')
+                ->whereRaw('lower(u.email) = ?', [mb_strtolower($term)])
+                ->when($foundIds !== [], fn (Builder $q) => $q->whereNotIn('u.id', $foundIds))
+                ->whereNotExists(fn (Builder $q) => $q->select(DB::raw(1))
+                    ->from('league_user as cur')
+                    ->whereColumn('cur.user_id', 'u.id')
+                    ->where('cur.league_id', $currentId))
+                ->limit(1)
+                ->get(['u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone']);
+
+            foreach ($external as $g) {
+                $results[] = [
+                    'id' => $g->id,
+                    'first_name' => $g->first_name,
+                    'last_name' => $g->last_name,
+                    'email' => $g->email,
+                    'phone' => $g->phone,
+                    'via' => null,
+                    'external' => true,
+                ];
+            }
+        }
+
+        return response()->json(['golfers' => $results]);
     }
 
     /**
@@ -189,21 +219,38 @@ class GolfersController extends Controller
      */
     private function resolveUser(array $row, $leagueIds): ?User
     {
-        // Reuse: only allowed for users the acting user can already see.
         if (! empty($row['golfer_id'])) {
-            return User::query()
+            // Reuse: a user already on one of the acting user's leagues.
+            $user = User::query()
                 ->whereKey($row['golfer_id'])
                 ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
                 ->first();
+
+            if ($user) {
+                return $user;
+            }
+
+            // Cross-account link: an outside account is allowed only when the row
+            // also carries that account's exact email — proof the admin was given
+            // it, since search reveals an outside account only on an exact match.
+            if (! empty($row['email'])) {
+                return User::query()
+                    ->whereKey($row['golfer_id'])
+                    ->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $row['email']))])
+                    ->first();
+            }
+
+            return null;
         }
 
-        // New: dedup by email within the user's visible scope.
+        // New: an email uniquely identifies a person, so dedup against ALL
+        // accounts (attaching the real one) rather than creating a duplicate or
+        // colliding on the unique email.
         $email = $row['email'] ?? null;
 
         if ($email) {
             $existing = User::query()
-                ->where('email', $email)
-                ->whereHas('leagues', fn ($q) => $q->whereIn('leagues.id', $leagueIds))
+                ->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $email))])
                 ->first();
 
             if ($existing) {

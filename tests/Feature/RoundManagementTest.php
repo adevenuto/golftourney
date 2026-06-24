@@ -24,6 +24,7 @@ class RoundManagementTest extends TestCase
             ->post(route('rounds.store', $golfer), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
+                'league_id' => $league->id,
             ])
             ->assertRedirect();
 
@@ -45,6 +46,7 @@ class RoundManagementTest extends TestCase
             ->post(route('rounds.store', $outsider), [
                 'score' => 40,
                 'created_at' => now()->toDateString(),
+                'league_id' => $league->id,
             ])
             ->assertNotFound();
     }

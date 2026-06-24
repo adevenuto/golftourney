@@ -204,10 +204,11 @@ onBeforeUnmount(() => {
                     <span class="block truncate text-xs text-ink/50">
                         <span v-if="g.email">{{ g.email }}</span>
                         <span v-if="g.via"> · in {{ g.via }}</span>
+                        <span v-else-if="g.external"> · existing account</span>
                     </span>
                 </span>
                 <span class="shrink-0 rounded-full bg-brass/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brass-dark">
-                    Reuse
+                    {{ g.external ? 'Link' : 'Reuse' }}
                 </span>
             </li>
 

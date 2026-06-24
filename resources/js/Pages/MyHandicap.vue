@@ -10,6 +10,7 @@ defineProps({
     usedRoundIds: { type: Array, default: () => [] },
     userId: { type: Number, required: true },
     recentWindow: { type: Number, default: 0 },
+    leagues: { type: Array, default: () => [] },
 });
 </script>
 
@@ -54,7 +55,7 @@ defineProps({
                 :used-round-ids="usedRoundIds"
                 :user-id="userId"
                 :can-manage="true"
-                :allow-league-round="false"
+                :leagues="leagues"
             />
         </div>
     </AuthenticatedLayout>
