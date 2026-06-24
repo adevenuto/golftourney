@@ -33,21 +33,27 @@ class HandicapService
 
     /**
      * The 18-hole-equivalent Score Differential for one round, or null if the
-     * round's league lacks the course data needed to score it.
+     * round lacks the course data needed to score it. Each round carries its own
+     * snapshotted course context (league rounds copy their league at creation;
+     * casual, league-less rounds copy the chosen course + teebox), so rounds are
+     * self-contained.
      */
     public function differentialFor(Round $round): ?float
     {
-        $league = $round->league;
+        $rating = (float) ($round->course_rating ?? 0);
+        $slope = (int) ($round->slope_rating ?? 0);
+        $par = (int) ($round->par ?? 0);
+        $holes = (int) ($round->holes ?? 0);
 
-        if (! $league || $league->course_rating <= 0 || $league->slope_rating <= 0 || ($league->par ?? 0) <= 0) {
+        if ($rating <= 0 || $slope <= 0 || $par <= 0) {
             return null;
         }
 
         // Differential = (AGS − CourseRating) × 113 / Slope. AGS = gross score.
-        $base = ((int) $round->score - (float) $league->course_rating) * self::STANDARD_SLOPE / $league->slope_rating;
+        $base = ((int) $round->score - $rating) * self::STANDARD_SLOPE / $slope;
 
         // A 9-hole round is half a round; double it onto the 18-hole scale.
-        return $league->holes === 9 ? $base * 2 : $base;
+        return $holes === 9 ? $base * 2 : $base;
     }
 
     /**

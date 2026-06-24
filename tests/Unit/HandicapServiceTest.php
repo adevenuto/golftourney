@@ -36,10 +36,14 @@ class HandicapServiceTest extends TestCase
 
     private function roundWith(int $score, League $league): Round
     {
-        $round = new Round(['score' => $score]);
-        $round->setRelation('league', $league);
-
-        return $round;
+        // Rounds carry their own snapshotted course context.
+        return new Round([
+            'score' => $score,
+            'course_rating' => $league->course_rating,
+            'slope_rating' => $league->slope_rating,
+            'par' => $league->par,
+            'holes' => $league->holes,
+        ]);
     }
 
     public function test_differential_for_an_18_hole_round(): void
@@ -59,6 +63,21 @@ class HandicapServiceTest extends TestCase
         $league = new League(['holes' => 9, 'course_rating' => 31.5, 'slope_rating' => 104, 'par' => null]);
 
         $this->assertNull($this->service->differentialFor($this->roundWith(45, $league)));
+    }
+
+    public function test_differential_reads_the_rounds_own_context_for_casual_rounds(): void
+    {
+        // An 18-hole casual round (no league) scored from its own snapshot — not doubled.
+        $round = new Round(['score' => 90, 'course_rating' => 72.0, 'slope_rating' => 113, 'par' => 72, 'holes' => 18]);
+
+        $this->assertEqualsWithDelta(18.0, $this->service->differentialFor($round), 0.001);
+    }
+
+    public function test_a_nine_hole_casual_round_is_doubled_from_its_own_context(): void
+    {
+        $round = new Round(['score' => 45, 'course_rating' => 31.5, 'slope_rating' => 104, 'par' => 33, 'holes' => 9]);
+
+        $this->assertEqualsWithDelta(29.3365, $this->service->differentialFor($round), 0.001);
     }
 
     public function test_course_handicap_for_a_nine_hole_course_uses_half_the_index(): void

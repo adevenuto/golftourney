@@ -48,12 +48,18 @@ trait WithLeague
     }
 
     /**
-     * A round for a roster user in a league.
+     * A round for a roster user in a league (snapshotting the league's context).
      */
     protected function roundFor(User $user, League $league, array $attributes = []): Round
     {
         return Round::factory()
             ->for($user)
-            ->create(array_merge(['league_id' => $league->id], $attributes));
+            ->create(array_merge([
+                'league_id' => $league->id,
+                'course_rating' => $league->course_rating,
+                'slope_rating' => $league->slope_rating,
+                'par' => $league->par,
+                'holes' => $league->holes,
+            ], $attributes));
     }
 }

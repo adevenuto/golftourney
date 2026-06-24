@@ -9,6 +9,7 @@ import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import CourseSearch from '@/Components/CourseSearch.vue';
 import PerPageSelect from '@/Components/Table/PerPageSelect.vue';
 import TableFooter from '@/Components/Table/TableFooter.vue';
 import { useDataTable } from '@/composables/useDataTable';
@@ -96,18 +97,36 @@ watch(
 
 /* ---------- create ---------- */
 const showCreate = ref(false);
-const createForm = useForm({ score: '', created_at: today() });
+// where: 'league' (current league) | 'casual' (another course)
+const createForm = useForm({ score: '', created_at: today(), course_id: null, teebox: '' });
+const where = ref('league');
+const casualCourse = ref(null); // selected course object (with teeboxes)
+const casualTeeboxes = computed(() => casualCourse.value?.teeboxes ?? []);
+
 function openCreate() {
     createForm.reset();
     createForm.created_at = today();
     createForm.clearErrors();
+    where.value = 'league';
+    casualCourse.value = null;
     showCreate.value = true;
 }
+function onCasualCourse(course) {
+    casualCourse.value = course;
+    createForm.course_id = course?.id ?? null;
+    createForm.teebox = course?.teeboxes?.[0]?.name ?? '';
+}
 function submitCreate() {
-    createForm.post(route('rounds.store', props.golfer.id), {
-        preserveScroll: true,
-        onSuccess: () => (showCreate.value = false),
-    });
+    createForm
+        .transform((data) =>
+            where.value === 'casual'
+                ? data
+                : { score: data.score, created_at: data.created_at },
+        )
+        .post(route('rounds.store', props.golfer.id), {
+            preserveScroll: true,
+            onSuccess: () => (showCreate.value = false),
+        });
 }
 
 /* ---------- edit ---------- */
@@ -273,7 +292,15 @@ function submitDelete() {
                                 {{ round.score }}
                             </span>
                             <div>
-                                <p class="font-medium text-ink">{{ displayDate(round.created_at) }}</p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="font-medium text-ink">{{ displayDate(round.created_at) }}</p>
+                                    <span
+                                        v-if="round.origin"
+                                        class="rounded-full bg-parchment-dark px-2 py-0.5 text-[11px] font-medium text-pine/70"
+                                    >
+                                        {{ round.origin }}
+                                    </span>
+                                </div>
                                 <p
                                     v-if="counts(round.id)"
                                     class="mt-0.5 text-xs font-medium uppercase tracking-wider text-brass-dark"
@@ -351,6 +378,51 @@ function submitDelete() {
                 <p class="mt-1 text-sm text-ink/60">For {{ fullName }}.</p>
 
                 <div class="mt-5 space-y-4">
+                    <!-- Where: this league vs another (casual) course -->
+                    <div>
+                        <InputLabel value="Where" />
+                        <div class="mt-1 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                @click="where = 'league'"
+                                class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+                                :class="where === 'league' ? 'border-pine bg-pine text-cream' : 'border-pine/20 text-pine hover:border-brass'"
+                            >
+                                {{ golfer.league }}
+                            </button>
+                            <button
+                                type="button"
+                                @click="where = 'casual'"
+                                class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+                                :class="where === 'casual' ? 'border-pine bg-pine text-cream' : 'border-pine/20 text-pine hover:border-brass'"
+                            >
+                                Another course
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Casual: pick a course + teebox -->
+                    <template v-if="where === 'casual'">
+                        <div>
+                            <InputLabel value="Course" />
+                            <CourseSearch class="mt-1" @select="onCasualCourse" />
+                            <InputError :message="createForm.errors.course_id" class="mt-1" />
+                        </div>
+                        <div v-if="casualCourse">
+                            <InputLabel for="c_teebox" value="Teebox" />
+                            <select
+                                id="c_teebox"
+                                v-model="createForm.teebox"
+                                class="mt-1 block w-full rounded-lg border-pine/20 bg-cream text-sm text-ink shadow-sm focus:border-brass focus:ring-brass"
+                            >
+                                <option v-if="!casualTeeboxes.length" value="">No tee data</option>
+                                <option v-for="tee in casualTeeboxes" :key="tee.name" :value="tee.name">
+                                    {{ tee.name }}<template v-if="tee.rating"> — {{ tee.rating }}/{{ tee.slope }}</template>
+                                </option>
+                            </select>
+                        </div>
+                    </template>
+
                     <div>
                         <InputLabel for="c_score" value="Score" />
                         <TextInput id="c_score" v-model="createForm.score" type="number" min="1" max="150" class="mt-1 block w-full tabular-nums" required autofocus />

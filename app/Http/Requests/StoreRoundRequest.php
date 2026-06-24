@@ -22,6 +22,9 @@ class StoreRoundRequest extends FormRequest
         return [
             'score' => 'required|integer|min:1|max:150',
             'created_at' => 'required|date',
+            // Present ⇒ a casual round at this catalog course/teebox (no league).
+            'course_id' => 'nullable|integer|exists:courses,id',
+            'teebox' => 'nullable|string|max:255',
         ];
     }
 }

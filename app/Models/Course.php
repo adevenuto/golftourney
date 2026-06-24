@@ -109,6 +109,41 @@ class Course extends Model
     }
 
     /**
+     * The handicap-scoring context for a teebox: normalized course rating,
+     * slope, par, and hole count. Null if the teebox or its data is missing.
+     * Used to snapshot a casual round's course onto the round.
+     *
+     * @return array{course_rating: float, slope_rating: int, par: int, holes: int}|null
+     */
+    public function teeboxContext(?string $teebox): ?array
+    {
+        $match = null;
+        foreach ($this->teeboxes() as $tee) {
+            if ($teebox && strcasecmp((string) ($tee['name'] ?? ''), $teebox) === 0) {
+                $match = $tee;
+                break;
+            }
+        }
+        $match ??= $this->teeboxes()[0] ?? null;
+
+        $par = $this->parForTeebox($match['name'] ?? $teebox);
+        $holes = $this->holeCount();
+        $rawRating = isset($match['courseRating']) ? (float) $match['courseRating'] : null;
+        $slope = isset($match['slope']) ? (int) $match['slope'] : null;
+
+        if (! $match || $rawRating === null || ! $slope || ! $par || ! $holes) {
+            return null;
+        }
+
+        return [
+            'course_rating' => self::normalizeRating($rawRating, $par),
+            'slope_rating' => $slope,
+            'par' => $par,
+            'holes' => $holes,
+        ];
+    }
+
+    /**
      * Normalize a stored course rating to the scale matching its par.
      * The source API doubled 9-hole ratings onto the 18-hole scale; par is the
      * anchor — whichever of {par, 2*par} the rating is closer to reveals its
