@@ -185,4 +185,44 @@ class HandicapServiceTest extends TestCase
         $user->update(['handicap_index' => null, 'manual_handicap_index' => null]);
         $this->assertNull($user->fresh()->effectiveHandicapIndex());
     }
+
+    public function test_league_only_excludes_outside_rounds_from_the_index(): void
+    {
+        $league = League::factory()->create(); // 9-hole, league_only = true (default)
+        $user = $this->golferIn($league);
+        foreach ([40, 40, 40] as $score) {
+            $this->roundFor($user, $league, ['score' => $score]);
+        }
+
+        // A casual round (no league) with a very low differential.
+        Round::factory()->for($user)->create([
+            'league_id' => null,
+            'course_rating' => 72.0,
+            'slope_rating' => 113,
+            'par' => 72,
+            'holes' => 18,
+            'score' => 70,
+        ]);
+
+        $this->service->recalculateFor($user);
+
+        // League-only (default): only this league's three rounds count.
+        $this->assertSame(16.5, $this->service->indexForLeague($user->fresh(), $league));
+
+        // Allow outside rounds: the casual round pools into the index.
+        $league->update(['league_only' => false]);
+        $this->assertSame(-3.0, $this->service->indexForLeague($user->fresh(), $league));
+    }
+
+    public function test_nine_hole_display_halves_the_shown_index(): void
+    {
+        $league = League::factory()->create(['display_nine_hole_index' => false]);
+
+        $this->assertSame(12.0, $this->service->displayIndex(12.0, $league));
+        $this->assertSame('12.0', $this->service->formatIndexFor(12.0, $league));
+
+        $league->update(['display_nine_hole_index' => true]);
+        $this->assertSame(6.0, $this->service->displayIndex(12.0, $league->fresh()));
+        $this->assertSame('6.0', $this->service->formatIndexFor(12.0, $league->fresh()));
+    }
 }

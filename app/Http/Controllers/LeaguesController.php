@@ -48,8 +48,8 @@ class LeaguesController extends Controller
             'par' => $par,
             'course_rating' => $request->input('course_rating'),
             'slope_rating' => $request->input('slope_rating'),
-            'recent_rounds' => $request->input('recent_rounds'),
-            'counting_rounds' => $request->input('counting_rounds'),
+            'league_only' => $request->boolean('league_only', true),
+            'display_nine_hole_index' => $request->boolean('display_nine_hole_index'),
         ]);
 
         $league->members()->attach($user->id, ['role' => 'admin']);
@@ -59,17 +59,36 @@ class LeaguesController extends Controller
     }
 
     /**
-     * Rename a league (admins of that league only).
+     * Update a league's name + handicap settings (admins of that league only).
      */
     public function update(Request $request, League $league): RedirectResponse
     {
         abort_unless($request->user()->isAdminOf($league), 403);
 
-        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'league_only' => 'boolean',
+            'display_nine_hole_index' => 'boolean',
+        ]);
 
-        $league->update(['name' => $validated['name']]);
+        // Only touch a setting when it's actually submitted, so a plain rename
+        // doesn't reset the handicap toggles.
+        $attributes = ['name' => $validated['name']];
 
-        return back()->with('success', 'League renamed.');
+        if ($request->has('league_only')) {
+            $attributes['league_only'] = $request->boolean('league_only');
+        }
+
+        if ($request->has('display_nine_hole_index')) {
+            $attributes['display_nine_hole_index'] = $request->boolean('display_nine_hole_index');
+        }
+
+        $league->update($attributes);
+
+        // Both settings change the handicaps the roster shows.
+        $league->forgetRosterCache();
+
+        return back()->with('success', 'League updated.');
     }
 
     /**

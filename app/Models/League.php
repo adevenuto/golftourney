@@ -27,6 +27,8 @@ class League extends Model
         'slope_rating',
         'recent_rounds',
         'counting_rounds',
+        'league_only',
+        'display_nine_hole_index',
     ];
 
     /**
@@ -39,6 +41,8 @@ class League extends Model
         'par' => 'integer',
         'recent_rounds' => 'integer',
         'counting_rounds' => 'integer',
+        'league_only' => 'boolean',
+        'display_nine_hole_index' => 'boolean',
     ];
 
     /**

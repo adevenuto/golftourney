@@ -61,9 +61,9 @@ class HandicapService
      * rounds. Computed from the lowest differentials of the most recent 20,
      * using the short-record table (see HANDICAP_RULES.md).
      */
-    public function indexFor(User $user): ?float
+    public function indexFor(User $user, ?League $league = null): ?float
     {
-        $differentials = $this->recentEligible($user)->pluck('diff');
+        $differentials = $this->recentEligible($user, $league)->pluck('diff');
 
         $table = $this->shortRecord($differentials->count());
 
@@ -84,9 +84,9 @@ class HandicapService
      *
      * @return array<int, int>
      */
-    public function usedRoundIds(User $user): array
+    public function usedRoundIds(User $user, ?League $league = null): array
     {
-        $eligible = $this->recentEligible($user);
+        $eligible = $this->recentEligible($user, $league);
 
         $table = $this->shortRecord($eligible->count());
 
@@ -102,19 +102,63 @@ class HandicapService
      * rounds in the recent window, capped at 20. Used to phrase the "most recent
      * N rounds" copy so it reflects players with a short record.
      */
-    public function recentWindowSize(User $user): int
+    public function recentWindowSize(User $user, ?League $league = null): int
     {
-        return $this->recentEligible($user)->count();
+        return $this->recentEligible($user, $league)->count();
     }
 
     /**
-     * A player's Course Handicap for a league, derived from their effective
-     * index + the league's slope/rating/par. Null if no index or no par.
-     * 9-hole courses use half the (18-hole) index.
+     * The 18-hole Handicap Index that drives a league's standings. Normally the
+     * player's global portable index, but when a league excludes outside rounds
+     * it's computed from that league's rounds only (falling back to the manual
+     * established-index seed). Always an 18-hole value.
+     */
+    public function indexForLeague(User $user, League $league): ?float
+    {
+        if (! $league->league_only) {
+            return $user->effectiveHandicapIndex();
+        }
+
+        $computed = $this->indexFor($user, $league);
+
+        if (! is_null($computed)) {
+            return $computed;
+        }
+
+        return is_null($user->manual_handicap_index) ? null : (float) $user->manual_handicap_index;
+    }
+
+    /**
+     * A player's Course Handicap for a league, derived from their league index
+     * + the league's slope/rating/par. Null if no index or no par. 9-hole
+     * courses use half the (18-hole) index.
      */
     public function courseHandicap(User $user, League $league): ?int
     {
-        return $this->courseHandicapForIndex($user->effectiveHandicapIndex(), $league);
+        return $this->courseHandicapForIndex($this->indexForLeague($user, $league), $league);
+    }
+
+    /**
+     * Transform an 18-hole index to the value a league wants to DISPLAY: the
+     * 9-hole equivalent (half) when the league opts in, else unchanged. Display
+     * only — never feed this back into a Course Handicap calculation.
+     */
+    public function displayIndex(?float $index, League $league): ?float
+    {
+        if (is_null($index)) {
+            return null;
+        }
+
+        return $league->display_nine_hole_index ? round($index / 2, 1) : $index;
+    }
+
+    /**
+     * Format an 18-hole index for display in a league's context, honouring its
+     * 9-hole display setting.
+     */
+    public function formatIndexFor(?float $index, League $league): string
+    {
+        return $this->formatIndex($this->displayIndex($index, $league));
     }
 
     /**
@@ -166,12 +210,19 @@ class HandicapService
      *
      * @return Collection<int, array{id: int, diff: float}>
      */
-    private function recentEligible(User $user): Collection
+    private function recentEligible(User $user, ?League $league = null): Collection
     {
-        return $user->rounds()
+        $query = $user->rounds()
             ->with('league')
             ->whereNotNull('score')
-            ->orderByDesc('created_at')
+            ->orderByDesc('created_at');
+
+        // A league-only league scores only its own rounds.
+        if ($league && $league->league_only) {
+            $query->where('rounds.league_id', $league->id);
+        }
+
+        return $query
             ->get()
             ->map(fn (Round $round): array => ['id' => $round->id, 'diff' => $this->differentialFor($round)])
             ->filter(fn (array $row): bool => ! is_null($row['diff']))

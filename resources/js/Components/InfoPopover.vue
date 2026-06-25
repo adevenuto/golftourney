@@ -35,7 +35,7 @@ onBeforeUnmount(() => {
     <span ref="root" class="relative inline-flex">
         <button
             type="button"
-            @click.stop="open = !open"
+            @click="open = !open"
             :aria-label="label"
             :aria-expanded="open"
             class="flex items-center justify-center w-4 h-4 rounded-full border border-pine/40 text-[10px] font-semibold leading-none text-pine/70 transition hover:border-pine hover:text-pine"
@@ -54,7 +54,7 @@ onBeforeUnmount(() => {
             <div
                 v-if="open"
                 :class="[
-                    'absolute top-7 z-20 rounded-xl border border-parchment-dark bg-cream p-3 text-xs leading-relaxed text-ink/70 shadow-lg',
+                    'absolute top-7 z-50 rounded-xl border border-parchment-dark bg-cream p-3 text-xs leading-relaxed text-ink/70 shadow-lg',
                     width,
                     align === 'right' ? 'right-0' : 'left-0',
                 ]"

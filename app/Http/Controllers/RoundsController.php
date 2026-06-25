@@ -33,11 +33,11 @@ class RoundsController extends Controller
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
-                'index' => $this->handicaps->formatIndex($user->effectiveHandicapIndex()),
+                'index' => $this->handicaps->formatIndexFor($this->handicaps->indexForLeague($user, $league), $league),
                 'course_handicap' => $this->handicaps->courseHandicap($user, $league),
                 'league' => $league->name,
                 'league_id' => $league->id,
-                'recent_window' => $this->handicaps->recentWindowSize($user),
+                'recent_window' => $this->handicaps->recentWindowSize($user, $league),
             ],
             'rounds' => $user->rounds()
                 ->with(['league:id,name', 'course:id,club_name,course_name'])
@@ -50,7 +50,7 @@ class RoundsController extends Controller
                     'origin' => $r->originLabel(),
                     'is_casual' => is_null($r->league_id),
                 ]),
-            'usedRoundIds' => $this->handicaps->usedRoundIds($user),
+            'usedRoundIds' => $this->handicaps->usedRoundIds($user, $league),
         ]);
     }
 

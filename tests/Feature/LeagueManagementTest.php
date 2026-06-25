@@ -186,6 +186,63 @@ class LeagueManagementTest extends TestCase
         $this->assertDatabaseHas('leagues', ['id' => $league->id, 'name' => 'New Name']);
     }
 
+    public function test_a_new_league_defaults_to_league_only(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post(route('leagues.store'), [
+                'name' => 'My League',
+                'course_rating' => 31.5,
+                'slope_rating' => 104,
+                'recent_rounds' => 20,
+                'counting_rounds' => 8,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('leagues', [
+            'name' => 'My League',
+            'league_only' => 1,
+            'display_nine_hole_index' => 0,
+        ]);
+    }
+
+    public function test_an_admin_can_update_league_handicap_settings(): void
+    {
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        $this->actingAs($admin)
+            ->patch(route('leagues.update', $league), [
+                'name' => $league->name,
+                'league_only' => false,
+                'display_nine_hole_index' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('leagues', [
+            'id' => $league->id,
+            'league_only' => 0,
+            'display_nine_hole_index' => 1,
+        ]);
+    }
+
+    public function test_renaming_a_league_preserves_its_handicap_settings(): void
+    {
+        $league = League::factory()->create(['league_only' => false, 'display_nine_hole_index' => true]);
+        $admin = $this->adminOf($league);
+
+        // A name-only update must not reset the toggles.
+        $this->actingAs($admin)
+            ->patch(route('leagues.update', $league), ['name' => 'Renamed'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('leagues', [
+            'id' => $league->id,
+            'name' => 'Renamed',
+            'league_only' => 0,
+            'display_nine_hole_index' => 1,
+        ]);
+    }
+
     public function test_a_non_admin_cannot_rename_a_league(): void
     {
         $league = League::factory()->create(['name' => 'Untouched']);

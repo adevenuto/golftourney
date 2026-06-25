@@ -26,6 +26,8 @@ class LeagueFactory extends Factory
             'slope_rating' => 104,
             'recent_rounds' => 20,
             'counting_rounds' => 8,
+            'league_only' => true,
+            'display_nine_hole_index' => false,
         ];
     }
 }

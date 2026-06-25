@@ -410,10 +410,24 @@ class GolfersController extends Controller
             )
             ->get();
 
-        return $rows->map(function (object $r) use ($league): array {
-            // Mirror User::effectiveHandicapIndex: the established index only
-            // seeds a thin record; the computed index takes over once it exists.
-            $effective = $r->handicap_index ?? $r->manual_handicap_index;
+        // A league-only league computes its index from this league's rounds only
+        // — per member, on the fly (the stored index pools everything). Cached,
+        // so this only runs on a roster cache miss.
+        $scopedIndex = [];
+
+        if ($league->league_only) {
+            foreach (User::whereIn('id', $rows->pluck('id'))->get() as $member) {
+                $scopedIndex[$member->id] = $this->handicaps->indexForLeague($member, $league);
+            }
+        }
+
+        return $rows->map(function (object $r) use ($league, $scopedIndex): array {
+            // The 18-hole index driving this league: a league-scoped value when
+            // league-only, else the global portable one (established index seeds
+            // a thin record, computed takes over).
+            $effective = $league->league_only
+                ? ($scopedIndex[$r->id] ?? null)
+                : ($r->handicap_index ?? $r->manual_handicap_index);
             $effective = is_null($effective) ? null : (float) $effective;
 
             return [
@@ -423,11 +437,11 @@ class GolfersController extends Controller
                 'email' => $r->email === null ? null : (string) $r->email,
                 'phone' => $r->phone === null ? null : (string) $r->phone,
                 'number_of_rounds' => (int) $r->number_of_rounds,
-                'index' => $this->handicaps->formatIndex($effective),
-                'index_value' => $effective,
+                'index' => $this->handicaps->formatIndexFor($effective, $league),
+                'index_value' => $this->handicaps->displayIndex($effective, $league),
                 'manual_handicap_index' => is_null($r->manual_handicap_index) ? null : (float) $r->manual_handicap_index,
-                // A computed index exists once the round minimum is met; until
-                // then the established index is required and editable.
+                // A computed (global) index exists once the round minimum is met;
+                // until then the established index is required and editable.
                 'has_computed_index' => ! is_null($r->handicap_index),
                 'course_handicap' => $this->handicaps->courseHandicapForIndex($effective, $league),
                 'can_login' => (bool) $r->can_login,

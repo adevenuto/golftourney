@@ -9,6 +9,8 @@ import InputError from '@/Components/InputError.vue';
 import CourseSearch from '@/Components/CourseSearch.vue';
 import Collapsible from '@/Components/Collapsible.vue';
 import PageHeader from '@/Components/PageHeader.vue';
+import ToggleSwitch from '@/Components/ToggleSwitch.vue';
+import InfoPopover from '@/Components/InfoPopover.vue';
 
 defineProps({
     leagues: { type: Array, default: () => [] },
@@ -24,8 +26,6 @@ const form = useForm({
     teebox: null,
     course_rating: '',
     slope_rating: '',
-    recent_rounds: 20,
-    counting_rounds: 8,
 });
 
 const currentTee = computed(
@@ -98,14 +98,20 @@ function openLeague(league) {
     }
 }
 
-/* ---------- rename ---------- */
+/* ---------- edit league (name + handicap settings) ---------- */
 const showRename = ref(false);
 const renaming = ref(null);
-const renameForm = useForm({ name: '' });
+const renameForm = useForm({
+    name: '',
+    league_only: true,
+    display_nine_hole_index: false,
+});
 function openRename(league) {
     renaming.value = league;
     renameForm.clearErrors();
     renameForm.name = league.name;
+    renameForm.league_only = league.league_only ?? true;
+    renameForm.display_nine_hole_index = league.display_nine_hole_index ?? false;
     showRename.value = true;
 }
 function submitRename() {
@@ -199,7 +205,7 @@ function submitDelete() {
                                 v-if="league.role === 'admin'"
                                 type="button"
                                 @click.stop="openRename(league)"
-                                :aria-label="`Rename ${league.name}`"
+                                :aria-label="`Edit ${league.name}`"
                                 class="rounded-full p-1.5 text-pine/60 transition hover:bg-pine/10 hover:text-pine"
                             >
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -295,7 +301,7 @@ function submitDelete() {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-5 sm:grid-cols-4">
+                    <div class="grid grid-cols-2 gap-5">
                         <div>
                             <InputLabel for="l_rating" value="Course rating" />
                             <TextInput id="l_rating" v-model="form.course_rating" type="number" step="0.1" min="0" :readonly="locked" :class="['mt-1 block w-full tabular-nums', locked ? 'cursor-not-allowed bg-parchment text-ink/60 focus:border-pine/20 focus:ring-0' : '']" required />
@@ -305,16 +311,6 @@ function submitDelete() {
                             <InputLabel for="l_slope" value="Slope" />
                             <TextInput id="l_slope" v-model="form.slope_rating" type="number" min="55" max="155" :readonly="locked" :class="['mt-1 block w-full tabular-nums', locked ? 'cursor-not-allowed bg-parchment text-ink/60 focus:border-pine/20 focus:ring-0' : '']" required />
                             <InputError :message="form.errors.slope_rating" class="mt-1" />
-                        </div>
-                        <div>
-                            <InputLabel for="l_recent" value="Recent rounds" />
-                            <TextInput id="l_recent" v-model="form.recent_rounds" type="number" min="1" max="100" class="block w-full mt-1 tabular-nums" required />
-                            <InputError :message="form.errors.recent_rounds" class="mt-1" />
-                        </div>
-                        <div>
-                            <InputLabel for="l_counting" value="Counting" />
-                            <TextInput id="l_counting" v-model="form.counting_rounds" type="number" min="1" class="block w-full mt-1 tabular-nums" required />
-                            <InputError :message="form.errors.counting_rounds" class="mt-1" />
                         </div>
                     </div>
 
@@ -335,15 +331,50 @@ function submitDelete() {
             </Collapsible>
         </div>
 
-        <!-- Rename league modal -->
+        <!-- Edit league modal -->
         <Modal :show="showRename" @close="showRename = false" max-width="md">
             <form @submit.prevent="submitRename" class="p-6">
-                <h2 class="text-2xl font-semibold font-display text-pine">Rename league</h2>
+                <h2 class="text-2xl font-semibold font-display text-pine">Edit league</h2>
                 <div class="mt-4">
                     <InputLabel for="rename" value="League name" />
                     <TextInput id="rename" v-model="renameForm.name" type="text" class="block w-full mt-1" required autofocus />
                     <InputError :message="renameForm.errors.name" class="mt-1" />
                 </div>
+
+                <div class="mt-5 space-y-3 border-t border-parchment-dark pt-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm font-medium text-ink/80">League only rounds</span>
+                            <InfoPopover label="About league-only rounds">
+                                <p class="font-medium text-pine">What this controls</p>
+                                <p class="mt-1">
+                                    On — handicaps come only from rounds played in this league, exactly
+                                    like a traditional league handicap.
+                                </p>
+                                <p class="mt-2">
+                                    Off — full WHS: casual and other-league rounds also factor into each
+                                    golfer's handicap here.
+                                </p>
+                            </InfoPopover>
+                        </div>
+                        <ToggleSwitch v-model="renameForm.league_only" label="League only rounds" />
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm font-medium text-ink/80">Show 9-hole index</span>
+                            <InfoPopover label="About the 9-hole index">
+                                <p class="font-medium text-pine">Display only</p>
+                                <p class="mt-1">
+                                    The Handicap Index is always an 18-hole number. For a 9-hole league,
+                                    turn this on to display the 9-hole equivalent (half) wherever the Index
+                                    is shown. Calculations are unchanged.
+                                </p>
+                            </InfoPopover>
+                        </div>
+                        <ToggleSwitch v-model="renameForm.display_nine_hole_index" label="Show 9-hole index" />
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" @click="showRename = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
