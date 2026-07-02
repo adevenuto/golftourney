@@ -701,7 +701,7 @@ function toggleExpand(id) {
         <!-- Invite link modal (shown after sending; also a share/copy fallback) -->
         <Modal :show="showInviteLink" @close="showInviteLink = false" max-width="md">
             <div class="p-6">
-                <h2 class="text-2xl font-semibold font-display text-pine">Invitation ready</h2>
+                <h2 class="text-2xl font-semibold font-display text-pine">Invitation sent</h2>
                 <p class="mt-1 text-sm text-ink/60">
                     We emailed a set-up link. You can also copy it and share it with the player directly.
                 </p>
@@ -716,13 +716,19 @@ function toggleExpand(id) {
                     <button
                         type="button"
                         @click="copyInviteLink"
-                        class="px-4 py-2 text-sm font-medium transition rounded-full shrink-0 bg-pine text-cream hover:bg-pine-light"
+                        class="px-4 py-2 text-sm font-medium transition border rounded-full shrink-0 border-pine/20 text-pine hover:border-brass hover:text-brass-dark"
                     >
                         {{ linkCopied ? 'Copied' : 'Copy' }}
                     </button>
                 </div>
-                <div class="flex justify-end mt-6">
-                    <button type="button" @click="showInviteLink = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">Done</button>
+                <div class="mt-6">
+                    <button
+                        type="button"
+                        @click="showInviteLink = false"
+                        class="w-full px-4 py-2.5 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light"
+                    >
+                        Done
+                    </button>
                 </div>
             </div>
         </Modal>

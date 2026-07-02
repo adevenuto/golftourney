@@ -26,9 +26,9 @@ class PlayerInvitation extends Notification
 
         return (new MailMessage)
             ->subject('Set up your GolfTourney login')
-            ->greeting('Hi '.ucfirst((string) $notifiable->first_name).',')
-            ->line('You’ve been invited to manage your handicap on GolfTourney — track your rounds and keep your Handicap Index up to date.')
-            ->action('Set up your account', $url)
-            ->line('If you weren’t expecting this, you can ignore this email.');
+            ->view('emails.player-invitation', [
+                'firstName' => ucfirst((string) $notifiable->first_name),
+                'url' => $url,
+            ]);
     }
 }

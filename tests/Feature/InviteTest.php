@@ -34,6 +34,20 @@ class InviteTest extends TestCase
         $this->assertNotNull($player->fresh()->invited_at);
     }
 
+    public function test_the_invitation_email_renders_with_branding(): void
+    {
+        $user = $this->golferIn(League::factory()->create(), [
+            'first_name' => 'jane',
+            'email' => 'jane@example.com',
+        ]);
+
+        $rendered = (new PlayerInvitation('some-token'))->toMail($user)->render();
+
+        $this->assertStringContainsString('Set up your account', $rendered);
+        $this->assertStringContainsString('logo-emblem-email.png', $rendered); // branded logo
+        $this->assertStringContainsString('Hi Jane,', $rendered);              // capitalized name
+    }
+
     public function test_inviting_updates_the_players_email(): void
     {
         Notification::fake();
