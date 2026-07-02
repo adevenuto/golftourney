@@ -50,12 +50,17 @@ class AcceptInviteController extends Controller
                     'password' => Hash::make($request->string('password')->value()),
                     'email_verified_at' => now(),
                     'remember_token' => Str::random(60),
+                    'invited_at' => null, // no longer a pending invite — they have a login now
                 ])->save();
 
                 // Land them in a league so their handicap view has context.
                 if (! $user->current_league_id && ($first = $user->leagues()->first())) {
                     $user->update(['current_league_id' => $first->id]);
                 }
+
+                // They can log in now, so every roster they're on is stale — the
+                // admin should see them flip from "Invite sent" to "Active".
+                $user->leagues()->get()->each->forgetRosterCache();
 
                 $invited = $user;
             }

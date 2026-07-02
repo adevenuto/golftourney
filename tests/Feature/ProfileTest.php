@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\League;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -97,5 +99,39 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_updating_the_profile_busts_the_roster_cache(): void
+    {
+        $user = User::factory()->create();
+        $league = League::factory()->create();
+        $user->leagues()->attach($league->id, ['role' => 'player']);
+
+        Cache::forever($league->rosterCacheKey(), ['stale']); // pre-edit roster
+
+        $this->actingAs($user)
+            ->patch('/profile', [
+                'first_name' => 'Renamed',
+                'last_name' => 'Player',
+                'email' => 'renamed@example.com',
+            ])
+            ->assertRedirect('/profile');
+
+        $this->assertFalse(Cache::has($league->rosterCacheKey()));
+    }
+
+    public function test_deleting_the_account_busts_the_roster_cache(): void
+    {
+        $user = User::factory()->create();
+        $league = League::factory()->create();
+        $user->leagues()->attach($league->id, ['role' => 'player']);
+
+        Cache::forever($league->rosterCacheKey(), ['stale']);
+
+        $this->actingAs($user)
+            ->delete('/profile', ['password' => 'password'])
+            ->assertRedirect('/');
+
+        $this->assertFalse(Cache::has($league->rosterCacheKey()));
     }
 }
