@@ -41,11 +41,12 @@ class InviteTest extends TestCase
             'email' => 'jane@example.com',
         ]);
 
-        $rendered = (new PlayerInvitation('some-token'))->toMail($user)->render();
+        $rendered = (new PlayerInvitation('some-token', 'Black League'))->toMail($user)->render();
 
         $this->assertStringContainsString('Set up your account', $rendered);
-        $this->assertStringContainsString('logo-emblem-email.png', $rendered); // branded logo
+        $this->assertStringContainsString('alt="GolfTourney"', $rendered);     // branded logo (embedded)
         $this->assertStringContainsString('Hi Jane,', $rendered);              // capitalized name
+        $this->assertStringContainsString('Black League', $rendered);          // league-specific
     }
 
     public function test_inviting_updates_the_players_email(): void

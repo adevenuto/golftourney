@@ -10,7 +10,7 @@ class PlayerInvitation extends Notification
 {
     use Queueable;
 
-    public function __construct(public string $token) {}
+    public function __construct(public string $token, public string $leagueName) {}
 
     /**
      * @return array<int, string>
@@ -25,9 +25,10 @@ class PlayerInvitation extends Notification
         $url = route('invite.accept', ['token' => $this->token, 'email' => $notifiable->email]);
 
         return (new MailMessage)
-            ->subject('Set up your GolfTourney login')
+            ->subject("You're invited to {$this->leagueName} on GolfTourney")
             ->view('emails.player-invitation', [
                 'firstName' => ucfirst((string) $notifiable->first_name),
+                'leagueName' => $this->leagueName,
                 'url' => $url,
             ]);
     }

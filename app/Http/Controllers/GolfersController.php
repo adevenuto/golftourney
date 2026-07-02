@@ -388,7 +388,7 @@ class GolfersController extends Controller
      */
     public function invite(Request $request, User $user): RedirectResponse
     {
-        $this->authorizeUser($request, $user);
+        $league = $this->authorizeUser($request, $user);
 
         if ($user->canLogin()) {
             throw ValidationException::withMessages(['email' => 'This golfer already has a login.']);
@@ -423,7 +423,7 @@ class GolfersController extends Controller
         $delivered = true;
 
         try {
-            $user->notify(new PlayerInvitation($token));
+            $user->notify(new PlayerInvitation($token, $league->name));
         } catch (\Throwable $e) {
             $delivered = false;
             Log::warning('Player invitation email failed to send; link fallback returned.', [

@@ -14,7 +14,7 @@
                     <!-- Logo -->
                     <tr>
                         <td align="center" style="padding:40px 40px 12px 40px;">
-                            <img src="{{ asset('img/logo-emblem-email.png') }}?v=1" width="112" height="112" alt="GolfTourney" style="display:block; border:0; outline:none; text-decoration:none; width:112px; height:112px;">
+                            <img src="{{ isset($message) ? $message->embed(public_path('img/logo-emblem-email.png')) : asset('img/logo-emblem-email.png').'?v=1' }}" width="112" height="112" alt="GolfTourney" style="display:block; border:0; outline:none; text-decoration:none; width:112px; height:112px;">
                         </td>
                     </tr>
 
@@ -22,7 +22,7 @@
                     <tr>
                         <td align="center" style="padding:4px 40px 0 40px;">
                             <h1 style="margin:0; font-family:Fraunces,Georgia,'Times New Roman',serif; font-size:26px; font-weight:600; line-height:1.3; color:#14432f;">
-                                You're invited to GolfTourney
+                                You're invited to {{ $leagueName }}
                             </h1>
                         </td>
                     </tr>
@@ -31,7 +31,7 @@
                     <tr>
                         <td style="padding:20px 40px 0 40px; font-family:Figtree,'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:1.6; color:#1b1d1a;">
                             <p style="margin:0 0 16px 0;">Hi {{ $firstName }},</p>
-                            <p style="margin:0;">You've been invited to manage your handicap on GolfTourney — track your rounds and keep your Handicap Index up to date.</p>
+                            <p style="margin:0;">You've been invited to join <strong style="color:#14432f;">{{ $leagueName }}</strong> and manage your handicap on GolfTourney — track your rounds and keep your Handicap Index up to date.</p>
                         </td>
                     </tr>
 
