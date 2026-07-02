@@ -234,19 +234,23 @@ class GolferManagementTest extends TestCase
         ]);
     }
 
-    public function test_a_golfer_without_a_computed_index_requires_an_established_index(): void
+    public function test_the_established_index_is_optional(): void
     {
         $league = League::factory()->create();
         $golfer = $this->golferIn($league); // no rounds -> no computed index
 
+        // Saving without an established index is allowed; it stays unset.
         $this->actingAs($this->adminOf($league))
             ->put(route('golfers.update', $golfer), [
                 'first_name' => 'Jane',
                 'last_name' => 'Doe',
             ])
-            ->assertInvalid('manual_handicap_index');
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
 
-        // With a seed provided, the update goes through and is stored.
+        $this->assertNull($golfer->fresh()->manual_handicap_index);
+
+        // A seed still stores when provided.
         $this->actingAs($this->adminOf($league))
             ->put(route('golfers.update', $golfer), [
                 'first_name' => 'Jane',
@@ -320,6 +324,54 @@ class GolferManagementTest extends TestCase
         // Detached from the league, but the login account survives.
         $this->assertDatabaseMissing('league_user', ['user_id' => $member->id, 'league_id' => $league->id]);
         $this->assertDatabaseHas('users', ['id' => $member->id]);
+    }
+
+    public function test_removing_the_league_owner_dissolves_the_league_and_keeps_rounds(): void
+    {
+        $league = League::factory()->create();
+        $owner = $this->adminOf($league);
+        $league->update(['owner_id' => $owner->id]);
+
+        // Another golfer, plus rounds for both, all in this league.
+        $golfer = $this->golferIn($league);
+        $ownerRound = $this->roundFor($owner, $league);
+        $golferRound = $this->roundFor($golfer, $league);
+
+        $this->actingAs($owner)
+            ->delete(route('golfers.destroy', $owner))
+            ->assertRedirect(route('leagues'));
+
+        // The league and every membership are gone.
+        $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
+        $this->assertDatabaseMissing('league_user', ['league_id' => $league->id]);
+
+        // No users are deleted, and both rounds survive as casual (league_id null).
+        $this->assertDatabaseHas('users', ['id' => $owner->id]);
+        $this->assertDatabaseHas('users', ['id' => $golfer->id]);
+        $this->assertDatabaseHas('rounds', ['id' => $ownerRound->id, 'league_id' => null]);
+        $this->assertDatabaseHas('rounds', ['id' => $golferRound->id, 'league_id' => null]);
+
+        // The owner is no longer parked on the deleted league.
+        $this->assertNull($owner->fresh()->current_league_id);
+    }
+
+    public function test_a_non_owner_admin_cannot_dissolve_the_league_by_removing_the_owner(): void
+    {
+        $league = League::factory()->create();
+        $owner = $this->adminOf($league);
+        $league->update(['owner_id' => $owner->id]);
+
+        // A second admin who did not create the league.
+        $otherAdmin = User::factory()->create(['current_league_id' => $league->id]);
+        $league->members()->attach($otherAdmin->id, ['role' => 'admin']);
+
+        $this->actingAs($otherAdmin)
+            ->delete(route('golfers.destroy', $owner))
+            ->assertForbidden();
+
+        // The league and the owner's membership are untouched.
+        $this->assertDatabaseHas('leagues', ['id' => $league->id]);
+        $this->assertDatabaseHas('league_user', ['user_id' => $owner->id, 'league_id' => $league->id]);
     }
 
     public function test_any_league_member_can_export_handicaps_pdf(): void

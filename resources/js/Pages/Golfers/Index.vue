@@ -19,6 +19,8 @@ const props = defineProps({
 
 const page = usePage();
 const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
+const currentLeague = computed(() => page.props.auth.user?.current_league ?? null);
+const ownerId = computed(() => currentLeague.value?.owner_id ?? null);
 
 /* ---------- search + sort + pagination ---------- */
 const sortable = [
@@ -60,19 +62,6 @@ const exportUrl = computed(() =>
         dir: sortDir.value,
         search: search.value || undefined,
     }),
-);
-
-/* ---------- flash toast ---------- */
-const toast = ref('');
-let toastTimer;
-watch(
-    () => page.props.flash?.success,
-    (msg) => {
-        if (!msg) return;
-        toast.value = msg;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast.value = ''), 3200);
-    },
 );
 
 /* ---------- create ---------- */
@@ -120,9 +109,20 @@ function submitEdit() {
 }
 
 /* ---------- invite to log in ---------- */
-const inviteForm = useForm({});
+const showInvite = ref(false);
+const inviting = ref(null);
+const inviteForm = useForm({ email: '' });
+function openInvite(golfer) {
+    inviting.value = golfer;
+    inviteForm.clearErrors();
+    inviteForm.email = golfer.email ?? '';
+    showInvite.value = true;
+}
 function sendInvite() {
-    inviteForm.post(route('golfers.invite', editing.value.id), { preserveScroll: true });
+    inviteForm.post(route('golfers.invite', inviting.value.id), {
+        preserveScroll: true,
+        onSuccess: () => (showInvite.value = false),
+    });
 }
 
 // Surface the invite link the server returns (mail-delivery fallback).
@@ -136,7 +136,7 @@ watch(
         inviteLink.value = link;
         linkCopied.value = false;
         showInviteLink.value = true;
-        showEdit.value = false;
+        showInvite.value = false;
     },
 );
 function copyInviteLink() {
@@ -152,6 +152,8 @@ function openDelete(golfer) {
     deleting.value = golfer;
     showDelete.value = true;
 }
+// Removing the league's creator dissolves the whole league (see destroy()).
+const deletingOwner = computed(() => !!deleting.value && deleting.value.id === ownerId.value);
 function submitDelete() {
     deleteForm.delete(route('golfers.destroy', deleting.value.id), {
         preserveScroll: true,
@@ -292,7 +294,6 @@ function toggleExpand(id) {
                                     </button>
                                 </th>
                                 <th scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-pine">Email</th>
-                                <th scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider uppercase text-pine">Phone</th>
                                 <th v-if="isAdmin" scope="col" class="px-5 py-3 text-xs font-semibold tracking-wider text-right uppercase text-pine">
                                     <span class="sr-only">Actions</span>
                                 </th>
@@ -322,35 +323,67 @@ function toggleExpand(id) {
                                 <td class="px-5 py-3.5 font-display tabular-nums text-ink/80">{{ g.course_handicap ?? '—' }}</td>
                                 <td class="px-5 py-3.5 tabular-nums text-ink/80">{{ g.number_of_rounds }}</td>
                                 <td class="px-5 py-3.5 text-ink/70">{{ g.email || '—' }}</td>
-                                <td class="px-5 py-3.5 tabular-nums text-ink/70">{{ g.phone || '—' }}</td>
                                 <td v-if="isAdmin" class="px-5 py-3.5">
-                                    <div class="flex items-center justify-end gap-1 transition opacity-60 group-hover:opacity-100">
-                                        <button
-                                            type="button"
-                                            @click="openEdit(g)"
-                                            class="rounded-full p-1.5 text-pine transition hover:bg-pine/10"
-                                            :aria-label="`Edit ${fullName(g)}`"
+                                    <div class="flex items-center justify-end gap-2">
+                                        <!-- Login status / invite (always visible) -->
+                                        <span
+                                            v-if="g.can_login"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-pine/10 px-2.5 py-1 text-xs font-medium text-pine"
+                                            title="This golfer has an active login"
                                         >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
-                                            </svg>
-                                        </button>
+                                            <span class="h-1.5 w-1.5 rounded-full bg-pine"></span> Active
+                                        </span>
+                                        <template v-else-if="g.invited_at">
+                                            <button
+                                                type="button"
+                                                @click="openInvite(g)"
+                                                title="Invite sent — click to resend"
+                                                class="inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/15 px-2.5 py-1 text-xs font-medium text-brass-dark transition hover:bg-brass/25"
+                                            >
+                                                <span class="h-1.5 w-1.5 rounded-full bg-brass-dark"></span> Invite sent
+                                            </button>
+                                        </template>
                                         <button
+                                            v-else
                                             type="button"
-                                            @click="openDelete(g)"
-                                            class="rounded-full p-1.5 text-red-700 transition hover:bg-red-700/10"
-                                            :aria-label="`Delete ${fullName(g)}`"
+                                            @click="openInvite(g)"
+                                            class="inline-flex items-center gap-1.5 rounded-full border border-pine/30 px-2.5 py-1 text-xs font-medium text-pine transition hover:border-brass hover:text-brass-dark"
                                         >
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                             </svg>
+                                            Send Invite
                                         </button>
+
+                                        <!-- Edit / delete (surface on hover) -->
+                                        <div class="flex items-center gap-1 transition opacity-60 group-hover:opacity-100">
+                                            <button
+                                                type="button"
+                                                @click="openEdit(g)"
+                                                class="rounded-full p-1.5 text-pine transition hover:bg-pine/10"
+                                                :aria-label="`Edit ${fullName(g)}`"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="openDelete(g)"
+                                                class="rounded-full p-1.5 text-red-700 transition hover:bg-red-700/10"
+                                                :aria-label="`Delete ${fullName(g)}`"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
 
                             <tr v-if="total === 0">
-                                <td :colspan="isAdmin ? 7 : 6" class="px-5 py-16 text-center">
+                                <td :colspan="isAdmin ? 6 : 5" class="px-5 py-16 text-center">
                                     <p class="text-xl font-display text-pine/70">No golfers found</p>
                                     <p class="mt-1 text-sm text-ink/50">
                                         {{ search ? 'Try a different search.' : 'The roster is empty.' }}
@@ -417,33 +450,58 @@ function toggleExpand(id) {
                                 <dt class="text-ink/50">Email</dt>
                                 <dd class="min-w-0 truncate text-ink/80">{{ g.email || '—' }}</dd>
                             </div>
-                            <div class="flex justify-between gap-3">
-                                <dt class="text-ink/50">Phone</dt>
-                                <dd class="tabular-nums text-ink/80">{{ g.phone || '—' }}</dd>
-                            </div>
                         </dl>
 
-                        <div v-if="isAdmin" class="flex gap-2 mt-4">
-                            <button
-                                type="button"
-                                @click="openEdit(g)"
-                                class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass"
-                            >
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
-                                </svg>
-                                Edit
-                            </button>
-                            <button
-                                type="button"
-                                @click="openDelete(g)"
-                                class="inline-flex items-center gap-1.5 rounded-full border border-red-700/30 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:border-red-700"
-                            >
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
-                                </svg>
-                                Delete
-                            </button>
+                        <div v-if="isAdmin" class="mt-4 space-y-3">
+                            <!-- Login status / invite -->
+                            <div>
+                                <span
+                                    v-if="g.can_login"
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-pine/10 px-3 py-1 text-sm text-pine"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-pine"></span> Active
+                                </span>
+                                <div v-else class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        @click="openInvite(g)"
+                                        class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition"
+                                        :class="g.invited_at
+                                            ? 'border-brass/40 bg-brass/15 text-brass-dark hover:bg-brass/25'
+                                            : 'border-pine/20 text-pine hover:border-brass'"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        {{ g.invited_at ? 'Invite sent' : 'Send Invite' }}
+                                    </button>
+                                    <span v-if="g.invited_at" class="text-xs text-ink/50">Invited {{ g.invited_at }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Edit / delete -->
+                            <div class="flex gap-2">
+                                <button
+                                    type="button"
+                                    @click="openEdit(g)"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass"
+                                >
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="openDelete(g)"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-red-700/30 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:border-red-700"
+                                >
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4h6v3" />
+                                    </svg>
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -469,20 +527,6 @@ function toggleExpand(id) {
             />
         </div>
 
-        <!-- Toast -->
-        <Transition
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="translate-y-2 opacity-0"
-            leave-active-class="transition duration-200 ease-in"
-            leave-to-class="translate-y-2 opacity-0"
-        >
-            <div
-                v-if="toast"
-                class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-cream shadow-lg"
-            >
-                {{ toast }}
-            </div>
-        </Transition>
 
         <!-- Add golfers modal -->
         <AddGolfersModal :show="showCreate" @close="showCreate = false" />
@@ -535,8 +579,9 @@ function toggleExpand(id) {
                             <p class="mt-1">
                                 A player's index is normally computed from their logged rounds. Until a
                                 golfer has <span class="font-medium">3</span> rounds there's nothing to
-                                compute, so an established index — a known USGA/GHIN handicap — is required
-                                to gauge their play.
+                                compute, so an established index — a known USGA/GHIN handicap — can
+                                optionally seed their play. Leave it blank to show no index until they
+                                log enough rounds.
                             </p>
                             <p class="mt-2">
                                 Once they reach 3 rounds, their computed index takes over automatically and
@@ -553,7 +598,7 @@ function toggleExpand(id) {
                         readonly
                         class="block w-full mt-2 rounded-lg shadow-sm cursor-not-allowed border-pine/20 bg-parchment tabular-nums text-ink/60 focus:border-pine/20 focus:ring-0"
                     />
-                    <!-- No computed index yet: an established index is required to seed play. -->
+                    <!-- No computed index yet: an established index optionally seeds play. -->
                     <TextInput
                         v-else
                         id="e_index"
@@ -562,7 +607,6 @@ function toggleExpand(id) {
                         step="0.1"
                         min="-9.9"
                         max="54.0"
-                        required
                         class="block w-full mt-2 tabular-nums"
                         placeholder="e.g. 12.3"
                     />
@@ -590,35 +634,10 @@ function toggleExpand(id) {
                         {{
                             editing?.has_computed_index
                                 ? `Calculated from ${editing.number_of_rounds} rounds.`
-                                : 'Required until this golfer has 3 rounds logged.'
+                                : 'Optional — seeds play until this golfer has 3 rounds logged.'
                         }}
                     </p>
                     <InputError :message="editForm.errors.manual_handicap_index" class="mt-1" />
-                </div>
-
-                <!-- Account access -->
-                <div class="pt-4 mt-4 border-t border-parchment-dark">
-                    <InputLabel value="Account access" />
-                    <div v-if="editing?.can_login" class="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-pine/10 px-3 py-1 text-sm text-pine">
-                        <span class="h-1.5 w-1.5 rounded-full bg-pine"></span> Active login
-                    </div>
-                    <div v-else class="mt-1.5">
-                        <button
-                            type="button"
-                            @click="sendInvite"
-                            :disabled="inviteForm.processing"
-                            class="inline-flex items-center gap-1.5 rounded-full border border-pine/20 px-3 py-1.5 text-sm font-medium text-pine transition hover:border-brass hover:text-brass-dark disabled:opacity-50"
-                        >
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 12H8m0 0l3-3m-3 3l3 3M3 12a9 9 0 1018 0 9 9 0 00-18 0z" />
-                            </svg>
-                            Invite to log in
-                        </button>
-                        <p class="mt-1 text-xs text-ink/50">
-                            Emails a set-up link to this golfer's saved address — save a real email first if you just edited it.
-                        </p>
-                        <InputError :message="inviteForm.errors.invite" class="mt-1" />
-                    </div>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
@@ -631,6 +650,49 @@ function toggleExpand(id) {
                         class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
                     >
                         Save changes
+                    </button>
+                </div>
+            </form>
+        </Modal>
+
+        <!-- Invite modal: confirm/update the email, then send the login invite -->
+        <Modal :show="showInvite" @close="showInvite = false" max-width="md">
+            <form @submit.prevent="sendInvite" class="p-6">
+                <h2 class="text-2xl font-semibold font-display text-pine">
+                    {{ inviting?.invited_at ? 'Resend login invite' : 'Invite to log in' }}
+                </h2>
+                <p class="mt-1 text-sm text-ink/60">
+                    We'll email
+                    <span class="font-medium capitalize text-ink">{{ inviting ? fullName(inviting) : '' }}</span>
+                    a link to set up their login so they can manage their own rounds.
+                </p>
+                <p v-if="inviting?.invited_at" class="mt-1 text-xs text-ink/50">
+                    Last invited {{ inviting.invited_at }}.
+                </p>
+
+                <div class="mt-4">
+                    <InputLabel for="invite_email" value="Email" />
+                    <TextInput
+                        id="invite_email"
+                        v-model="inviteForm.email"
+                        type="email"
+                        required
+                        class="block w-full mt-1"
+                        placeholder="player@example.com"
+                    />
+                    <InputError :message="inviteForm.errors.email" class="mt-1" />
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" @click="showInvite = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="inviteForm.processing"
+                        class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
+                    >
+                        {{ inviting?.invited_at ? 'Resend invite' : 'Send invite' }}
                     </button>
                 </div>
             </form>
@@ -668,12 +730,27 @@ function toggleExpand(id) {
         <!-- Delete modal -->
         <Modal :show="showDelete" @close="showDelete = false" max-width="md">
             <div class="p-6">
-                <h2 class="text-2xl font-semibold font-display text-pine">Remove golfer</h2>
-                <p class="mt-2 text-sm text-ink/70">
-                    Remove
-                    <span class="font-semibold capitalize text-ink">{{ deleting ? fullName(deleting) : '' }}</span>
-                    and all of their rounds? This can't be undone.
-                </p>
+                <!-- Removing the owner tears down the whole league. -->
+                <template v-if="deletingOwner">
+                    <h2 class="text-2xl font-semibold font-display text-pine">Delete this league?</h2>
+                    <p class="mt-2 text-sm text-ink/70">
+                        Are you sure you want to delete
+                        <span class="font-semibold text-ink">{{ currentLeague?.name }}</span>
+                        and remove all golfers from it?
+                    </p>
+                    <p class="mt-2 text-sm text-ink/70">
+                        Everyone's historical rounds are preserved for their index — they stay in the
+                        system as casual rounds. You'll be taken back to your leagues.
+                    </p>
+                </template>
+                <template v-else>
+                    <h2 class="text-2xl font-semibold font-display text-pine">Remove golfer</h2>
+                    <p class="mt-2 text-sm text-ink/70">
+                        Remove
+                        <span class="font-semibold capitalize text-ink">{{ deleting ? fullName(deleting) : '' }}</span>
+                        and all of their rounds? This can't be undone.
+                    </p>
+                </template>
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" @click="showDelete = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
                         Cancel
@@ -684,7 +761,7 @@ function toggleExpand(id) {
                         @click="submitDelete"
                         class="px-5 py-2 text-sm font-medium text-white transition bg-red-700 rounded-full hover:bg-red-800 disabled:opacity-50"
                     >
-                        Yes, remove
+                        {{ deletingOwner ? 'Delete league' : 'Yes, remove' }}
                     </button>
                 </div>
             </div>

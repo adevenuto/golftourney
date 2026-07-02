@@ -265,14 +265,15 @@ class LeagueManagementTest extends TestCase
             ->assertJsonValidationErrors(['name']);
     }
 
-    public function test_an_admin_can_delete_a_league_and_cascade_its_rounds_and_golfers(): void
+    public function test_the_owner_can_delete_a_league_and_keep_rounds_as_casual(): void
     {
         $league = League::factory()->create();
         $admin = $this->adminOf($league);
+        $league->update(['owner_id' => $admin->id]);
 
-        $orphan = $this->golferIn($league);
-        $this->roundFor($orphan, $league);
-        $this->roundFor($orphan, $league);
+        $roster = $this->golferIn($league);
+        $r1 = $this->roundFor($roster, $league);
+        $r2 = $this->roundFor($roster, $league);
 
         // A golfer also on another league must survive (just detached).
         $other = League::factory()->create();
@@ -284,16 +285,37 @@ class LeagueManagementTest extends TestCase
             ->assertRedirect(route('leagues'));
 
         $this->assertDatabaseMissing('leagues', ['id' => $league->id]);
-        $this->assertDatabaseMissing('rounds', ['league_id' => $league->id]);
         $this->assertDatabaseMissing('league_user', ['league_id' => $league->id]);
 
-        // Orphan golfer gone; shared golfer kept (still in the other league).
-        $this->assertDatabaseMissing('users', ['id' => $orphan->id]);
+        // Rounds are preserved as casual (league_id null), not deleted.
+        $this->assertDatabaseHas('rounds', ['id' => $r1->id, 'league_id' => null]);
+        $this->assertDatabaseHas('rounds', ['id' => $r2->id, 'league_id' => null]);
+
+        // No users are deleted — even the login-less roster golfer survives.
+        $this->assertDatabaseHas('users', ['id' => $roster->id]);
         $this->assertDatabaseHas('users', ['id' => $shared->id]);
         $this->assertDatabaseHas('league_user', ['user_id' => $shared->id, 'league_id' => $other->id]);
 
-        // The admin no longer points at the deleted league.
+        // The admin had no other league, so nothing is selected afterwards.
         $this->assertNull($admin->fresh()->current_league_id);
+    }
+
+    public function test_deleting_a_league_selects_the_next_available_league(): void
+    {
+        $keeper = League::factory()->create(['name' => 'aaa keeper']);
+        $doomed = League::factory()->create(['name' => 'zzz doomed']);
+
+        $owner = User::factory()->create(['current_league_id' => $doomed->id]);
+        $doomed->update(['owner_id' => $owner->id]);
+        $doomed->members()->attach($owner->id, ['role' => 'admin']);
+        $keeper->members()->attach($owner->id, ['role' => 'player']);
+
+        $this->actingAs($owner)
+            ->delete(route('leagues.destroy', $doomed))
+            ->assertRedirect(route('leagues'));
+
+        // Parked on the deleted league, they roll onto their remaining one.
+        $this->assertSame($keeper->id, $owner->fresh()->current_league_id);
     }
 
     public function test_a_non_admin_cannot_delete_a_league(): void
@@ -302,6 +324,19 @@ class LeagueManagementTest extends TestCase
         $player = $this->playerOf($league);
 
         $this->actingAs($player)
+            ->delete(route('leagues.destroy', $league))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('leagues', ['id' => $league->id]);
+    }
+
+    public function test_an_admin_who_is_not_the_owner_cannot_delete_a_league(): void
+    {
+        // Owner is the factory's separate user; this admin didn't create it.
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        $this->actingAs($admin)
             ->delete(route('leagues.destroy', $league))
             ->assertForbidden();
 

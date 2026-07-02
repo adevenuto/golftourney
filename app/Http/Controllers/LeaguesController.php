@@ -5,11 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreLeagueRequest;
 use App\Models\Course;
 use App\Models\League;
-use App\Models\Round;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LeaguesController extends Controller
 {
@@ -98,40 +95,15 @@ class LeaguesController extends Controller
      */
     public function destroy(Request $request, League $league): RedirectResponse
     {
-        abort_unless($request->user()->isAdminOf($league), 403);
+        // Only the creator (owner) may delete a league they made.
+        abort_unless($request->user()->id === $league->owner_id, 403);
 
         $name = $league->name;
 
-        DB::transaction(function () use ($league) {
-            // This league's rounds.
-            Round::where('league_id', $league->id)->delete();
+        // Keeps everyone's rounds as casual rounds and reselects a next league.
+        $league->dissolve();
 
-            // Detach members; delete any login-less roster user left leagueless.
-            $memberIds = DB::table('league_user')
-                ->where('league_id', $league->id)
-                ->pluck('user_id');
-            $league->members()->detach();
-
-            foreach ($memberIds as $memberId) {
-                $stillMember = DB::table('league_user')
-                    ->where('user_id', $memberId)
-                    ->exists();
-
-                if (! $stillMember) {
-                    User::whereKey($memberId)->whereNull('password')->delete();
-                }
-            }
-
-            // Anyone pointing at this as their current league.
-            User::where('current_league_id', $league->id)
-                ->update(['current_league_id' => null]);
-
-            $league->delete();
-        });
-
-        $league->forgetRosterCache();
-
-        return redirect()->route('leagues')->with('success', "“{$name}” deleted.");
+        return redirect()->route('leagues')->with('success', "“{$name}” deleted. Members’ rounds were kept.");
     }
 
     /**

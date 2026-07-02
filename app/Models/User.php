@@ -31,6 +31,7 @@ class User extends Authenticatable
         'handicap_index',
         'manual_handicap_index',
         'password',
+        'invited_at',
         'created_at',
         'updated_at',
     ];
@@ -52,6 +53,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'invited_at' => 'datetime',
         'password' => 'hashed',
         'handicap_index' => 'decimal:1',
         'manual_handicap_index' => 'decimal:1',

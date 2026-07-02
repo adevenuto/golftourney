@@ -213,7 +213,7 @@ function submitDelete() {
                                 </svg>
                             </button>
                             <button
-                                v-if="league.role === 'admin'"
+                                v-if="league.is_owner"
                                 type="button"
                                 @click.stop="openDelete(league)"
                                 :aria-label="`Delete ${league.name}`"

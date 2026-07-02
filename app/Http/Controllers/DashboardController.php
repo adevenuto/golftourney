@@ -26,7 +26,7 @@ class DashboardController extends Controller
             ->join('league_user as lu', 'lu.league_id', '=', 'l.id')
             ->leftJoin('courses as c', 'c.id', '=', 'l.course_id')
             ->where('lu.user_id', $user->id)
-            ->select('l.id', 'l.name', 'lu.role', 'l.course_rating', 'l.slope_rating', 'c.club_name', 'c.course_name', 'l.league_only', 'l.display_nine_hole_index')
+            ->select('l.id', 'l.name', 'lu.role', 'l.owner_id', 'l.course_rating', 'l.slope_rating', 'c.club_name', 'c.course_name', 'l.league_only', 'l.display_nine_hole_index')
             ->selectSub(
                 DB::table('league_user')->selectRaw('count(*)')->whereColumn('league_user.league_id', 'l.id'),
                 'golfers_count'
@@ -43,6 +43,7 @@ class DashboardController extends Controller
                 'slope_rating' => $l->slope_rating,
                 'golfers_count' => $l->golfers_count,
                 'is_current' => $l->id === $user->current_league_id,
+                'is_owner' => $l->owner_id === $user->id,
                 'league_only' => (bool) $l->league_only,
                 'display_nine_hole_index' => (bool) $l->display_nine_hole_index,
             ]);

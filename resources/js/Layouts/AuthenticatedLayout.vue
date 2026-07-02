@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import FlashToast from '@/Components/FlashToast.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -231,5 +232,8 @@ function switchLeague(id) {
         <main>
             <slot />
         </main>
+
+        <!-- Global success toast (any page/redirect that flashes `success`). -->
+        <FlashToast />
     </div>
 </template>
