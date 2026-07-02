@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import Modal from '@/Components/Modal.vue';
@@ -29,8 +29,6 @@ const props = defineProps({
     // Optional subtitle on the create modal, e.g. "For john milne".
     forLabel: { type: String, default: '' },
 });
-
-const page = usePage();
 
 const countingSet = computed(() => new Set(props.usedRoundIds));
 const counts = (id) => countingSet.value.has(id);
@@ -83,18 +81,6 @@ function primarySortClass(field) {
         : `${base} border-pine/20 text-pine hover:border-brass`;
 }
 
-/* ---------- flash toast ---------- */
-const toast = ref('');
-let toastTimer;
-watch(
-    () => page.props.flash?.success,
-    (msg) => {
-        if (!msg) return;
-        toast.value = msg;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast.value = ''), 3200);
-    },
-);
 
 /* ---------- create ---------- */
 const showCreate = ref(false);
@@ -296,20 +282,6 @@ defineExpose({ openCreate });
             @update:page="setPage"
         />
 
-        <!-- Toast -->
-        <Transition
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="translate-y-2 opacity-0"
-            leave-active-class="transition duration-200 ease-in"
-            leave-to-class="translate-y-2 opacity-0"
-        >
-            <div
-                v-if="toast"
-                class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-pine px-5 py-2.5 text-sm font-medium text-cream shadow-lg"
-            >
-                {{ toast }}
-            </div>
-        </Transition>
 
         <!-- Create modal -->
         <Modal :show="showCreate" @close="showCreate = false" max-width="md">

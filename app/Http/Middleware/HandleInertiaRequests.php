@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                     'current_league' => $league ? [
                         'id' => $league->id,
                         'name' => $league->name,
+                        'owner_id' => $league->owner_id,
                     ] : null,
                     // The user's leagues, for the nav switcher.
                     'leagues' => DB::table('league_user as lu')

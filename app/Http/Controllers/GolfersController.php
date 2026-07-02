@@ -13,6 +13,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -332,10 +333,23 @@ class GolfersController extends Controller
     /**
      * Remove a golfer from the current league. Login-less roster users left with
      * no leagues are deleted entirely; login accounts are only detached.
+     *
+     * Removing the league's owner (the admin who created it) has no other admin
+     * to hand off to, so it tears the whole league down instead — see
+     * dissolveLeague().
      */
     public function destroy(Request $request, User $user): RedirectResponse
     {
         $league = $this->authorizeUser($request, $user);
+
+        // Removing the owner deletes the league — only the owner may do it to
+        // their own league, so another admin can't tear it down out from under
+        // them (nor orphan it by detaching the owner without a teardown).
+        if ($user->id === $league->owner_id) {
+            abort_unless($request->user()->id === $league->owner_id, 403);
+
+            return $this->dissolveLeague($league);
+        }
 
         $user->rounds()->where('league_id', $league->id)->delete();
         $user->leagues()->detach($league->id);
@@ -350,20 +364,57 @@ class GolfersController extends Controller
     }
 
     /**
-     * Invite a roster player to set up a login: email them a set-password link
-     * (and surface it to the admin to copy, since mail delivery isn't assured).
+     * Tear down a league when its owner leaves: remove every member (league_user)
+     * and delete the league, but keep everyone's rounds by detaching them into
+     * standalone casual rounds (rounds are self-contained, so they stay scoreable
+     * without a league). No users are deleted — that would cascade their rounds.
+     */
+    private function dissolveLeague(League $league): RedirectResponse
+    {
+        $name = $league->name;
+
+        // Keeps everyone's rounds as casual rounds and reselects a next league.
+        $league->dissolve();
+
+        return redirect()->route('leagues')
+            ->with('success', "“{$name}” was deleted. Members’ rounds were kept.");
+    }
+
+    /**
+     * Invite a roster player to set up a login: confirm/update their email (it
+     * must be unique across accounts), then email them a set-password link (and
+     * surface it to the admin to copy, since mail delivery isn't assured). Also
+     * used to resend — invited_at is stamped each time.
      */
     public function invite(Request $request, User $user): RedirectResponse
     {
         $this->authorizeUser($request, $user);
 
         if ($user->canLogin()) {
-            throw ValidationException::withMessages(['invite' => 'This golfer already has a login.']);
+            throw ValidationException::withMessages(['email' => 'This golfer already has a login.']);
         }
 
-        if (! $user->email || str_ends_with($user->email, '@noreply.com')) {
-            throw ValidationException::withMessages(['invite' => 'Add the player’s real email before inviting them.']);
+        $email = trim((string) $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ])['email']);
+
+        // Placeholder noreply addresses (used for login-less roster golfers) can't
+        // receive an invite — the admin must supply a real, reachable email.
+        if (str_ends_with(mb_strtolower($email), '@noreply.com')) {
+            throw ValidationException::withMessages(['email' => 'Enter a real email — a noreply address can’t receive an invite.']);
         }
+
+        // An email uniquely identifies a person, so it can't already belong to a
+        // different account (case-insensitive, matching how we dedup elsewhere).
+        $taken = User::whereRaw('lower(email) = ?', [mb_strtolower($email)])
+            ->where('id', '!=', $user->id)
+            ->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages(['email' => 'This email is already in use.']);
+        }
+
+        $user->update(['email' => $email]);
 
         $token = Password::broker('invites')->createToken($user);
 
@@ -381,6 +432,11 @@ class GolfersController extends Controller
             ]);
         }
 
+        $user->update(['invited_at' => now()]);
+
+        // Email + invite state changed, so every roster this golfer is on is stale.
+        $user->leagues()->get()->each->forgetRosterCache();
+
         return back()
             ->with('success', $delivered
                 ? "Invitation sent to {$user->email}."
@@ -392,14 +448,14 @@ class GolfersController extends Controller
      * The league roster: each member with their per-league round count, portable
      * Handicap Index (formatted + raw for sorting), and derived Course Handicap.
      *
-     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, has_computed_index: bool, course_handicap: ?int, can_login: bool}>
+     * @return list<array{id: int, first_name: string, last_name: string, email: ?string, phone: ?string, number_of_rounds: int, index: string, index_value: ?float, manual_handicap_index: ?float, has_computed_index: bool, course_handicap: ?int, can_login: bool, invited_at: ?string}>
      */
     private function rosterFor(League $league): array
     {
         $rows = DB::table('users as u')
             ->join('league_user as lu', 'lu.user_id', '=', 'u.id')
             ->where('lu.league_id', $league->id)
-            ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'u.handicap_index', 'u.manual_handicap_index')
+            ->select('u.id', 'u.first_name', 'u.last_name', 'u.email', 'u.phone', 'u.handicap_index', 'u.manual_handicap_index', 'u.invited_at')
             ->selectRaw('(u.password is not null) as can_login')
             ->selectSub(
                 DB::table('rounds')
@@ -445,6 +501,8 @@ class GolfersController extends Controller
                 'has_computed_index' => ! is_null($r->handicap_index),
                 'course_handicap' => $this->handicaps->courseHandicapForIndex($effective, $league),
                 'can_login' => (bool) $r->can_login,
+                // When they were last sent a login invite (null = never / accepted).
+                'invited_at' => $r->invited_at ? Carbon::parse($r->invited_at)->format('M j, Y') : null,
             ];
         })->values()->all();
     }
