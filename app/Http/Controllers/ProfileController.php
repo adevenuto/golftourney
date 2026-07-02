@@ -29,13 +29,21 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // Name/email show on every roster this user is on, so those are stale.
+        $rosterStale = $user->isDirty(['first_name', 'last_name', 'email']);
+
+        $user->save();
+
+        if ($rosterStale) {
+            $user->leagues()->get()->each->forgetRosterCache();
+        }
 
         return Redirect::route('profile.edit');
     }
@@ -51,9 +59,15 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // Grab their leagues before the delete cascades the memberships away, so
+        // we can drop them from each cached roster afterward.
+        $leagues = $user->leagues()->get();
+
         Auth::logout();
 
         $user->delete();
+
+        $leagues->each->forgetRosterCache();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

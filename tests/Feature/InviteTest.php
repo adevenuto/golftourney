@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\PlayerInvitation;
 use Illuminate\Contracts\Mail\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\Concerns\WithLeague;
@@ -126,6 +127,29 @@ class InviteTest extends TestCase
 
         $this->assertTrue($player->fresh()->canLogin());
         $this->assertAuthenticatedAs($player->fresh());
+    }
+
+    public function test_accepting_an_invite_refreshes_the_roster_and_clears_the_marker(): void
+    {
+        $league = League::factory()->create();
+        $player = $this->golferIn($league, ['email' => 'player@example.com']);
+        $player->update(['invited_at' => now()]);
+        $token = Password::broker('invites')->createToken($player);
+
+        // A stale roster cache from before they logged in.
+        Cache::forever($league->rosterCacheKey(), ['stale']);
+
+        $this->post(route('invite.store'), [
+            'token' => $token,
+            'email' => 'player@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ])->assertRedirect(route('my-handicap'));
+
+        // Invite marker cleared and the roster cache busted, so the admin now
+        // sees an active login instead of "Invite sent".
+        $this->assertNull($player->fresh()->invited_at);
+        $this->assertFalse(Cache::has($league->rosterCacheKey()));
     }
 
     public function test_accept_rejects_a_bad_token(): void
