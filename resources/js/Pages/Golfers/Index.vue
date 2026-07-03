@@ -664,7 +664,7 @@ function toggleExpand(id) {
                 <p class="mt-1 text-sm text-ink/60">
                     We'll email
                     <span class="font-medium capitalize text-ink">{{ inviting ? fullName(inviting) : '' }}</span>
-                    a link to set up their login so they can manage their own rounds.
+                    a link to set up their account.
                 </p>
                 <p v-if="inviting?.invited_at" class="mt-1 text-xs text-ink/50">
                     Last invited {{ inviting.invited_at }}.
