@@ -234,6 +234,40 @@ class GolferManagementTest extends TestCase
         ]);
     }
 
+    public function test_updating_a_golfer_to_an_email_in_use_is_rejected(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league);
+        User::factory()->create(['email' => 'taken@example.com']);
+
+        // A duplicate email is a validation error, not a 500 from the DB.
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $golfer), [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'email' => 'TAKEN@example.com', // case-insensitive
+                'manual_handicap_index' => 12.3,
+            ])
+            ->assertInvalid('email');
+    }
+
+    public function test_updating_a_golfer_keeps_their_own_email(): void
+    {
+        $league = League::factory()->create();
+        $golfer = $this->golferIn($league, ['email' => 'mine@example.com']);
+
+        // Re-saving with the golfer's own email is not a collision.
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $golfer), [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'email' => 'mine@example.com',
+                'manual_handicap_index' => 12.3,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+    }
+
     public function test_the_established_index_is_optional(): void
     {
         $league = League::factory()->create();
