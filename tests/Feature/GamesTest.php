@@ -2,10 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Events\GameCompleted;
+use App\Events\GameStarted;
+use App\Events\PlayerJoined;
+use App\Events\ScoreUpdated;
 use App\Models\Course;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class GamesTest extends TestCase
@@ -138,8 +143,8 @@ class GamesTest extends TestCase
             ->assertForbidden();
 
         // Owner enters hole 1, then corrects it (upsert, not a duplicate row).
-        $this->actingAs($owner)->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 4])->assertRedirect();
-        $this->actingAs($owner)->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 5])->assertRedirect();
+        $this->actingAs($owner)->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 4])->assertNoContent();
+        $this->actingAs($owner)->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 5])->assertNoContent();
 
         $this->assertDatabaseHas('game_scores', ['game_id' => $game->id, 'user_id' => $owner->id, 'hole' => 1, 'strokes' => 5]);
         $this->assertSame(1, $game->scores()->where('user_id', $owner->id)->count());
@@ -173,6 +178,27 @@ class GamesTest extends TestCase
         // Re-finalizing a completed game is rejected and creates no extra rounds.
         $this->actingAs($owner)->post(route('games.finalize', $game))->assertStatus(422);
         $this->assertDatabaseCount('rounds', 2);
+    }
+
+    public function test_realtime_events_are_broadcast_across_the_lifecycle(): void
+    {
+        Event::fake([PlayerJoined::class, GameStarted::class, ScoreUpdated::class, GameCompleted::class]);
+
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $game = $this->gameWith($owner);
+
+        $this->actingAs($other)->post(route('games.join'), ['join_code' => $game->join_code])->assertRedirect();
+        Event::assertDispatched(PlayerJoined::class);
+
+        $this->actingAs($owner)->post(route('games.start', $game))->assertRedirect();
+        Event::assertDispatched(GameStarted::class);
+
+        $this->actingAs($owner)->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 4])->assertNoContent();
+        Event::assertDispatched(ScoreUpdated::class);
+
+        $this->actingAs($owner)->post(route('games.finalize', $game))->assertRedirect();
+        Event::assertDispatched(GameCompleted::class);
     }
 
     public function test_owner_can_abandon_a_game_without_posting_rounds(): void

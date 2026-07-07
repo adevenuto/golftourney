@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GameCompleted;
+use App\Events\GameStarted;
+use App\Events\PlayerJoined;
+use App\Events\ScoreUpdated;
 use App\Http\Requests\JoinGameRequest;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameScoreRequest;
 use App\Models\Course;
 use App\Models\Game;
 use App\Models\GamePlayer;
+use App\Models\User;
 use App\Services\HandicapService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,6 +79,8 @@ class GamesController extends Controller
             abort_if($game->isFull(), 422, 'This game is full.');
 
             $game->players()->create(['user_id' => $userId]);
+
+            broadcast(new PlayerJoined($game->id, $this->playerSummary($request->user())))->toOthers();
         }
 
         return redirect()->route('games.show', $game);
@@ -83,20 +91,26 @@ class GamesController extends Controller
      * endpoint always writes the actor's own row, so a player can never edit
      * another's card (no user_id is accepted).
      */
-    public function updateScore(UpdateGameScoreRequest $request, Game $game): RedirectResponse
+    public function updateScore(UpdateGameScoreRequest $request, Game $game): HttpResponse
     {
         $actor = $request->user();
         abort_unless($this->isPlayer($game, $actor->id), 403);
         abort_unless($game->isActive(), 422, 'Scores can only be entered while the game is active.');
 
-        $strokes = $request->input('strokes');
+        $hole = $request->integer('hole');
+        $raw = $request->input('strokes');
+        $strokes = ($raw === null || $raw === '') ? null : (int) $raw;
 
         $game->scores()->updateOrCreate(
-            ['user_id' => $actor->id, 'hole' => $request->integer('hole')],
-            ['strokes' => ($strokes === null || $strokes === '') ? null : (int) $strokes],
+            ['user_id' => $actor->id, 'hole' => $hole],
+            ['strokes' => $strokes],
         );
 
-        return back();
+        // Push the new cell to the other players (the editor already has it).
+        broadcast(new ScoreUpdated($game->id, $actor->id, $hole, $strokes, $game->grossFor($actor)))->toOthers();
+
+        // Silent 204 — the client updates optimistically, so no Inertia reload.
+        return response()->noContent();
     }
 
     /**
@@ -109,6 +123,8 @@ class GamesController extends Controller
         abort_unless($game->players()->count() >= Game::MIN_PLAYERS, 422, 'Need at least two players to start.');
 
         $game->update(['status' => Game::STATUS_ACTIVE, 'started_at' => now()]);
+
+        broadcast(new GameStarted($game->id))->toOthers();
 
         return back();
     }
@@ -163,6 +179,8 @@ class GamesController extends Controller
             $this->handicaps->recalculateFor($player);
         }
 
+        broadcast(new GameCompleted($game->id))->toOthers();
+
         return redirect()->route('games.show', $game)->with('success', 'Game finished — rounds posted.');
     }
 
@@ -185,6 +203,24 @@ class GamesController extends Controller
     private function isPlayer(Game $game, int $userId): bool
     {
         return $game->players()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * A fresh player's card entry, matching the shape used in gamePayload().
+     *
+     * @return array<string, mixed>
+     */
+    private function playerSummary(User $user): array
+    {
+        return [
+            'user_id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'is_owner' => false,
+            'confirmed' => false,
+            'holes' => [],
+            'gross' => 0,
+        ];
     }
 
     /**
