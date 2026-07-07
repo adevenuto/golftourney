@@ -307,6 +307,11 @@ class GolfersController extends Controller
     {
         $this->authorizeUser($request, $user);
 
+        // Once a golfer has their own login they manage their own account — an
+        // admin must not be able to change their email/details (that would open
+        // an account-takeover path). Their profile is theirs to edit.
+        abort_if($user->canLogin(), 403);
+
         $attributes = [
             'first_name' => strtolower($request->input('first_name')),
             'last_name' => strtolower($request->input('last_name')),

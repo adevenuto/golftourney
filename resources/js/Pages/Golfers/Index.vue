@@ -77,6 +77,9 @@ const editForm = useForm({
     phone: '',
     manual_handicap_index: '',
 });
+// A golfer with their own login manages their own account, so the edit modal
+// is read-only for them (the backend also rejects such edits — see update()).
+const editLocked = computed(() => !!editing.value?.can_login);
 function openEdit(golfer) {
     editing.value = golfer;
     editForm.clearErrors();
@@ -546,27 +549,29 @@ function toggleExpand(id) {
                         {{ editing.number_of_rounds === 1 ? 'round' : 'rounds' }}
                     </span>
                 </div>
-                <p class="mt-1 text-sm text-ink/60">Update this golfer's details.</p>
+                <p class="mt-1 text-sm text-ink/60">
+                    {{ editLocked ? 'This golfer has their own login and manages their own account, so their details are read-only.' : "Update this golfer's details." }}
+                </p>
 
                 <div class="grid grid-cols-1 gap-4 mt-5 sm:grid-cols-2">
                     <div>
                         <InputLabel for="e_first" value="First name" />
-                        <TextInput id="e_first" v-model="editForm.first_name" type="text" class="block w-full mt-1 capitalize" required />
+                        <TextInput id="e_first" v-model="editForm.first_name" type="text" :disabled="editLocked" class="block w-full mt-1 capitalize disabled:cursor-not-allowed disabled:bg-parchment disabled:text-ink/50" required />
                         <InputError :message="editForm.errors.first_name" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_last" value="Last name" />
-                        <TextInput id="e_last" v-model="editForm.last_name" type="text" class="block w-full mt-1 capitalize" required />
+                        <TextInput id="e_last" v-model="editForm.last_name" type="text" :disabled="editLocked" class="block w-full mt-1 capitalize disabled:cursor-not-allowed disabled:bg-parchment disabled:text-ink/50" required />
                         <InputError :message="editForm.errors.last_name" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_phone" value="Phone" />
-                        <TextInput id="e_phone" v-model="editForm.phone" type="text" class="block w-full mt-1" />
+                        <TextInput id="e_phone" v-model="editForm.phone" type="text" :disabled="editLocked" class="block w-full mt-1 disabled:cursor-not-allowed disabled:bg-parchment disabled:text-ink/50" />
                         <InputError :message="editForm.errors.phone" class="mt-1" />
                     </div>
                     <div>
                         <InputLabel for="e_email" value="Email" />
-                        <TextInput id="e_email" v-model="editForm.email" type="email" class="block w-full mt-1" />
+                        <TextInput id="e_email" v-model="editForm.email" type="email" :disabled="editLocked" class="block w-full mt-1 disabled:cursor-not-allowed disabled:bg-parchment disabled:text-ink/50" />
                         <InputError :message="editForm.errors.email" class="mt-1" />
                     </div>
                 </div>
@@ -607,12 +612,13 @@ function toggleExpand(id) {
                         step="0.1"
                         min="-9.9"
                         max="54.0"
-                        class="block w-full mt-2 tabular-nums"
+                        :disabled="editLocked"
+                        class="block w-full mt-2 tabular-nums disabled:cursor-not-allowed disabled:bg-parchment disabled:text-ink/50"
                         placeholder="e.g. 12.3"
                     />
 
                     <!-- Quick presets to seed a rough index when the exact number isn't known. -->
-                    <div v-if="!editing?.has_computed_index" class="flex flex-wrap items-center gap-1.5 mt-2">
+                    <div v-if="!editing?.has_computed_index && !editLocked" class="flex flex-wrap items-center gap-1.5 mt-2">
                         <span class="text-xs text-ink/50">Quick set:</span>
                         <button
                             v-for="preset in indexPresets"
@@ -641,16 +647,23 @@ function toggleExpand(id) {
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" @click="showEdit = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        :disabled="editForm.processing"
-                        class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
-                    >
-                        Save changes
-                    </button>
+                    <template v-if="editLocked">
+                        <button type="button" @click="showEdit = false" class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light">
+                            Close
+                        </button>
+                    </template>
+                    <template v-else>
+                        <button type="button" @click="showEdit = false" class="px-4 py-2 text-sm font-medium transition rounded-full text-ink/60 hover:text-ink">
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="editForm.processing"
+                            class="px-5 py-2 text-sm font-medium transition rounded-full bg-pine text-cream hover:bg-pine-light disabled:opacity-50"
+                        >
+                            Save changes
+                        </button>
+                    </template>
                 </div>
             </form>
         </Modal>
