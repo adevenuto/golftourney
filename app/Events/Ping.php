@@ -26,4 +26,12 @@ class Ping implements ShouldBroadcast
     {
         return [new PrivateChannel('App.Models.User.'.$this->userId)];
     }
+
+    /**
+     * Clean event name so the client listens with `.listen('.ping', ...)`.
+     */
+    public function broadcastAs(): string
+    {
+        return 'ping';
+    }
 }
