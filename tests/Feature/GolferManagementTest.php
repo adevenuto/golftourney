@@ -234,6 +234,26 @@ class GolferManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_cannot_edit_a_golfer_who_has_their_own_login(): void
+    {
+        $league = League::factory()->create();
+
+        // A login-capable member (has a password) manages their own account.
+        $member = User::factory()->create(['email' => 'member@example.com']);
+        $member->leagues()->attach($league->id, ['role' => 'player']);
+
+        $this->actingAs($this->adminOf($league))
+            ->put(route('golfers.update', $member), [
+                'first_name' => 'Hacked',
+                'last_name' => 'Name',
+                'email' => 'attacker@example.com',
+            ])
+            ->assertForbidden();
+
+        // The account is untouched — no takeover vector.
+        $this->assertSame('member@example.com', $member->fresh()->email);
+    }
+
     public function test_updating_a_golfer_to_an_email_in_use_is_rejected(): void
     {
         $league = League::factory()->create();
