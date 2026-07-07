@@ -11,6 +11,7 @@ use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class GamesTest extends TestCase
@@ -61,13 +62,44 @@ class GamesTest extends TestCase
         $this->assertDatabaseHas('game_players', ['game_id' => $game->id, 'user_id' => $user->id]);
     }
 
-    public function test_only_players_can_view_a_game(): void
+    public function test_a_player_sees_the_scorecard(): void
     {
         $owner = User::factory()->create();
         $game = $this->gameWith($owner);
 
-        $this->actingAs($owner)->get(route('games.show', $game))->assertOk();
-        $this->actingAs(User::factory()->create())->get(route('games.show', $game))->assertForbidden();
+        $this->actingAs($owner)
+            ->get(route('games.show', $game))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Games/Show'));
+    }
+
+    public function test_a_non_player_is_offered_to_join_an_open_game_or_redirected(): void
+    {
+        $owner = User::factory()->create();
+        $game = $this->gameWith($owner); // lobby, not full
+
+        // Share-link visitor on an open game → join confirmation.
+        $this->actingAs(User::factory()->create())
+            ->get(route('games.show', $game))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Games/Join'));
+
+        // Once it's no longer joinable → back to the hub.
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+        $this->actingAs(User::factory()->create())
+            ->get(route('games.show', $game))
+            ->assertRedirect(route('games.index'));
+    }
+
+    public function test_the_games_hub_lists_the_users_games(): void
+    {
+        $owner = User::factory()->create();
+        $this->gameWith($owner);
+
+        $this->actingAs($owner)
+            ->get(route('games.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Games/Index')->has('games', 1));
     }
 
     public function test_a_user_can_join_by_code(): void

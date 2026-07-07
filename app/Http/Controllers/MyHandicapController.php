@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game;
 use App\Models\Round;
 use App\Services\HandicapService;
 use Illuminate\Http\Request;
@@ -46,6 +47,8 @@ class MyHandicapController extends Controller
                     'is_casual' => is_null($r->league_id),
                 ]),
             'usedRoundIds' => $this->handicaps->usedRoundIds($user),
+            // Live games the player is in (active/waiting/recent) for the hub card.
+            'games' => Game::listForUser($user),
         ]);
     }
 }

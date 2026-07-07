@@ -156,4 +156,45 @@ class Game extends Model
     {
         return $this->players()->count() >= self::MAX_PLAYERS;
     }
+
+    /**
+     * A display label for the game's course (club name, then course name).
+     */
+    public function courseLabel(): string
+    {
+        $course = $this->course;
+
+        if (! $course) {
+            return 'Casual game';
+        }
+
+        return $course->club_name ?? $course->course_name ?? 'Casual game';
+    }
+
+    /**
+     * A compact list of the games a user is in, most-relevant first (active,
+     * then waiting, then finished) — for the games hub and my-handicap.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function listForUser(User $user): array
+    {
+        return static::query()
+            ->whereHas('players', fn ($q) => $q->where('user_id', $user->id))
+            ->with('course:id,club_name,course_name')
+            ->withCount('players')
+            ->orderByRaw("case status when 'active' then 0 when 'lobby' then 1 else 2 end")
+            ->orderByDesc('created_at')
+            ->limit(12)
+            ->get()
+            ->map(fn (Game $g): array => [
+                'id' => $g->id,
+                'status' => $g->status,
+                'course_name' => $g->courseLabel(),
+                'holes' => $g->holes,
+                'players_count' => $g->players_count,
+                'is_owner' => $g->owner_id === $user->id,
+            ])
+            ->all();
+    }
 }

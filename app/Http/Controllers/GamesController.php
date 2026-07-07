@@ -55,11 +55,29 @@ class GamesController extends Controller
     }
 
     /**
-     * The live scorecard for a game (only its players may view it).
+     * The player's games hub — start/join + a list of active and recent games.
      */
-    public function show(Request $request, Game $game): Response
+    public function index(Request $request): Response
     {
-        abort_unless($this->isPlayer($game, $request->user()->id), 403);
+        return Inertia::render('Games/Index', [
+            'games' => Game::listForUser($request->user()),
+        ]);
+    }
+
+    /**
+     * The live scorecard for a game. A non-player who opens a share link gets a
+     * "join this game?" confirmation while the game is still open; otherwise
+     * they're sent back to the hub.
+     */
+    public function show(Request $request, Game $game): Response|RedirectResponse
+    {
+        if (! $this->isPlayer($game, $request->user()->id)) {
+            if ($game->isLobby() && ! $game->isFull()) {
+                return Inertia::render('Games/Join', ['game' => $this->joinSummary($game)]);
+            }
+
+            return redirect()->route('games.index');
+        }
 
         return Inertia::render('Games/Show', [
             'game' => $this->gamePayload($game),
@@ -206,6 +224,26 @@ class GamesController extends Controller
     }
 
     /**
+     * Minimal game info for the share-link "join this game?" screen.
+     *
+     * @return array<string, mixed>
+     */
+    private function joinSummary(Game $game): array
+    {
+        $game->load('owner:id,first_name,last_name', 'course:id,club_name,course_name');
+
+        return [
+            'id' => $game->id,
+            'join_code' => $game->join_code,
+            'course_name' => $game->courseLabel(),
+            'holes' => $game->holes,
+            'teebox' => $game->teebox,
+            'host' => trim($game->owner->first_name.' '.$game->owner->last_name),
+            'players_count' => $game->players()->count(),
+        ];
+    }
+
+    /**
      * A fresh player's card entry, matching the shape used in gamePayload().
      *
      * @return array<string, mixed>
@@ -256,7 +294,7 @@ class GamesController extends Controller
             'hole_numbers' => $game->holeNumbers(),
             'par' => $game->par,
             'teebox' => $game->teebox,
-            'course_name' => optional($game->course)->club_name ?? optional($game->course)->course_name,
+            'course_name' => $game->courseLabel(),
             'owner_id' => $game->owner_id,
             'players' => $players,
         ];

@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
 
     // Live games (realtime hole-by-hole scorecard, casual/outside leagues).
     // Authorization is per-action in GamesController (only players; own scores).
+    Route::get('/games', [GamesController::class, 'index'])->name('games.index');
     Route::post('/games', [GamesController::class, 'store'])->name('games.store');
     Route::post('/games/join', [GamesController::class, 'join'])->name('games.join');
     Route::get('/games/{game}', [GamesController::class, 'show'])->name('games.show');

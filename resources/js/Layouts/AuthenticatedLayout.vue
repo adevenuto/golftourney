@@ -33,6 +33,7 @@ const navLinks = computed(() => [
     // The roster is league-scoped — only show it once the user is in a league.
     ...(currentLeagueId.value ? [{ label: 'Golfers', route: 'golfers.index' }] : []),
     { label: 'Handicaps', route: 'handicaps' },
+    { label: 'Games', route: 'games.index' },
     { label: 'Profile', route: 'profile.edit' },
 ]);
 
