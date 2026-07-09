@@ -8,6 +8,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import Modal from '@/Components/Modal.vue';
 import FlashToast from '@/Components/FlashToast.vue';
 import PlayerAvatar from '@/Components/Games/PlayerAvatar.vue';
 import HolePad from '@/Components/Games/HolePad.vue';
@@ -172,10 +173,15 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Games
                     </Link>
-                    <p class="max-w-[10rem] truncate text-[15px] font-semibold capitalize">{{ game.course_name }}</p>
-                    <button type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
-                    </button>
+                    <p class="max-w-[8rem] truncate text-[15px] font-semibold capitalize">{{ game.course_name }}</p>
+                    <div class="flex items-center gap-3">
+                        <button v-if="game.status === 'active'" type="button" @click="scorecardOpen = true" class="text-cream/80 transition hover:text-cream" aria-label="Open scorecard">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
+                        </button>
+                        <button type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Players -->
@@ -236,26 +242,8 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         />
                     </div>
 
-                    <!-- Collapsible scorecard -->
-                    <div class="border-t border-parchment-dark">
-                        <button type="button" @click="scorecardOpen = !scorecardOpen" class="flex w-full items-center justify-between px-5 py-4" :aria-expanded="scorecardOpen">
-                            <span class="text-[11px] font-semibold uppercase tracking-widest text-pine/60">Scorecard</span>
-                            <svg class="h-5 w-5 text-pine/50 transition-transform" :class="scorecardOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        <Scorecard
-                            v-show="scorecardOpen"
-                            :players="game.players"
-                            :hole-numbers="game.hole_numbers"
-                            :hole-pars="game.hole_pars"
-                            :par="game.par"
-                            :me-id="meId"
-                            :online-ids="onlineIds"
-                            :current-hole="currentHole"
-                        />
-                    </div>
-
                     <!-- Host: cancel (finish lives in the bottom nav on the last hole) -->
-                    <div v-if="isOwner" class="border-t border-parchment-dark px-5 py-4 text-center">
+                    <div v-if="isOwner" class="px-5 pb-2 text-center">
                         <button type="button" @click="abandon" class="text-sm font-medium text-red-700/70 transition hover:text-red-800">Cancel game</button>
                     </div>
                 </template>
@@ -305,6 +293,28 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 </div>
             </footer>
         </div>
+
+        <!-- Scorecard modal -->
+        <Modal :show="scorecardOpen" @close="scorecardOpen = false" max-width="lg">
+            <div class="overflow-hidden rounded-lg bg-cream">
+                <div class="flex items-center justify-between border-b border-parchment-dark px-5 py-4">
+                    <h2 class="font-display text-lg font-semibold text-pine">Scorecard</h2>
+                    <button type="button" @click="scorecardOpen = false" class="text-ink/40 transition hover:text-ink" aria-label="Close">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                    </button>
+                </div>
+                <Scorecard
+                    :players="game.players"
+                    :hole-numbers="game.hole_numbers"
+                    :hole-pars="game.hole_pars"
+                    :par="game.par"
+                    :me-id="meId"
+                    :online-ids="onlineIds"
+                    :current-hole="currentHole"
+                />
+            </div>
+        </Modal>
+
         <FlashToast />
     </div>
 </template>
