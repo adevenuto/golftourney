@@ -312,6 +312,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     :players="game.players"
                     :hole-numbers="game.hole_numbers"
                     :hole-pars="game.hole_pars"
+                    :hole-lengths="game.hole_lengths"
                     :par="game.par"
                     :me-id="meId"
                     :online-ids="onlineIds"

@@ -5,6 +5,7 @@ const props = defineProps({
     players: { type: Array, required: true },
     holeNumbers: { type: Array, required: true },
     holePars: { type: Object, default: () => ({}) },
+    holeLengths: { type: Object, default: () => ({}) },
     par: { type: Number, default: 0 },
     meId: { type: Number, default: null },
     onlineIds: { type: Array, default: () => [] },
@@ -15,6 +16,8 @@ const front = computed(() => props.holeNumbers.filter((h) => h <= 9));
 const back = computed(() => props.holeNumbers.filter((h) => h > 9));
 const hasBack = computed(() => back.value.length > 0);
 const hasPars = computed(() => Object.keys(props.holePars || {}).length > 0);
+const hasLengths = computed(() => Object.keys(props.holeLengths || {}).length > 0);
+const lengthSum = (holes) => holes.reduce((t, h) => t + (Number(props.holeLengths?.[h]) || 0), 0);
 
 const val = (p, h) => {
     const v = p.holes?.[h];
@@ -60,6 +63,17 @@ const sticky = 'sticky left-0 z-10 shadow-[1px_0_0_0_theme(colors.parchment.dark
                         <th class="border-b-2 border-parchment-dark bg-parchment/50 text-xs font-bold uppercase" :class="sub">In</th>
                     </template>
                     <th class="border-b-2 border-parchment-dark bg-brass/15 text-xs font-bold uppercase text-brass-dark" :class="sub">Tot</th>
+                </tr>
+                <!-- Yards -->
+                <tr v-if="hasLengths" class="text-ink/40">
+                    <th :class="sticky" class="border-b border-parchment-dark bg-cream pl-4 pr-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider">Yds</th>
+                    <th v-for="h in front" :key="h" class="border-b border-parchment-dark px-1.5 py-1.5 text-[11px] tabular-nums" :class="colHi(h)">{{ holeLengths[h] ?? '·' }}</th>
+                    <th v-if="hasBack" class="border-b border-parchment-dark bg-parchment/50 px-2 py-1.5 text-[11px] tabular-nums">{{ lengthSum(front) || '—' }}</th>
+                    <template v-if="hasBack">
+                        <th v-for="h in back" :key="h" class="border-b border-parchment-dark px-1.5 py-1.5 text-[11px] tabular-nums" :class="colHi(h)">{{ holeLengths[h] ?? '·' }}</th>
+                        <th class="border-b border-parchment-dark bg-parchment/50 px-2 py-1.5 text-[11px] tabular-nums">{{ lengthSum(back) || '—' }}</th>
+                    </template>
+                    <th class="border-b border-parchment-dark bg-brass/15 px-2 py-1.5 text-[11px] tabular-nums">{{ lengthSum(holeNumbers) || '—' }}</th>
                 </tr>
                 <!-- Par -->
                 <tr v-if="hasPars" class="text-ink/50">

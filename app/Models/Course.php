@@ -110,12 +110,33 @@ class Course extends Model
 
     /**
      * Per-hole par for a teebox, keyed by hole number (1-based): {1:4, 2:5, …}.
-     * Empty if the tee or its hole data is missing. Used to snapshot a game's
-     * hole pars so the scorecard can show PAR + colour scores by result.
+     * Used to snapshot a game's hole pars (PAR row + score colouring).
      *
      * @return array<int, int>
      */
     public function holePars(?string $teebox): array
+    {
+        return $this->holeField($teebox, 'par');
+    }
+
+    /**
+     * Per-hole length (yardage) for a teebox, keyed by hole number: {1:507, …}.
+     * Used to snapshot a game's hole yardages for the scorecard's Yards row.
+     *
+     * @return array<int, int>
+     */
+    public function holeLengths(?string $teebox): array
+    {
+        return $this->holeField($teebox, 'length');
+    }
+
+    /**
+     * Per-hole integer values for a teebox field ('par' | 'length'), keyed by
+     * hole number (1-based). Empty if the tee or its hole data is missing.
+     *
+     * @return array<int, int>
+     */
+    private function holeField(?string $teebox, string $field): array
     {
         $match = null;
         foreach ($this->teeboxes() as $tee) {
@@ -130,19 +151,19 @@ class Course extends Model
             return [];
         }
 
-        $pars = [];
+        $values = [];
         $i = 0;
         foreach ($match['holes'] as $key => $hole) {
             $i++;
             $n = preg_match('/(\d+)/', (string) $key, $m) ? (int) $m[1] : $i;
-            $par = (int) ($hole['par'] ?? 0);
-            if ($n >= 1 && $par > 0) {
-                $pars[$n] = $par;
+            $value = (int) ($hole[$field] ?? 0);
+            if ($n >= 1 && $value > 0) {
+                $values[$n] = $value;
             }
         }
-        ksort($pars);
+        ksort($values);
 
-        return $pars;
+        return $values;
     }
 
     /**

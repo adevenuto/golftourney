@@ -25,6 +25,7 @@ class GameFactory extends Factory
             'holes' => 9,
             'par' => 33,
             'hole_pars' => [1 => 4, 2 => 4, 3 => 3, 4 => 4, 5 => 4, 6 => 4, 7 => 3, 8 => 4, 9 => 3],
+            'hole_lengths' => [1 => 380, 2 => 410, 3 => 165, 4 => 395, 5 => 420, 6 => 400, 7 => 150, 8 => 405, 9 => 175],
             'course_rating' => 31.5,
             'slope_rating' => 104,
             'status' => Game::STATUS_LOBBY,

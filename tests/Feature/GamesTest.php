@@ -28,7 +28,7 @@ class GamesTest extends TestCase
                     'name' => 'Blue',
                     'slope' => 113,
                     'courseRating' => 72.0,
-                    'holes' => collect(range(1, 18))->mapWithKeys(fn ($i) => ['hole-'.$i => ['par' => '4']])->all(),
+                    'holes' => collect(range(1, 18))->mapWithKeys(fn ($i) => ['hole-'.$i => ['par' => '4', 'length' => '400']])->all(),
                 ]],
             ],
         ]);
@@ -61,9 +61,11 @@ class GamesTest extends TestCase
         $this->assertNotEmpty($game->join_code);
         $this->assertDatabaseHas('game_players', ['game_id' => $game->id, 'user_id' => $user->id]);
 
-        // Per-hole par is snapshotted (18 holes, par 4 each in the fixture).
+        // Per-hole par + length are snapshotted (18 holes; par 4 / 400 yds).
         $this->assertCount(18, $game->hole_pars);
         $this->assertSame(4, $game->hole_pars[1]);
+        $this->assertCount(18, $game->hole_lengths);
+        $this->assertSame(400, $game->hole_lengths[1]);
     }
 
     public function test_a_player_sees_the_scorecard(): void

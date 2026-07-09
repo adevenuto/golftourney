@@ -47,6 +47,7 @@ class GamesController extends Controller
             'course_id' => $course->id,
             'teebox' => $teebox,
             'hole_pars' => $course->holePars($teebox) ?: null,
+            'hole_lengths' => $course->holeLengths($teebox) ?: null,
             'status' => Game::STATUS_LOBBY,
         ]);
 
@@ -306,6 +307,7 @@ class GamesController extends Controller
             'hole_numbers' => $game->holeNumbers(),
             'par' => $game->par,
             'hole_pars' => $game->hole_pars ?? [],
+            'hole_lengths' => $game->hole_lengths ?? [],
             'teebox' => $game->teebox,
             'course_name' => $game->courseLabel(),
             'course_sub' => $game->courseSubLabel(),

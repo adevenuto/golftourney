@@ -41,6 +41,7 @@ class Game extends Model
         'holes',
         'par',
         'hole_pars',
+        'hole_lengths',
         'course_rating',
         'slope_rating',
         'status',
@@ -58,6 +59,7 @@ class Game extends Model
         'holes' => 'integer',
         'par' => 'integer',
         'hole_pars' => 'array',
+        'hole_lengths' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
