@@ -109,6 +109,43 @@ class Course extends Model
     }
 
     /**
+     * Per-hole par for a teebox, keyed by hole number (1-based): {1:4, 2:5, …}.
+     * Empty if the tee or its hole data is missing. Used to snapshot a game's
+     * hole pars so the scorecard can show PAR + colour scores by result.
+     *
+     * @return array<int, int>
+     */
+    public function holePars(?string $teebox): array
+    {
+        $match = null;
+        foreach ($this->teeboxes() as $tee) {
+            if ($teebox && strcasecmp((string) ($tee['name'] ?? ''), $teebox) === 0) {
+                $match = $tee;
+                break;
+            }
+        }
+        $match ??= $this->teeboxes()[0] ?? null;
+
+        if (! $match || ! is_array($match['holes'] ?? null)) {
+            return [];
+        }
+
+        $pars = [];
+        $i = 0;
+        foreach ($match['holes'] as $key => $hole) {
+            $i++;
+            $n = preg_match('/(\d+)/', (string) $key, $m) ? (int) $m[1] : $i;
+            $par = (int) ($hole['par'] ?? 0);
+            if ($n >= 1 && $par > 0) {
+                $pars[$n] = $par;
+            }
+        }
+        ksort($pars);
+
+        return $pars;
+    }
+
+    /**
      * The handicap-scoring context for a teebox: normalized course rating,
      * slope, par, and hole count. Null if the teebox or its data is missing.
      * Used to snapshot a casual round's course onto the round.

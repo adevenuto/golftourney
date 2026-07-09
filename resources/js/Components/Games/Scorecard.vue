@@ -4,14 +4,17 @@ import { computed } from 'vue';
 const props = defineProps({
     players: { type: Array, required: true },
     holeNumbers: { type: Array, required: true },
+    holePars: { type: Object, default: () => ({}) },
     par: { type: Number, default: 0 },
     meId: { type: Number, default: null },
     onlineIds: { type: Array, default: () => [] },
+    currentHole: { type: Number, default: null },
 });
 
 const front = computed(() => props.holeNumbers.filter((h) => h <= 9));
 const back = computed(() => props.holeNumbers.filter((h) => h > 9));
 const hasBack = computed(() => back.value.length > 0);
+const hasPars = computed(() => Object.keys(props.holePars || {}).length > 0);
 
 const val = (p, h) => {
     const v = p.holes?.[h];
@@ -19,66 +22,73 @@ const val = (p, h) => {
 };
 const sum = (p, holes) => holes.reduce((t, h) => t + (val(p, h) ?? 0), 0);
 const total = (p) => sum(p, props.holeNumbers);
+const parSum = (holes) => holes.reduce((t, h) => t + (Number(props.holePars?.[h]) || 0), 0);
 
 const fullName = (p) => `${p.first_name} ${p.last_name}`;
 const isOnline = (id) => props.onlineIds.includes(id);
 
-// Total relative to par, once there's something entered.
 const toPar = (p) => {
     const t = total(p);
     if (!t) return '';
     const d = t - props.par;
     return d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`;
 };
+
+// Subtle par-relative text colour for a score cell.
+function scoreColor(p, h) {
+    const v = val(p, h);
+    if (v == null) return 'text-ink/25';
+    const par = Number(props.holePars?.[h]) || 0;
+    if (!par) return 'text-ink/80';
+    const d = v - par;
+    if (d <= -1) return 'font-semibold text-emerald-600';
+    if (d === 0) return 'text-ink/80';
+    if (d === 1) return 'text-amber-600';
+    return 'font-semibold text-red-600';
+}
+const colHi = (h) => (h === props.currentHole ? 'bg-brass/10' : '');
 </script>
 
 <template>
-    <div class="overflow-x-auto border rounded-2xl border-parchment-dark bg-cream">
+    <div class="overflow-x-auto rounded-2xl border border-parchment-dark bg-cream [-webkit-overflow-scrolling:touch]">
         <table class="min-w-full border-separate border-spacing-0 text-center text-sm">
             <thead>
                 <tr class="text-pine">
-                    <th class="sticky left-0 z-10 border-b border-parchment-dark bg-cream px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                    <th class="sticky left-0 z-10 border-b border-parchment-dark bg-cream px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider shadow-[1px_0_0_0_theme(colors.parchment.dark)]">
                         Player
                     </th>
-                    <th
-                        v-for="h in holeNumbers"
-                        :key="h"
-                        class="border-b border-parchment-dark px-2.5 py-3 tabular-nums text-xs font-semibold"
-                    >
-                        {{ h }}
-                    </th>
-                    <th class="border-b border-parchment-dark bg-parchment/40 px-3 py-3 text-xs font-semibold uppercase">Out</th>
-                    <th v-if="hasBack" class="border-b border-parchment-dark bg-parchment/40 px-3 py-3 text-xs font-semibold uppercase">In</th>
-                    <th class="border-b border-parchment-dark bg-parchment/60 px-4 py-3 text-xs font-semibold uppercase">Tot</th>
+                    <th v-for="h in holeNumbers" :key="h" class="border-b border-parchment-dark px-2 py-2.5 text-[11px] font-semibold tabular-nums" :class="colHi(h)">{{ h }}</th>
+                    <th class="border-b border-parchment-dark bg-parchment/40 px-2.5 py-2.5 text-[11px] font-semibold uppercase">Out</th>
+                    <th v-if="hasBack" class="border-b border-parchment-dark bg-parchment/40 px-2.5 py-2.5 text-[11px] font-semibold uppercase">In</th>
+                    <th class="border-b border-parchment-dark bg-parchment/60 px-3 py-2.5 text-[11px] font-semibold uppercase">Tot</th>
+                </tr>
+                <tr v-if="hasPars" class="text-ink/45">
+                    <th class="sticky left-0 z-10 border-b border-parchment-dark bg-cream px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider shadow-[1px_0_0_0_theme(colors.parchment.dark)]">Par</th>
+                    <th v-for="h in holeNumbers" :key="h" class="border-b border-parchment-dark px-2 py-1.5 text-[11px] tabular-nums" :class="colHi(h)">{{ holePars[h] ?? '·' }}</th>
+                    <th class="border-b border-parchment-dark bg-parchment/40 px-2.5 py-1.5 text-[11px] tabular-nums">{{ parSum(front) || '—' }}</th>
+                    <th v-if="hasBack" class="border-b border-parchment-dark bg-parchment/40 px-2.5 py-1.5 text-[11px] tabular-nums">{{ parSum(back) || '—' }}</th>
+                    <th class="border-b border-parchment-dark bg-parchment/60 px-3 py-1.5 text-[11px] tabular-nums">{{ par || '—' }}</th>
                 </tr>
             </thead>
             <tbody>
-                <tr
-                    v-for="p in players"
-                    :key="p.user_id"
-                    :class="p.user_id === meId ? 'bg-brass/[0.06]' : ''"
-                >
+                <tr v-for="p in players" :key="p.user_id" :class="p.user_id === meId ? 'bg-brass/[0.06]' : ''">
                     <td
-                        class="sticky left-0 z-10 border-b border-parchment-dark/60 px-4 py-3 text-left"
+                        class="sticky left-0 z-10 border-b border-parchment-dark/60 px-3 py-2.5 text-left shadow-[1px_0_0_0_theme(colors.parchment.dark)]"
                         :class="p.user_id === meId ? 'bg-[#f7f0e3]' : 'bg-cream'"
                     >
-                        <span class="inline-flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5">
                             <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="isOnline(p.user_id) ? 'bg-pine' : 'bg-ink/20'"></span>
-                            <span class="font-medium capitalize text-ink">{{ fullName(p) }}</span>
+                            <span class="max-w-[6rem] truncate font-medium capitalize text-ink">{{ fullName(p) }}</span>
                         </span>
                     </td>
-                    <td
-                        v-for="h in holeNumbers"
-                        :key="h"
-                        class="border-b border-parchment-dark/60 px-2.5 py-3 tabular-nums text-ink/80"
-                    >
+                    <td v-for="h in holeNumbers" :key="h" class="border-b border-parchment-dark/60 px-2 py-2.5 tabular-nums" :class="[colHi(h), scoreColor(p, h)]">
                         {{ val(p, h) ?? '·' }}
                     </td>
-                    <td class="border-b border-parchment-dark/60 bg-parchment/40 px-3 py-3 font-semibold tabular-nums text-pine">{{ sum(p, front) || '—' }}</td>
-                    <td v-if="hasBack" class="border-b border-parchment-dark/60 bg-parchment/40 px-3 py-3 font-semibold tabular-nums text-pine">{{ sum(p, back) || '—' }}</td>
-                    <td class="border-b border-parchment-dark/60 bg-parchment/60 px-4 py-3 font-display font-semibold tabular-nums text-pine">
+                    <td class="border-b border-parchment-dark/60 bg-parchment/40 px-2.5 py-2.5 font-semibold tabular-nums text-pine">{{ sum(p, front) || '—' }}</td>
+                    <td v-if="hasBack" class="border-b border-parchment-dark/60 bg-parchment/40 px-2.5 py-2.5 font-semibold tabular-nums text-pine">{{ sum(p, back) || '—' }}</td>
+                    <td class="border-b border-parchment-dark/60 bg-parchment/60 px-3 py-2.5 font-display font-semibold tabular-nums text-pine">
                         {{ total(p) || '—' }}
-                        <span v-if="toPar(p)" class="ml-0.5 text-xs font-normal text-ink/50">{{ toPar(p) }}</span>
+                        <span v-if="toPar(p)" class="ml-0.5 text-[11px] font-normal text-ink/50">{{ toPar(p) }}</span>
                     </td>
                 </tr>
             </tbody>

@@ -40,6 +40,7 @@ class Game extends Model
         'teebox',
         'holes',
         'par',
+        'hole_pars',
         'course_rating',
         'slope_rating',
         'status',
@@ -56,6 +57,7 @@ class Game extends Model
         'slope_rating' => 'integer',
         'holes' => 'integer',
         'par' => 'integer',
+        'hole_pars' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

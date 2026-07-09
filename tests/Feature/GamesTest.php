@@ -60,6 +60,10 @@ class GamesTest extends TestCase
         $this->assertSame(18, $game->holes);
         $this->assertNotEmpty($game->join_code);
         $this->assertDatabaseHas('game_players', ['game_id' => $game->id, 'user_id' => $user->id]);
+
+        // Per-hole par is snapshotted (18 holes, par 4 each in the fixture).
+        $this->assertCount(18, $game->hole_pars);
+        $this->assertSame(4, $game->hole_pars[1]);
     }
 
     public function test_a_player_sees_the_scorecard(): void

@@ -24,6 +24,7 @@ class GameFactory extends Factory
             'teebox' => null,
             'holes' => 9,
             'par' => 33,
+            'hole_pars' => [1 => 4, 2 => 4, 3 => 3, 4 => 4, 5 => 4, 6 => 4, 7 => 3, 8 => 4, 9 => 3],
             'course_rating' => 31.5,
             'slope_rating' => 104,
             'status' => Game::STATUS_LOBBY,
