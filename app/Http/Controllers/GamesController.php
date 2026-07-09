@@ -117,16 +117,16 @@ class GamesController extends Controller
         abort_unless($game->isActive(), 422, 'Scores can only be entered while the game is active.');
 
         $hole = $request->integer('hole');
-        $raw = $request->input('strokes');
-        $strokes = ($raw === null || $raw === '') ? null : (int) $raw;
+        $strokes = $this->nullableInt($request->input('strokes'));
+        $putts = $this->nullableInt($request->input('putts'));
 
         $game->scores()->updateOrCreate(
             ['user_id' => $actor->id, 'hole' => $hole],
-            ['strokes' => $strokes],
+            ['strokes' => $strokes, 'putts' => $putts],
         );
 
         // Push the new cell to the other players (the editor already has it).
-        broadcast(new ScoreUpdated($game->id, $actor->id, $hole, $strokes, $game->grossFor($actor)))->toOthers();
+        broadcast(new ScoreUpdated($game->id, $actor->id, $hole, $strokes, $putts, $game->grossFor($actor)))->toOthers();
 
         // Silent 204 — the client updates optimistically, so no Inertia reload.
         return response()->noContent();
@@ -225,6 +225,14 @@ class GamesController extends Controller
     }
 
     /**
+     * A submitted score field as a nullable int (blank/empty ⇒ null).
+     */
+    private function nullableInt(mixed $value): ?int
+    {
+        return ($value === null || $value === '') ? null : (int) $value;
+    }
+
+    /**
      * Minimal game info for the share-link "join this game?" screen.
      *
      * @return array<string, mixed>
@@ -258,6 +266,7 @@ class GamesController extends Controller
             'is_owner' => false,
             'confirmed' => false,
             'holes' => [],
+            'putts' => [],
             'gross' => 0,
         ];
     }
@@ -274,7 +283,8 @@ class GamesController extends Controller
         $scoresByUser = $game->scores->groupBy('user_id');
 
         $players = $game->players->map(function (GamePlayer $p) use ($game, $scoresByUser): array {
-            $holes = $scoresByUser->get($p->user_id, collect())->pluck('strokes', 'hole');
+            $rows = $scoresByUser->get($p->user_id, collect());
+            $holes = $rows->pluck('strokes', 'hole');
 
             return [
                 'user_id' => $p->user_id,
@@ -283,6 +293,7 @@ class GamesController extends Controller
                 'is_owner' => $p->user_id === $game->owner_id,
                 'confirmed' => ! is_null($p->confirmed_at),
                 'holes' => $holes->all(),
+                'putts' => $rows->pluck('putts', 'hole')->all(),
                 'gross' => (int) $holes->filter(fn ($s) => ! is_null($s))->sum(),
             ];
         })->values()->all();

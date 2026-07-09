@@ -38,10 +38,9 @@ const parFor = (h) => {
     const p = game.hole_pars?.[h];
     return p == null ? null : Number(p);
 };
-const myScore = computed(() => {
-    const v = myPlayer.value?.holes?.[currentHole.value];
-    return v == null || v === '' ? null : Number(v);
-});
+const numOr = (v) => (v == null || v === '' ? null : Number(v));
+const myStrokes = computed(() => numOr(myPlayer.value?.holes?.[currentHole.value]));
+const myPutts = computed(() => numOr(myPlayer.value?.putts?.[currentHole.value]));
 const myTotal = computed(() =>
     myPlayer.value
         ? Object.values(myPlayer.value.holes).reduce((t, v) => t + (v == null || v === '' ? 0 : Number(v)), 0)
@@ -57,33 +56,30 @@ function jumpToFirstUnentered() {
     if (i > 0) currentIdx.value = i;
 }
 
-/* ---------- score writes (optimistic + debounced) ---------- */
+/* ---------- score writes (optimistic + debounced; sends strokes + putts) ---------- */
 const patchTimers = {};
-function setScore(value) {
-    if (!myPlayer.value) return;
-    const hole = currentHole.value;
-    myPlayer.value.holes[hole] = value; // optimistic (null = cleared)
+function writeCell(hole) {
     clearTimeout(patchTimers[hole]);
     patchTimers[hole] = setTimeout(() => {
         window.axios
-            .patch(route('games.scores.update', game.id), { hole, strokes: value })
+            .patch(route('games.scores.update', game.id), {
+                hole,
+                strokes: numOr(myPlayer.value?.holes?.[hole]),
+                putts: numOr(myPlayer.value?.putts?.[hole]),
+            })
             .catch(() => router.reload({ only: ['game'] }));
     }, 200);
 }
-
-/* ---------- hole nav + complete ---------- */
-const isLast = computed(() => currentIdx.value >= game.hole_numbers.length - 1);
-const completeLabel = computed(() => {
-    if (!isLast.value) return 'Complete Hole';
-    return isOwner.value ? 'Finish & post rounds' : 'Waiting for host…';
-});
-const completeDisabled = computed(() => isLast.value && !isOwner.value);
-function complete() {
-    if (!isLast.value) {
-        currentIdx.value++;
-        return;
-    }
-    if (isOwner.value) finalize();
+function setStrokes(value) {
+    if (!myPlayer.value) return;
+    myPlayer.value.holes[currentHole.value] = value;
+    writeCell(currentHole.value);
+}
+function setPutts(value) {
+    if (!myPlayer.value) return;
+    if (!myPlayer.value.putts) myPlayer.value.putts = {};
+    myPlayer.value.putts[currentHole.value] = value;
+    writeCell(currentHole.value);
 }
 
 /* ---------- lifecycle ---------- */
@@ -122,7 +118,11 @@ onMounted(() => {
         .leaving((u) => online.delete(u.id))
         .listen('.score.updated', (e) => {
             const p = game.players.find((pl) => pl.user_id === e.userId);
-            if (p) p.holes[e.hole] = e.strokes;
+            if (p) {
+                p.holes[e.hole] = e.strokes;
+                if (!p.putts) p.putts = {};
+                p.putts[e.hole] = e.putts;
+            }
         })
         .listen('.player.joined', (e) => {
             if (!game.players.some((pl) => pl.user_id === e.player.user_id)) game.players.push(e.player);
@@ -213,19 +213,19 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     <HolePad
                         :hole="currentHole"
                         :par="parFor(currentHole)"
-                        :score="myScore"
+                        :strokes="myStrokes"
+                        :putts="myPutts"
                         :can-prev="currentIdx > 0"
                         :can-next="currentIdx < game.hole_numbers.length - 1"
-                        :complete-label="completeLabel"
-                        :complete-disabled="completeDisabled"
-                        @set="setScore"
+                        @set-strokes="setStrokes"
+                        @set-putts="setPutts"
                         @prev="currentIdx--"
                         @next="currentIdx++"
-                        @complete="complete"
                     />
 
-                    <div>
-                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pine/60">Scorecard</p>
+                    <!-- Full-bleed scorecard -->
+                    <div class="-mx-5">
+                        <p class="mb-2 px-5 text-[11px] font-semibold uppercase tracking-wider text-pine/60">Scorecard</p>
                         <Scorecard
                             :players="game.players"
                             :hole-numbers="game.hole_numbers"
@@ -237,9 +237,9 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         />
                     </div>
 
-                    <div v-if="isOwner" class="flex items-center justify-between pt-2 text-sm">
-                        <button type="button" @click="abandon" class="font-medium text-red-700/80 transition hover:text-red-800">Cancel game</button>
-                        <button type="button" @click="finalize" class="rounded-full border border-pine/20 px-4 py-2 font-medium text-pine transition hover:border-brass">Finish now</button>
+                    <div v-if="isOwner" class="pt-2">
+                        <button type="button" @click="finalize" class="w-full rounded-full bg-pine px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pine-light">Finish &amp; post rounds</button>
+                        <button type="button" @click="abandon" class="mt-3 w-full text-sm font-medium text-red-700/80 transition hover:text-red-800">Cancel game</button>
                     </div>
                 </div>
 

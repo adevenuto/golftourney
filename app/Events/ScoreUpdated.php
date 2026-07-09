@@ -22,6 +22,7 @@ class ScoreUpdated implements ShouldBroadcast
         public int $userId,
         public int $hole,
         public ?int $strokes,
+        public ?int $putts,
         public int $gross,
     ) {}
 

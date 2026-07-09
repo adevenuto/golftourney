@@ -186,6 +186,22 @@ class GamesTest extends TestCase
         $this->assertSame(1, $game->scores()->where('user_id', $owner->id)->count());
     }
 
+    public function test_a_player_can_record_putts_alongside_strokes(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $game = $this->gameWith($owner, $other);
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+
+        $this->actingAs($owner)
+            ->patch(route('games.scores.update', $game), ['hole' => 1, 'strokes' => 4, 'putts' => 2])
+            ->assertNoContent();
+
+        $this->assertDatabaseHas('game_scores', [
+            'game_id' => $game->id, 'user_id' => $owner->id, 'hole' => 1, 'strokes' => 4, 'putts' => 2,
+        ]);
+    }
+
     public function test_finalizing_posts_a_casual_round_per_player_and_is_guarded(): void
     {
         $owner = User::factory()->create();

@@ -18,6 +18,7 @@ class GameScore extends Model
         'user_id',
         'hole',
         'strokes',
+        'putts',
     ];
 
     /**
@@ -26,6 +27,7 @@ class GameScore extends Model
     protected $casts = [
         'hole' => 'integer',
         'strokes' => 'integer',
+        'putts' => 'integer',
     ];
 
     /**

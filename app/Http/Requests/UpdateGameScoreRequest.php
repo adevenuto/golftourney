@@ -23,6 +23,7 @@ class UpdateGameScoreRequest extends FormRequest
         return [
             'hole' => "required|integer|min:1|max:{$maxHole}",
             'strokes' => 'nullable|integer|min:1|max:20',
+            'putts' => 'nullable|integer|min:0|max:15',
         ];
     }
 }

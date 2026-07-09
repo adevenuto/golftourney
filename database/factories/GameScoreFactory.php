@@ -22,6 +22,7 @@ class GameScoreFactory extends Factory
             'user_id' => User::factory(),
             'hole' => fake()->numberBetween(1, 9),
             'strokes' => fake()->numberBetween(3, 7),
+            'putts' => fake()->numberBetween(1, 3),
         ];
     }
 }
