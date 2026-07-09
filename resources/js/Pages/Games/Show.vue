@@ -300,7 +300,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
         </div>
 
         <!-- Scorecard modal -->
-        <Modal :show="scorecardOpen" @close="scorecardOpen = false" max-width="lg">
+        <Modal :show="scorecardOpen" @close="scorecardOpen = false" max-width="2xl">
             <div class="overflow-hidden rounded-lg bg-cream">
                 <div class="flex items-center justify-between border-b border-parchment-dark px-5 py-4">
                     <h2 class="font-display text-lg font-semibold text-pine">Scorecard</h2>
