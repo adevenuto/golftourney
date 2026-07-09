@@ -6,8 +6,8 @@ const props = defineProps({
     lastName: { type: String, default: '' },
     size: { type: String, default: 'md' }, // sm | md | lg
     online: { type: Boolean, default: false },
-    active: { type: Boolean, default: false }, // e.g. it's me / current
-    ringColor: { type: String, default: 'ring-cream/30' },
+    // Identity ring — green for the current user, brass for others.
+    ringColor: { type: String, default: 'ring-brass' },
 });
 
 const initials = computed(() => {
@@ -16,33 +16,21 @@ const initials = computed(() => {
     return ((a + b) || '?').toUpperCase();
 });
 
-// Deterministic brand-tinted background from the name.
-const palette = ['bg-pine', 'bg-pine-light', 'bg-brass-dark', 'bg-[#3a5a44]', 'bg-[#7a5b34]', 'bg-[#2f6d4f]'];
-const bg = computed(() => {
-    const s = props.firstName + props.lastName;
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return palette[h % palette.length];
-});
-
 const sizes = {
-    sm: 'h-9 w-9 text-xs',
-    md: 'h-12 w-12 text-sm',
-    lg: 'h-20 w-20 text-2xl',
+    sm: 'h-9 w-9 text-xs ring-2',
+    md: 'h-12 w-12 text-sm ring-[3px]',
+    lg: 'h-16 w-16 text-xl ring-[3px]',
 };
 </script>
 
 <template>
     <span class="relative inline-flex shrink-0">
-        <span
-            :class="[sizes[size], bg, active ? 'ring-brass' : ringColor]"
-            class="flex items-center justify-center rounded-full font-semibold uppercase text-cream ring-2"
-        >
+        <span :class="[sizes[size], ringColor]" class="flex items-center justify-center rounded-full bg-pine-light font-semibold uppercase text-cream">
             {{ initials }}
         </span>
         <span
             v-if="online"
-            class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-brass-light ring-2 ring-pine"
+            class="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-brass ring-2 ring-pine-deep"
             aria-hidden="true"
         ></span>
     </span>

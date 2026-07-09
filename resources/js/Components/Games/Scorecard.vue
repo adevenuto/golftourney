@@ -51,7 +51,7 @@ const stickyShadow = 'shadow-[1px_0_0_0_theme(colors.parchment.dark)]';
 </script>
 
 <template>
-    <div class="overflow-x-auto border-y border-parchment-dark bg-cream [-webkit-overflow-scrolling:touch]">
+    <div class="overflow-x-auto border-t border-parchment-dark bg-cream [-webkit-overflow-scrolling:touch]">
         <table class="min-w-full border-separate border-spacing-0 text-center text-[13px]">
             <thead>
                 <!-- Hole numbers -->
