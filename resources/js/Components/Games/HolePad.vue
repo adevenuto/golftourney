@@ -6,10 +6,8 @@ const props = defineProps({
     par: { type: Number, default: null },
     strokes: { type: Number, default: null },
     putts: { type: Number, default: null },
-    canPrev: { type: Boolean, default: false },
-    canNext: { type: Boolean, default: false },
 });
-const emit = defineEmits(['set-strokes', 'set-putts', 'prev', 'next']);
+const emit = defineEmits(['set-strokes', 'set-putts']);
 
 const strokesExpanded = ref(false);
 const puttsExpanded = ref(false);
@@ -92,28 +90,6 @@ const puttCls = (v) => (v === props.putts ? picked : neutral);
                 </div>
                 <button type="button" @click="puttsExpanded = false" class="mt-2 w-full text-xs font-medium text-pine/60 hover:text-pine">Back</button>
             </div>
-        </div>
-
-        <!-- Hole navigation -->
-        <div class="flex items-center justify-between pt-1">
-            <button
-                type="button"
-                :disabled="!canPrev"
-                @click="emit('prev')"
-                class="inline-flex items-center gap-1 px-2 py-2 text-sm font-semibold text-pine transition hover:text-brass-dark disabled:opacity-30"
-            >
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                Back
-            </button>
-            <button
-                type="button"
-                :disabled="!canNext"
-                @click="emit('next')"
-                class="inline-flex items-center gap-1.5 rounded-full bg-pine px-9 py-3.5 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.98] disabled:opacity-40"
-            >
-                Next Hole
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-            </button>
         </div>
     </div>
 </template>

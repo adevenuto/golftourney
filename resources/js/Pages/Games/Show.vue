@@ -88,6 +88,20 @@ const start = () => act('games.start');
 const finalize = () => act('games.finalize');
 const abandon = () => act('games.abandon');
 
+/* ---------- bottom nav (Next Hole morphs into Finish on the last hole) ---------- */
+const isLastHole = computed(() => currentIdx.value >= game.hole_numbers.length - 1);
+const primaryLabel = computed(() =>
+    !isLastHole.value ? 'Next Hole' : isOwner.value ? 'Finish & post rounds' : 'Waiting for host…',
+);
+const primaryDisabled = computed(() => isLastHole.value && !isOwner.value);
+function primaryAction() {
+    if (!isLastHole.value) {
+        currentIdx.value++;
+        return;
+    }
+    if (isOwner.value) finalize();
+}
+
 /* ---------- ui ---------- */
 const scorecardOpen = ref(false);
 const ringFor = (userId) => (userId === meId.value ? 'ring-[#43a06a]' : 'ring-brass');
@@ -146,11 +160,11 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
 <template>
     <Head title="Live game" />
 
-    <div class="min-h-screen bg-pine-deep sm:py-6">
-        <div class="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-cream sm:min-h-0 sm:rounded-3xl sm:shadow-2xl">
-            <!-- Header -->
+    <div class="bg-pine-deep sm:min-h-screen sm:py-6">
+        <div class="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-cream sm:h-[calc(100dvh-3rem)] sm:max-h-[900px] sm:rounded-3xl sm:shadow-2xl">
+            <!-- Sticky header -->
             <header
-                class="rounded-b-[2rem] px-5 pt-5 pb-6 text-cream"
+                class="shrink-0 rounded-b-[2rem] px-5 pt-5 pb-6 text-cream"
                 style="background: radial-gradient(120% 90% at 50% -12%, #1f6146 0%, #14432f 48%, #0d2e20 100%)"
             >
                 <div class="flex items-center justify-between">
@@ -189,8 +203,8 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 </div>
             </header>
 
-            <!-- Body -->
-            <main class="flex flex-1 flex-col">
+            <!-- Scrollable content -->
+            <main class="flex-1 overflow-y-auto overscroll-contain">
                 <!-- Lobby -->
                 <div v-if="game.status === 'lobby'" class="px-5 py-8 text-center">
                     <p class="text-[11px] font-medium uppercase tracking-widest text-ink/40">Invite code</p>
@@ -217,12 +231,8 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                             :par="parFor(currentHole)"
                             :strokes="myStrokes"
                             :putts="myPutts"
-                            :can-prev="currentIdx > 0"
-                            :can-next="currentIdx < game.hole_numbers.length - 1"
                             @set-strokes="setStrokes"
                             @set-putts="setPutts"
-                            @prev="currentIdx--"
-                            @next="currentIdx++"
                         />
                     </div>
 
@@ -244,10 +254,9 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         />
                     </div>
 
-                    <!-- Host controls -->
-                    <div v-if="isOwner" class="mt-auto border-t border-parchment-dark px-5 py-5">
-                        <button type="button" @click="finalize" class="w-full rounded-full bg-pine px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pine-light">Finish &amp; post rounds</button>
-                        <button type="button" @click="abandon" class="mt-3 w-full text-sm font-medium text-red-700/80 transition hover:text-red-800">Cancel game</button>
+                    <!-- Host: cancel (finish lives in the bottom nav on the last hole) -->
+                    <div v-if="isOwner" class="border-t border-parchment-dark px-5 py-4 text-center">
+                        <button type="button" @click="abandon" class="text-sm font-medium text-red-700/70 transition hover:text-red-800">Cancel game</button>
                     </div>
                 </template>
 
@@ -267,6 +276,34 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     <Link :href="route('games.index')" class="mt-8 inline-block text-sm font-medium text-pine hover:text-brass-dark">Back to Games →</Link>
                 </div>
             </main>
+
+            <!-- Sticky bottom nav (active) -->
+            <footer
+                v-if="game.status === 'active'"
+                class="shrink-0 border-t border-parchment-dark bg-cream px-5 py-4"
+                style="box-shadow: 0 -8px 20px -16px rgba(0, 0, 0, 0.3)"
+            >
+                <div class="flex gap-3">
+                    <button
+                        type="button"
+                        :disabled="currentIdx === 0"
+                        @click="currentIdx--"
+                        class="flex-[1] inline-flex items-center justify-center gap-1 rounded-full border border-pine/25 py-3.5 text-sm font-semibold text-pine transition hover:border-brass hover:text-brass-dark disabled:opacity-30"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        Back
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="primaryDisabled"
+                        @click="primaryAction"
+                        class="flex-[3] inline-flex items-center justify-center gap-1.5 rounded-full bg-pine py-3.5 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99] disabled:opacity-50"
+                    >
+                        {{ primaryLabel }}
+                        <svg v-if="!isLastHole" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
+            </footer>
         </div>
         <FlashToast />
     </div>
