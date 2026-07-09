@@ -35,9 +35,9 @@ function submit() {
 
 <template>
     <Modal :show="show" @close="close" max-width="md">
-        <div class="overflow-hidden rounded-lg bg-cream">
+        <div class="rounded-lg bg-cream">
             <!-- Header band -->
-            <div class="bg-pine px-6 pt-6 pb-7 text-center text-cream">
+            <div class="rounded-t-lg bg-pine px-6 pt-6 pb-7 text-center text-cream">
                 <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-cream/10 ring-1 ring-cream/20">
                     <svg class="h-7 w-7 text-brass-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v18M5 4h11l-2 3 2 3H5" /></svg>
                 </span>
