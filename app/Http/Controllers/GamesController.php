@@ -308,6 +308,7 @@ class GamesController extends Controller
             'hole_pars' => $game->hole_pars ?? [],
             'teebox' => $game->teebox,
             'course_name' => $game->courseLabel(),
+            'course_sub' => $game->courseSubLabel(),
             'owner_id' => $game->owner_id,
             'players' => $players,
         ];

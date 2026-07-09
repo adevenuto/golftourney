@@ -174,6 +174,21 @@ class Game extends Model
     }
 
     /**
+     * The secondary course label (the specific course name), shown deemphasized
+     * under the club name when the two differ. Null otherwise.
+     */
+    public function courseSubLabel(): ?string
+    {
+        $course = $this->course;
+
+        if (! $course || ! $course->club_name || ! $course->course_name) {
+            return null;
+        }
+
+        return $course->course_name !== $course->club_name ? $course->course_name : null;
+    }
+
+    /**
      * A compact list of the games a user is in, most-relevant first (active,
      * then waiting, then finished) — for the games hub and my-handicap.
      *

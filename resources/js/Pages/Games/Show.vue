@@ -184,7 +184,10 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 </div>
 
                 <!-- Course name -->
-                <p class="mt-4 truncate text-center text-base font-semibold capitalize">{{ game.course_name }}</p>
+                <div class="mt-4 text-center">
+                    <p class="truncate text-base font-semibold capitalize">{{ game.course_name }}</p>
+                    <p v-if="game.course_sub" class="truncate text-xs capitalize text-cream/50">{{ game.course_sub }}</p>
+                </div>
 
                 <!-- Players -->
                 <div class="mt-4 flex flex-wrap items-start justify-center gap-6">

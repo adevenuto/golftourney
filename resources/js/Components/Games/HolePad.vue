@@ -23,7 +23,8 @@ const allStrokes = Array.from({ length: 15 }, (_, i) => i + 1);
 const allPutts = Array.from({ length: 9 }, (_, i) => i);
 
 const neutral = 'bg-[#eae7df] text-pine hover:bg-[#e3ded1]';
-const parAccent = 'bg-[#f3f0e9] text-pine ring-1 ring-inset ring-pine/10 hover:bg-[#ece9e0]';
+// Par tile: a brass ring makes it obvious which number is par (no label needed).
+const parAccent = 'bg-[#eae7df] text-pine ring-2 ring-inset ring-brass/70 hover:bg-[#e3ded1]';
 const picked = 'bg-pine text-cream';
 const strokeCls = (v) => {
     if (v === props.strokes) return picked;
@@ -49,13 +50,13 @@ const puttCls = (v) => (v === props.putts ? picked : neutral);
                     type="button"
                     @click="emit('set-strokes', v)"
                     :aria-pressed="v === strokes"
-                    class="flex h-20 flex-col items-center justify-center rounded-2xl text-2xl font-semibold tabular-nums transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass"
+                    :aria-label="par && v === par ? `${v} (par)` : `${v}`"
+                    class="flex h-16 items-center justify-center rounded-2xl text-2xl font-semibold tabular-nums transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass"
                     :class="strokeCls(v)"
                 >
                     {{ v }}
-                    <span v-if="par && v === par" class="mt-0.5 text-[10px] font-medium uppercase tracking-wider" :class="v === strokes ? 'text-cream/60' : 'text-pine/40'">Par</span>
                 </button>
-                <button type="button" @click="strokesExpanded = true" class="flex h-20 items-center justify-center rounded-2xl text-2xl text-pine/50 transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass" :class="neutral" aria-label="More strokes">…</button>
+                <button type="button" @click="strokesExpanded = true" class="flex h-16 items-center justify-center rounded-2xl text-2xl text-pine/50 transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass" :class="neutral" aria-label="More strokes">…</button>
             </div>
             <div v-else class="mt-3">
                 <div class="grid grid-cols-5 gap-2">
@@ -79,10 +80,10 @@ const puttCls = (v) => (v === props.putts ? picked : neutral);
                     type="button"
                     @click="emit('set-putts', v)"
                     :aria-pressed="v === putts"
-                    class="flex h-20 items-center justify-center rounded-2xl text-2xl font-semibold tabular-nums transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass"
+                    class="flex h-16 items-center justify-center rounded-2xl text-2xl font-semibold tabular-nums transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass"
                     :class="puttCls(v)"
                 >{{ v }}</button>
-                <button type="button" @click="puttsExpanded = true" class="flex h-20 items-center justify-center rounded-2xl text-2xl text-pine/50 transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass" :class="neutral" aria-label="More putts">…</button>
+                <button type="button" @click="puttsExpanded = true" class="flex h-16 items-center justify-center rounded-2xl text-2xl text-pine/50 transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brass" :class="neutral" aria-label="More putts">…</button>
             </div>
             <div v-else class="mt-3">
                 <div class="grid grid-cols-5 gap-2">
