@@ -302,7 +302,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
         <!-- Scorecard modal -->
         <Modal :show="scorecardOpen" @close="scorecardOpen = false" max-width="2xl">
             <div class="overflow-hidden rounded-lg bg-cream">
-                <div class="flex items-center justify-between border-b border-parchment-dark px-5 py-4">
+                <div class="flex items-center justify-between border-b border-parchment-dark px-4 py-4">
                     <h2 class="font-display text-lg font-semibold text-pine">Scorecard</h2>
                     <button type="button" @click="scorecardOpen = false" class="text-ink/40 transition hover:text-ink" aria-label="Close">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
