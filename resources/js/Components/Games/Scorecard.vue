@@ -52,7 +52,7 @@ const sticky = 'sticky left-0 z-10 shadow-[1px_0_0_0_theme(colors.parchment.dark
             <thead>
                 <!-- Hole numbers -->
                 <tr class="text-pine">
-                    <th :class="sticky" class="border-b-2 border-parchment-dark bg-cream px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Hole</th>
+                    <th :class="sticky" class="border-b-2 border-parchment-dark bg-cream pl-4 pr-2 py-3 text-left text-xs font-bold uppercase tracking-wider">Hole</th>
                     <th v-for="h in front" :key="h" class="border-b-2 border-parchment-dark font-bold" :class="[hole, colHi(h)]">{{ h }}</th>
                     <th v-if="hasBack" class="border-b-2 border-parchment-dark bg-parchment/50 text-xs font-bold uppercase" :class="sub">Out</th>
                     <template v-if="hasBack">
@@ -63,7 +63,7 @@ const sticky = 'sticky left-0 z-10 shadow-[1px_0_0_0_theme(colors.parchment.dark
                 </tr>
                 <!-- Par -->
                 <tr v-if="hasPars" class="text-ink/50">
-                    <th :class="sticky" class="border-b border-parchment-dark bg-cream px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider">Par</th>
+                    <th :class="sticky" class="border-b border-parchment-dark bg-cream pl-4 pr-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wider">Par</th>
                     <th v-for="h in front" :key="h" class="border-b border-parchment-dark px-1.5 py-2 text-sm tabular-nums" :class="colHi(h)">{{ holePars[h] ?? '·' }}</th>
                     <th v-if="hasBack" class="border-b border-parchment-dark bg-parchment/50 px-2 py-2 text-sm tabular-nums">{{ parSum(front) || '—' }}</th>
                     <template v-if="hasBack">
@@ -75,10 +75,10 @@ const sticky = 'sticky left-0 z-10 shadow-[1px_0_0_0_theme(colors.parchment.dark
             </thead>
             <tbody>
                 <tr v-for="p in players" :key="p.user_id" :class="p.user_id === meId ? 'bg-brass/[0.07]' : ''">
-                    <td :class="[sticky, p.user_id === meId ? 'bg-[#f7f0e3]' : 'bg-cream']" class="border-b border-parchment-dark/60 px-4 py-3.5 text-left">
+                    <td :class="[sticky, p.user_id === meId ? 'bg-[#f7f0e3]' : 'bg-cream']" class="border-b border-parchment-dark/60 pl-4 pr-2 py-3.5 text-left">
                         <span class="flex items-center gap-2">
                             <span class="h-2 w-2 shrink-0 rounded-full" :class="isOnline(p.user_id) ? 'bg-pine' : 'bg-ink/20'"></span>
-                            <span class="max-w-[7rem] truncate text-sm font-semibold capitalize text-ink">{{ fullName(p) }}</span>
+                            <span class="max-w-[4.5rem] truncate text-sm font-semibold capitalize text-ink">{{ fullName(p) }}</span>
                         </span>
                     </td>
                     <td v-for="h in front" :key="h" class="border-b border-parchment-dark/60" :class="[hole, colHi(h), scoreColor(p, h)]">{{ val(p, h) ?? '·' }}</td>
