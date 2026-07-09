@@ -173,7 +173,6 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Games
                     </Link>
-                    <p class="max-w-[8rem] truncate text-[15px] font-semibold capitalize">{{ game.course_name }}</p>
                     <div class="flex items-center gap-3">
                         <button v-if="game.status === 'active'" type="button" @click="scorecardOpen = true" class="text-cream/80 transition hover:text-cream" aria-label="Open scorecard">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
@@ -184,8 +183,11 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     </div>
                 </div>
 
+                <!-- Course name -->
+                <p class="mt-4 truncate text-center text-base font-semibold capitalize">{{ game.course_name }}</p>
+
                 <!-- Players -->
-                <div class="mt-5 flex flex-wrap items-start justify-center gap-6">
+                <div class="mt-4 flex flex-wrap items-start justify-center gap-6">
                     <div v-for="p in game.players" :key="p.user_id" class="flex w-16 flex-col items-center gap-2 text-center">
                         <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="lg" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
                         <span class="w-full truncate text-[13px] font-medium capitalize text-cream/90">{{ p.first_name }}</span>
