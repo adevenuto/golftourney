@@ -285,8 +285,8 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">To Par</p>
                     </div>
                     <div>
-                        <p class="mb-1 text-[11px] font-semibold uppercase tracking-widest text-cream/75">Hole</p>
-                        <p class="font-display text-5xl font-semibold leading-none tabular-nums">{{ currentHole }}</p>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-cream/85">Hole</p>
+                        <p class="font-display text-6xl font-semibold leading-none tabular-nums">{{ currentHole }}</p>
                         <p class="mt-1.5 text-[11px] font-semibold uppercase tracking-widest text-cream/60">Par {{ parFor(currentHole) ?? '—' }}</p>
                         <p v-if="lengthFor(currentHole)" class="mt-0.5 text-[10px] font-medium tabular-nums text-cream/40">{{ lengthFor(currentHole) }} yds</p>
                     </div>
