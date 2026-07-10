@@ -161,6 +161,11 @@ function primaryAction() {
 
 /* ---------- ui ---------- */
 const scorecardOpen = ref(false);
+const confirmCancel = ref(false);
+function doCancel() {
+    confirmCancel.value = false;
+    abandon();
+}
 const ringFor = (userId) => (userId === meId.value ? 'ring-[#43a06a]' : 'ring-brass');
 
 /* ---------- share ---------- */
@@ -241,12 +246,20 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Games
                     </Link>
-                    <div class="flex items-center gap-3">
-                        <button v-if="game.status !== 'lobby'" type="button" @click="scorecardOpen = true" class="text-cream/80 transition hover:text-cream" aria-label="Open scorecard">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
+                    <div class="flex items-center gap-3.5">
+                        <!-- Host: throw in the towel (white flag) → fills solid on hover, confirm first. Everyone else can share. -->
+                        <button v-if="isOwner && game.status !== 'completed'" type="button" @click="confirmCancel = true" class="group text-cream/75 transition hover:text-cream" aria-label="Cancel game">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path class="fill-transparent transition-colors group-hover:fill-cream" stroke-linecap="round" stroke-linejoin="round" d="M4 5h13l-2.5 4L17 14H4z" />
+                                <path stroke-linecap="round" d="M4 21V4" />
+                            </svg>
                         </button>
-                        <button type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
+                        <button v-else type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
+                        </button>
+                        <!-- Scorecard — larger + more prominent (easy phone tap target) -->
+                        <button v-if="game.status !== 'lobby'" type="button" @click="scorecardOpen = true" class="-m-1 p-1 text-cream transition hover:text-brass-light" aria-label="Open scorecard">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
                         </button>
                     </div>
                 </div>
@@ -324,7 +337,6 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         >
                             {{ canStart ? 'Start game' : 'Waiting for players…' }}
                         </button>
-                        <button type="button" @click="abandon" class="text-sm font-medium text-ink/50 transition hover:text-ink">Cancel game</button>
                     </div>
                     <div v-else class="mt-8 flex flex-col gap-2">
                         <p class="text-sm text-ink/50">The host will start the game.</p>
@@ -343,11 +355,6 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                             @set-strokes="setStrokes"
                             @set-putts="setPutts"
                         />
-                    </div>
-
-                    <!-- Host: cancel (finish lives in the bottom nav on the last hole) -->
-                    <div v-if="isOwner" class="px-5 pb-2 text-center">
-                        <button type="button" @click="abandon" class="text-sm font-medium text-red-700/70 transition hover:text-red-800">Cancel game</button>
                     </div>
                 </template>
 
@@ -452,6 +459,21 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     :online-ids="onlineIds"
                     :current-hole="currentHole"
                 />
+            </div>
+        </Modal>
+
+        <!-- Confirm cancel (host) -->
+        <Modal :show="confirmCancel" @close="confirmCancel = false" max-width="sm">
+            <div class="overflow-hidden rounded-lg bg-cream p-6 text-center">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V4m0 1h13l-2.5 4L17 14H4" /></svg>
+                </div>
+                <h2 class="mt-4 font-display text-xl font-semibold text-pine">Call it off?</h2>
+                <p class="mt-1.5 text-sm text-ink/60">This ends the game for everyone and discards all scores — no rounds will be posted. This can’t be undone.</p>
+                <div class="mt-6 flex gap-3">
+                    <button type="button" @click="confirmCancel = false" class="flex-1 rounded-full border border-pine/20 py-2.5 text-sm font-semibold text-pine transition hover:border-brass">Keep playing</button>
+                    <button type="button" @click="doCancel" class="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-cream transition hover:bg-red-700">Cancel game</button>
+                </div>
             </div>
         </Modal>
 
