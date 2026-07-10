@@ -254,7 +254,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                                 <path stroke-linecap="round" d="M4 21V4" />
                             </svg>
                         </button>
-                        <button v-else type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
+                        <button v-else-if="isOwner" type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
                         </button>
                         <!-- Scorecard — larger + more prominent (easy phone tap target) -->
