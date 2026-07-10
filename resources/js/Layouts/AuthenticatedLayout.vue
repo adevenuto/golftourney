@@ -33,7 +33,6 @@ const navLinks = computed(() => [
     // The roster is league-scoped — only show it once the user is in a league.
     ...(currentLeagueId.value ? [{ label: 'Golfers', route: 'golfers.index' }] : []),
     { label: 'Handicaps', route: 'handicaps' },
-    { label: 'Games', route: 'games.index' },
     { label: 'Profile', route: 'profile.edit' },
 ]);
 
@@ -157,6 +156,9 @@ function switchLeague(id) {
                                   <DropdownLink :href="myHandicapHref">
                                       My Handicap
                                   </DropdownLink>
+                                  <DropdownLink :href="route('games.index')">
+                                      Games
+                                  </DropdownLink>
                                   <DropdownLink :href="route('profile.edit')">
                                       Profile
                                   </DropdownLink>
@@ -216,6 +218,9 @@ function switchLeague(id) {
                     <div class="border-t">
                       <ResponsiveNavLink :href="myHandicapHref">
                             My Handicap
+                      </ResponsiveNavLink>
+                      <ResponsiveNavLink :href="route('games.index')" :active="isActive('games.index')">
+                            Games
                       </ResponsiveNavLink>
                       <ResponsiveNavLink :href="route('logout')" method="post" as="button">
                             Log Out
