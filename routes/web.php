@@ -51,9 +51,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/games', [GamesController::class, 'index'])->name('games.index');
     Route::post('/games', [GamesController::class, 'store'])->name('games.store');
     Route::post('/games/join', [GamesController::class, 'join'])->name('games.join');
+    Route::post('/games/{game}/leave', [GamesController::class, 'leave'])->name('games.leave');
     Route::get('/games/{game}', [GamesController::class, 'show'])->name('games.show');
     Route::patch('/games/{game}/scores', [GamesController::class, 'updateScore'])->name('games.scores.update');
     Route::post('/games/{game}/start', [GamesController::class, 'start'])->name('games.start');
+    Route::post('/games/{game}/finish', [GamesController::class, 'finish'])->name('games.finish');
+    Route::post('/games/{game}/reopen', [GamesController::class, 'reopen'])->name('games.reopen');
     Route::post('/games/{game}/finalize', [GamesController::class, 'finalize'])->name('games.finalize');
     Route::post('/games/{game}/abandon', [GamesController::class, 'abandon'])->name('games.abandon');
 

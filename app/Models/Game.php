@@ -191,8 +191,23 @@ class Game extends Model
     }
 
     /**
-     * A compact list of the games a user is in, most-relevant first (active,
-     * then waiting, then finished) — for the games hub and my-handicap.
+     * The one game a user is still in the middle of (waiting or live), if any.
+     * A player can only be in one ongoing game at a time.
+     */
+    public static function ongoingForUser(User $user): ?self
+    {
+        return static::query()
+            ->whereHas('players', fn ($q) => $q->where('user_id', $user->id))
+            ->whereIn('status', [self::STATUS_LOBBY, self::STATUS_ACTIVE])
+            ->with('course:id,club_name,course_name')
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * A compact list of the games a user is in, most-relevant first (live,
+     * then waiting, then finished) — for the games hub. Canceled games are
+     * not kept, so they never appear here.
      *
      * @return list<array<string, mixed>>
      */
@@ -200,6 +215,7 @@ class Game extends Model
     {
         return static::query()
             ->whereHas('players', fn ($q) => $q->where('user_id', $user->id))
+            ->whereNot('status', self::STATUS_ABANDONED)
             ->with('course:id,club_name,course_name')
             ->withCount('players')
             ->orderByRaw("case status when 'active' then 0 when 'lobby' then 1 else 2 end")

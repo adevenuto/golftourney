@@ -17,6 +17,7 @@ class GamePlayer extends Model
         'game_id',
         'user_id',
         'confirmed_at',
+        'finished_at',
         'round_id',
     ];
 
@@ -25,6 +26,7 @@ class GamePlayer extends Model
      */
     protected $casts = [
         'confirmed_at' => 'datetime',
+        'finished_at' => 'datetime',
     ];
 
     /**

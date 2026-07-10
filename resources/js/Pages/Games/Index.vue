@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import InputError from '@/Components/InputError.vue';
@@ -9,6 +9,7 @@ import GamesList from '@/Components/Games/GamesList.vue';
 
 defineProps({
     games: { type: Array, default: () => [] },
+    ongoing: { type: Object, default: null },
 });
 
 const showStart = ref(false);
@@ -30,8 +31,25 @@ const join = () => joinForm.post(route('games.join'));
         </PageHeader>
 
         <div class="max-w-5xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
+            <!-- A game already in progress: resume it (one game at a time). -->
+            <div v-if="ongoing" class="flex flex-col gap-4 p-6 border rounded-2xl border-brass/40 bg-brass/5 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold tracking-wider uppercase text-brass-dark">
+                        {{ ongoing.status === 'active' ? 'Game in progress' : 'Waiting to start' }}
+                    </p>
+                    <h2 class="mt-1 text-lg font-semibold capitalize truncate font-display text-pine">{{ ongoing.course_name }}</h2>
+                    <p class="mt-1 text-sm text-ink/60">Finish or cancel it before starting or joining another.</p>
+                </div>
+                <Link
+                    :href="route('games.show', ongoing.id)"
+                    class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium transition rounded-full shrink-0 bg-pine text-cream hover:bg-pine-light"
+                >
+                    Resume game
+                </Link>
+            </div>
+
             <!-- Start / Join -->
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div v-else class="grid gap-4 sm:grid-cols-2">
                 <div class="flex flex-col p-6 border rounded-2xl border-parchment-dark bg-cream">
                     <h2 class="text-lg font-semibold font-display text-pine">Start a game</h2>
                     <p class="flex-1 mt-1 text-sm text-ink/60">Pick a course and get a code to invite your group.</p>

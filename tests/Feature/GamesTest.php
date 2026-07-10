@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Events\GameCompleted;
 use App\Events\GameStarted;
+use App\Events\PlayerFinished;
 use App\Events\PlayerJoined;
+use App\Events\PlayerLeft;
 use App\Events\ScoreUpdated;
 use App\Models\Course;
 use App\Models\Game;
@@ -121,6 +123,29 @@ class GamesTest extends TestCase
         $this->assertDatabaseHas('game_players', ['game_id' => $game->id, 'user_id' => $joiner->id]);
     }
 
+    public function test_a_non_host_player_can_leave_the_lobby_but_the_host_cannot(): void
+    {
+        Event::fake([PlayerLeft::class]);
+
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $game = $this->gameWith($owner, $other);
+
+        // The host can't "leave" — they cancel the game instead.
+        $this->actingAs($owner)->post(route('games.leave', $game))->assertForbidden();
+
+        // A non-host player leaves and is dropped from the roster.
+        $this->actingAs($other)->post(route('games.leave', $game))->assertRedirect(route('games.index'));
+        $this->assertDatabaseMissing('game_players', ['game_id' => $game->id, 'user_id' => $other->id]);
+        $this->assertDatabaseHas('game_players', ['game_id' => $game->id, 'user_id' => $owner->id]);
+        Event::assertDispatched(PlayerLeft::class);
+
+        // Can't leave once the game has started.
+        $game->players()->create(['user_id' => $other->id]);
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+        $this->actingAs($other)->post(route('games.leave', $game))->assertStatus(422);
+    }
+
     public function test_cannot_join_a_full_game(): void
     {
         $owner = User::factory()->create();
@@ -128,35 +153,36 @@ class GamesTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post(route('games.join'), ['join_code' => $game->join_code])
-            ->assertStatus(422);
+            ->assertInvalid(['join_code' => 'This game is full.']);
     }
 
-    public function test_cannot_join_a_started_game(): void
+    public function test_joining_a_started_or_unknown_game_fails_gracefully(): void
     {
         $owner = User::factory()->create();
         $game = $this->gameWith($owner);
         $game->update(['status' => Game::STATUS_ACTIVE]);
 
+        // An already-started game → a friendly field error, not an exception.
         $this->actingAs(User::factory()->create())
             ->post(route('games.join'), ['join_code' => $game->join_code])
-            ->assertStatus(422);
+            ->assertInvalid(['join_code' => 'This game has already started.']);
+
+        // An unknown code → a friendly field error, not a 404.
+        $this->actingAs(User::factory()->create())
+            ->post(route('games.join'), ['join_code' => 'NOPECODE'])
+            ->assertInvalid(['join_code']);
     }
 
-    public function test_owner_starts_the_game_with_enough_players(): void
+    public function test_the_owner_can_start_the_game_solo_and_others_cannot_start_it(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
         $game = $this->gameWith($owner); // just the owner
 
-        // Not enough players yet.
-        $this->actingAs($owner)->post(route('games.start', $game))->assertStatus(422);
-
-        $game->players()->create(['user_id' => $other->id]);
-
-        // Non-owner can't start.
+        // A non-owner can't start it.
         $this->actingAs($other)->post(route('games.start', $game))->assertForbidden();
 
-        // Owner starts it.
+        // The owner can start solo — no minimum beyond the host.
         $this->actingAs($owner)->post(route('games.start', $game))->assertRedirect();
         $this->assertSame(Game::STATUS_ACTIVE, $game->fresh()->status);
         $this->assertNotNull($game->fresh()->started_at);
@@ -228,10 +254,85 @@ class GamesTest extends TestCase
         $this->assertDatabaseHas('rounds', ['user_id' => $owner->id, 'league_id' => null, 'score' => 12]);
         $this->assertDatabaseHas('rounds', ['user_id' => $other->id, 'league_id' => null, 'score' => 13]);
         $this->assertDatabaseCount('rounds', 2);
+        // Ending for everyone marks all players finished.
+        $this->assertSame(0, $game->players()->whereNull('finished_at')->count());
 
         // Re-finalizing a completed game is rejected and creates no extra rounds.
         $this->actingAs($owner)->post(route('games.finalize', $game))->assertStatus(422);
         $this->assertDatabaseCount('rounds', 2);
+    }
+
+    public function test_each_player_finishes_their_own_round_and_rounds_post_when_all_are_done(): void
+    {
+        Event::fake([PlayerFinished::class, GameCompleted::class]);
+
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $game = $this->gameWith($owner, $other);
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+
+        foreach ([4, 5, 3] as $i => $s) { // owner gross 12
+            $game->scores()->create(['user_id' => $owner->id, 'hole' => $i + 1, 'strokes' => $s]);
+        }
+        foreach ([5, 4, 4] as $i => $s) { // other gross 13
+            $game->scores()->create(['user_id' => $other->id, 'hole' => $i + 1, 'strokes' => $s]);
+        }
+
+        // A non-player can't finish.
+        $this->actingAs(User::factory()->create())->post(route('games.finish', $game))->assertForbidden();
+
+        // One player finishes: marked done, but no round is posted yet.
+        $this->actingAs($other)->post(route('games.finish', $game))->assertRedirect(route('games.show', $game));
+        $this->assertNotNull($game->players()->where('user_id', $other->id)->first()->finished_at);
+        $this->assertSame(Game::STATUS_ACTIVE, $game->fresh()->status);
+        $this->assertDatabaseCount('rounds', 0);
+        Event::assertDispatched(PlayerFinished::class);
+        Event::assertNotDispatched(GameCompleted::class);
+
+        // Finishing twice is rejected.
+        $this->actingAs($other)->post(route('games.finish', $game))->assertStatus(422);
+
+        // The last player to finish completes the game and posts everyone's round.
+        $this->actingAs($owner)->post(route('games.finish', $game))->assertRedirect();
+        $this->assertSame(Game::STATUS_COMPLETED, $game->fresh()->status);
+        $this->assertDatabaseHas('rounds', ['user_id' => $owner->id, 'league_id' => null, 'score' => 12]);
+        $this->assertDatabaseHas('rounds', ['user_id' => $other->id, 'league_id' => null, 'score' => 13]);
+        $this->assertDatabaseCount('rounds', 2);
+        Event::assertDispatched(GameCompleted::class);
+    }
+
+    public function test_a_finished_player_can_reopen_their_card_until_the_game_completes(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $game = $this->gameWith($owner, $other);
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+
+        $game->scores()->create(['user_id' => $owner->id, 'hole' => 1, 'strokes' => 4]);
+        $game->scores()->create(['user_id' => $other->id, 'hole' => 1, 'strokes' => 5]);
+
+        // Finish, then reopen — back to playing, still nothing posted.
+        $this->actingAs($other)->post(route('games.finish', $game))->assertRedirect();
+        $this->actingAs($other)->post(route('games.reopen', $game))->assertRedirect(route('games.show', $game));
+        $this->assertNull($game->players()->where('user_id', $other->id)->first()->finished_at);
+        $this->assertSame(Game::STATUS_ACTIVE, $game->fresh()->status);
+        $this->assertDatabaseCount('rounds', 0);
+
+        // Once everyone finishes and the game completes, reopening is rejected.
+        $this->actingAs($other)->post(route('games.finish', $game))->assertRedirect();
+        $this->actingAs($owner)->post(route('games.finish', $game))->assertRedirect();
+        $this->assertSame(Game::STATUS_COMPLETED, $game->fresh()->status);
+        $this->actingAs($other)->post(route('games.reopen', $game))->assertStatus(422);
+    }
+
+    public function test_a_player_cannot_finish_without_entering_scores(): void
+    {
+        $owner = User::factory()->create();
+        $game = $this->gameWith($owner, User::factory()->create());
+        $game->update(['status' => Game::STATUS_ACTIVE]);
+
+        $this->actingAs($owner)->post(route('games.finish', $game))->assertStatus(422);
+        $this->assertDatabaseCount('rounds', 0);
     }
 
     public function test_realtime_events_are_broadcast_across_the_lifecycle(): void
@@ -255,7 +356,7 @@ class GamesTest extends TestCase
         Event::assertDispatched(GameCompleted::class);
     }
 
-    public function test_owner_can_abandon_a_game_without_posting_rounds(): void
+    public function test_owner_can_cancel_a_game_which_deletes_it_without_posting_rounds(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
@@ -264,8 +365,46 @@ class GamesTest extends TestCase
 
         $this->actingAs($other)->post(route('games.abandon', $game))->assertForbidden();
 
-        $this->actingAs($owner)->post(route('games.abandon', $game))->assertRedirect(route('my-handicap'));
-        $this->assertSame(Game::STATUS_ABANDONED, $game->fresh()->status);
+        // Canceling deletes the game (and its players) — canceled games aren't kept.
+        $this->actingAs($owner)->post(route('games.abandon', $game))->assertRedirect(route('games.index'));
+        $this->assertDatabaseMissing('games', ['id' => $game->id]);
+        $this->assertDatabaseMissing('game_players', ['game_id' => $game->id]);
         $this->assertDatabaseCount('rounds', 0);
+    }
+
+    public function test_a_player_cannot_start_or_join_while_they_have_an_ongoing_game(): void
+    {
+        $owner = User::factory()->create();
+        $ongoing = $this->gameWith($owner);
+        $ongoing->update(['status' => Game::STATUS_ACTIVE]);
+
+        // Starting another game bounces back to the one already in progress.
+        $this->actingAs($owner)
+            ->post(route('games.store'), ['course_id' => $this->course()->id, 'teebox' => 'Blue'])
+            ->assertRedirect(route('games.show', $ongoing));
+        $this->assertSame(1, Game::count());
+
+        // Joining someone else's game is blocked too.
+        $host = User::factory()->create();
+        $theirGame = $this->gameWith($host);
+
+        $this->actingAs($owner)
+            ->post(route('games.join'), ['join_code' => $theirGame->join_code])
+            ->assertInvalid(['join_code']);
+        $this->assertDatabaseMissing('game_players', ['game_id' => $theirGame->id, 'user_id' => $owner->id]);
+    }
+
+    public function test_canceled_games_do_not_appear_in_a_players_list(): void
+    {
+        $owner = User::factory()->create();
+        $live = $this->gameWith($owner);
+        $live->update(['status' => Game::STATUS_ACTIVE]);
+        $abandoned = $this->gameWith($owner);
+        $abandoned->update(['status' => Game::STATUS_ABANDONED]);
+
+        $list = Game::listForUser($owner);
+
+        $this->assertCount(1, $list);
+        $this->assertSame($live->id, $list[0]['id']);
     }
 }

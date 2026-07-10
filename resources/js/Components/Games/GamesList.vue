@@ -7,7 +7,6 @@ const meta = {
     active: { label: 'Live', class: 'bg-brass/15 text-brass-dark' },
     lobby: { label: 'Waiting', class: 'bg-pine/10 text-pine' },
     completed: { label: 'Finished', class: 'bg-parchment-dark text-ink/60' },
-    abandoned: { label: 'Canceled', class: 'bg-parchment-dark text-ink/40' },
 };
 </script>
 

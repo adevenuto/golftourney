@@ -27,6 +27,14 @@ const myPlayer = computed(() => game.players.find((p) => p.user_id === meId.valu
 const canStart = computed(() => game.players.length >= 2);
 const fullName = (p) => `${p.first_name} ${p.last_name}`;
 
+// Each player finishes on their own: once I've finished I see the results
+// screen while peers keep playing. The game completes when everyone's done.
+const iFinished = computed(() => !!myPlayer.value?.finished);
+const playing = computed(() => game.status === 'active' && !iFinished.value);
+// On a completed game everyone is done, regardless of the per-player flag.
+const playerDone = (p) => p.finished || game.status === 'completed';
+const grossOf = (p) => Object.values(p.holes || {}).reduce((t, v) => t + (v == null || v === '' ? 0 : Number(v)), 0);
+
 /* ---------- presence ---------- */
 const online = reactive(new Set());
 const onlineIds = computed(() => [...online]);
@@ -39,14 +47,36 @@ const parFor = (h) => {
     const p = game.hole_pars?.[h];
     return p == null ? null : Number(p);
 };
+const lengthFor = (h) => {
+    const l = game.hole_lengths?.[h];
+    return l == null || l === '' ? null : Number(l);
+};
 const numOr = (v) => (v == null || v === '' ? null : Number(v));
 const myStrokes = computed(() => numOr(myPlayer.value?.holes?.[currentHole.value]));
 const myPutts = computed(() => numOr(myPlayer.value?.putts?.[currentHole.value]));
-const myTotal = computed(() =>
-    myPlayer.value
-        ? Object.values(myPlayer.value.holes).reduce((t, v) => t + (v == null || v === '' ? 0 : Number(v)), 0)
-        : 0,
-);
+// My running score relative to par, across the holes I've actually scored.
+const toPar = computed(() => {
+    let diff = 0;
+    let counted = 0;
+    for (const h of game.hole_numbers) {
+        const s = numOr(myPlayer.value?.holes?.[h]);
+        const p = parFor(h);
+        if (s != null && p != null) {
+            diff += s - p;
+            counted++;
+        }
+    }
+    return counted ? diff : null;
+});
+const toParDisplay = computed(() => {
+    if (toPar.value == null) return '—';
+    if (toPar.value === 0) return 'E';
+    return toPar.value > 0 ? `+${toPar.value}` : `${toPar.value}`;
+});
+
+// A hole is "done" once strokes are in — putts follow automatically and aren't
+// required to move on.
+const currentHoleComplete = computed(() => myStrokes.value != null);
 
 // Start on the first hole I haven't scored yet.
 function jumpToFirstUnentered() {
@@ -74,6 +104,7 @@ function writeCell(hole) {
 function setStrokes(value) {
     if (!myPlayer.value) return;
     myPlayer.value.holes[currentHole.value] = value;
+    syncPutts(value); // keep putts consistent with the new stroke count
     writeCell(currentHole.value);
 }
 function setPutts(value) {
@@ -83,24 +114,49 @@ function setPutts(value) {
     writeCell(currentHole.value);
 }
 
+// Putts can never exceed strokes - 1 (the tee shot is never a putt). Given a
+// score, assume greens-in-regulation and infer the putts: par-3 birdie ⇒ 1,
+// a par ⇒ 2, etc. — capped at a realistic 2 for over-regulation scores.
+function expectedPutts(strokes, par) {
+    if (strokes == null || strokes <= 1) return 0;
+    const cap = Math.min(strokes - 1, 2);
+    if (!par) return cap; // no par data — default to a sensible 2 (capped)
+    return Math.max(0, Math.min(strokes - (par - 2), cap));
+}
+// After strokes change: auto-fill putts if unset, or clamp if now out of range.
+function syncPutts(strokes) {
+    if (!myPlayer.value || strokes == null) return;
+    if (!myPlayer.value.putts) myPlayer.value.putts = {};
+    const hole = currentHole.value;
+    const current = numOr(myPlayer.value.putts[hole]);
+    const cap = Math.max(0, strokes - 1);
+    if (current == null) {
+        myPlayer.value.putts[hole] = expectedPutts(strokes, parFor(hole));
+    } else if (current > cap) {
+        myPlayer.value.putts[hole] = cap;
+    }
+}
+
 /* ---------- lifecycle ---------- */
 const act = (name) => router.post(route(name, game.id), {}, { preserveScroll: true });
 const start = () => act('games.start');
-const finalize = () => act('games.finalize');
-const abandon = () => act('games.abandon');
+const finish = () => act('games.finish'); // finish my own round
+const reopen = () => act('games.reopen'); // go back and edit my card
+const finalize = () => act('games.finalize'); // owner: end for everyone (fallback)
+const abandon = () => act('games.abandon'); // owner: cancel the whole game
+const leave = () => act('games.leave'); // non-host: leave before it starts
 
 /* ---------- bottom nav (Next Hole morphs into Finish on the last hole) ---------- */
 const isLastHole = computed(() => currentIdx.value >= game.hole_numbers.length - 1);
-const primaryLabel = computed(() =>
-    !isLastHole.value ? 'Next Hole' : isOwner.value ? 'Finish & post rounds' : 'Waiting for host…',
-);
-const primaryDisabled = computed(() => isLastHole.value && !isOwner.value);
+const primaryLabel = computed(() => (isLastHole.value ? 'Finish & post round' : 'Next Hole'));
+// Can't advance (or finish) until the current hole's strokes + putts are entered.
+const primaryDisabled = computed(() => !currentHoleComplete.value);
 function primaryAction() {
     if (!isLastHole.value) {
         currentIdx.value++;
         return;
     }
-    if (isOwner.value) finalize();
+    finish();
 }
 
 /* ---------- ui ---------- */
@@ -146,6 +202,18 @@ onMounted(() => {
         .listen('.player.joined', (e) => {
             if (!game.players.some((pl) => pl.user_id === e.player.user_id)) game.players.push(e.player);
         })
+        .listen('.player.left', (e) => {
+            const i = game.players.findIndex((pl) => pl.user_id === e.userId);
+            if (i !== -1) game.players.splice(i, 1);
+        })
+        .listen('.player.finished', (e) => {
+            const p = game.players.find((pl) => pl.user_id === e.userId);
+            if (p) p.finished = true;
+        })
+        .listen('.player.reopened', (e) => {
+            const p = game.players.find((pl) => pl.user_id === e.userId);
+            if (p) p.finished = false;
+        })
         .listen('.game.started', () => router.reload({ only: ['game'] }))
         .listen('.game.completed', () => router.reload({ only: ['game'] }));
 
@@ -174,7 +242,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         Games
                     </Link>
                     <div class="flex items-center gap-3">
-                        <button v-if="game.status === 'active'" type="button" @click="scorecardOpen = true" class="text-cream/80 transition hover:text-cream" aria-label="Open scorecard">
+                        <button v-if="game.status !== 'lobby'" type="button" @click="scorecardOpen = true" class="text-cream/80 transition hover:text-cream" aria-label="Open scorecard">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
                         </button>
                         <button type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
@@ -197,18 +265,20 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     </div>
                 </div>
 
-                <!-- Stat band (active) -->
-                <div v-if="game.status === 'active'" class="mt-6 grid grid-cols-3 items-center rounded-2xl bg-[#0b241a]/70 px-3 py-4 text-center">
+                <!-- Stat band (while I'm still playing) -->
+                <div v-if="playing" class="mt-6 grid grid-cols-3 items-center rounded-2xl bg-[#0b241a]/70 px-3 py-4 text-center">
                     <div>
-                        <p class="font-display text-3xl font-semibold leading-none tabular-nums text-brass-light">{{ parFor(currentHole) ?? '—' }}</p>
-                        <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">Par</p>
+                        <p class="font-display text-3xl font-semibold leading-none tabular-nums text-brass-light">{{ toParDisplay }}</p>
+                        <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">To Par</p>
                     </div>
                     <div>
+                        <p class="mb-1 text-[11px] font-semibold uppercase tracking-widest text-cream/75">Hole</p>
                         <p class="font-display text-5xl font-semibold leading-none tabular-nums">{{ currentHole }}</p>
-                        <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">Hole</p>
+                        <p class="mt-1.5 text-[11px] font-semibold uppercase tracking-widest text-cream/60">Par {{ parFor(currentHole) ?? '—' }}</p>
+                        <p v-if="lengthFor(currentHole)" class="mt-0.5 text-[10px] font-medium tabular-nums text-cream/40">{{ lengthFor(currentHole) }} yds</p>
                     </div>
                     <div>
-                        <p class="font-display text-3xl font-semibold leading-none tabular-nums">{{ myTotal || '—' }}</p>
+                        <p class="font-display text-3xl font-semibold leading-none tabular-nums">{{ myStrokes ?? '—' }}</p>
                         <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">Score</p>
                     </div>
                 </div>
@@ -225,17 +295,45 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         {{ copied ? 'Link copied' : 'Share' }}
                     </button>
 
+                    <!-- Live roster — players appear here by name as they join -->
+                    <div class="mx-auto mt-8 max-w-xs">
+                        <p class="text-[11px] font-medium uppercase tracking-widest text-ink/40">
+                            {{ game.players.length }} {{ game.players.length === 1 ? 'player' : 'players' }}
+                        </p>
+                        <ul class="mt-3 space-y-2">
+                            <li v-for="p in game.players" :key="p.user_id" class="flex items-center gap-3 rounded-xl border border-parchment-dark bg-parchment/40 px-3 py-2 text-left">
+                                <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="sm" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
+                                <span class="min-w-0 flex-1 truncate text-sm font-medium capitalize text-ink">{{ fullName(p) }}</span>
+                                <span v-if="p.is_owner" class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-brass-dark">Host</span>
+                            </li>
+                        </ul>
+                    </div>
+
                     <div v-if="isOwner" class="mt-8 flex flex-col gap-3">
-                        <button type="button" :disabled="!canStart" @click="start" class="w-full rounded-full bg-pine px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pine-light disabled:opacity-50">
+                        <!-- Solo escape hatch while waiting on others -->
+                        <button v-if="!canStart" type="button" @click="start" class="w-full rounded-full bg-pine px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99]">
+                            Play solo
+                        </button>
+                        <!-- Start (enabled once someone joins) / waiting indicator -->
+                        <button
+                            type="button"
+                            :disabled="!canStart"
+                            @click="start"
+                            class="w-full rounded-full px-6 py-3 text-sm font-semibold transition disabled:cursor-default"
+                            :class="canStart ? 'bg-pine text-cream hover:bg-pine-light' : 'border border-pine/20 text-pine/50'"
+                        >
                             {{ canStart ? 'Start game' : 'Waiting for players…' }}
                         </button>
                         <button type="button" @click="abandon" class="text-sm font-medium text-ink/50 transition hover:text-ink">Cancel game</button>
                     </div>
-                    <p v-else class="mt-8 text-sm text-ink/50">The host will start the game.</p>
+                    <div v-else class="mt-8 flex flex-col gap-2">
+                        <p class="text-sm text-ink/50">The host will start the game.</p>
+                        <button type="button" @click="leave" class="text-sm font-medium text-ink/50 transition hover:text-red-700">Leave game</button>
+                    </div>
                 </div>
 
-                <!-- Active -->
-                <template v-else-if="game.status === 'active'">
+                <!-- Active (still playing) -->
+                <template v-else-if="playing">
                     <div class="px-5 py-6">
                         <HolePad
                             :hole="currentHole"
@@ -253,29 +351,65 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     </div>
                 </template>
 
-                <!-- Completed / canceled -->
-                <div v-else class="px-5 py-10 text-center">
-                    <h2 class="font-display text-2xl font-semibold text-pine">{{ game.status === 'completed' ? 'Game finished' : 'Game canceled' }}</h2>
-                    <p v-if="game.status === 'completed'" class="mt-1 text-sm text-ink/50">Each player's round was posted to their handicap.</p>
-                    <ul v-if="game.status === 'completed'" class="mx-auto mt-6 max-w-xs divide-y divide-parchment-dark">
-                        <li v-for="p in game.players" :key="p.user_id" class="flex items-center justify-between py-2.5 text-sm capitalize">
-                            <span class="inline-flex items-center gap-2">
-                                <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="sm" :ring-color="ringFor(p.user_id)" />
-                                <span class="text-ink/80">{{ fullName(p) }}</span>
+                <!-- Results — I've finished (or the whole game is complete) -->
+                <div v-else class="px-5 py-8">
+                    <div class="text-center">
+                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pine/10 text-pine">
+                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <h2 class="mt-4 font-display text-2xl font-semibold text-pine">{{ game.status === 'completed' ? 'Game finished' : 'You’re all done' }}</h2>
+                        <p class="mt-1 text-sm text-ink/50">
+                            {{ game.status === 'completed'
+                                ? 'Every round was posted to each player’s handicap.'
+                                : 'Waiting for the others to finish. You can still reopen your card to fix a hole.' }}
+                        </p>
+                    </div>
+
+                    <ul class="mx-auto mt-6 max-w-xs divide-y divide-parchment-dark">
+                        <li v-for="p in game.players" :key="p.user_id" class="flex items-center justify-between gap-3 py-3">
+                            <span class="inline-flex min-w-0 items-center gap-2.5">
+                                <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="sm" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-medium capitalize text-ink">{{ fullName(p) }}</span>
+                                    <span class="text-[11px]" :class="playerDone(p) ? 'font-medium text-pine/70' : 'text-ink/40'">
+                                        {{ playerDone(p) ? 'Finished' : 'In-round' }}
+                                    </span>
+                                </span>
                             </span>
-                            <span class="font-display text-lg font-semibold tabular-nums text-pine">{{ Object.values(p.holes).reduce((t, v) => t + (v ? Number(v) : 0), 0) || '—' }}</span>
+                            <span class="shrink-0 font-display text-lg font-semibold tabular-nums text-pine">{{ grossOf(p) || '—' }}</span>
                         </li>
                     </ul>
-                    <Link :href="route('games.index')" class="mt-8 inline-block text-sm font-medium text-pine hover:text-brass-dark">Back to Games →</Link>
+
+                    <div class="mt-8 flex flex-col items-center gap-3">
+                        <button
+                            v-if="game.status === 'active'"
+                            type="button"
+                            @click="reopen"
+                            class="inline-flex items-center gap-1.5 rounded-full bg-pine px-6 py-2.5 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99]"
+                        >
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                            Resume my card
+                        </button>
+                        <button
+                            v-if="isOwner && game.status !== 'completed'"
+                            type="button"
+                            @click="finalize"
+                            class="text-sm font-medium text-ink/50 transition hover:text-ink"
+                        >
+                            End game for everyone
+                        </button>
+                        <Link :href="route('games.index')" class="text-sm font-medium text-pine/70 transition hover:text-brass-dark">Back to Games →</Link>
+                    </div>
                 </div>
             </main>
 
-            <!-- Sticky bottom nav (active) -->
+            <!-- Sticky bottom nav (while I'm still playing) -->
             <footer
-                v-if="game.status === 'active'"
+                v-if="playing"
                 class="shrink-0 border-t border-parchment-dark bg-cream px-5 py-4"
                 style="box-shadow: 0 -8px 20px -16px rgba(0, 0, 0, 0.3)"
             >
+                <p v-if="!currentHoleComplete" class="mb-2.5 text-center text-xs text-ink/45">Enter your strokes to continue.</p>
                 <div class="flex gap-3">
                     <button
                         type="button"
