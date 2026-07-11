@@ -189,27 +189,46 @@ class GolfersController extends Controller
 
         $leagueIds = $this->visibleLeagueIds($request);
         $added = 0;
+        $already = 0;
 
-        DB::transaction(function () use ($request, $league, $leagueIds, &$added) {
+        DB::transaction(function () use ($request, $league, $leagueIds, &$added, &$already) {
             foreach ($request->validated()['golfers'] as $row) {
-                $golfer = $this->resolveUser($row, $leagueIds);
+                $golfer = $this->resolveUser($row, $leagueIds, $league);
 
                 if (! $golfer) {
                     continue;
                 }
 
-                $golfer->leagues()->syncWithoutDetaching([
+                $result = $golfer->leagues()->syncWithoutDetaching([
                     $league->id => ['role' => 'player'],
                 ]);
-                $added++;
+
+                // Distinguish a genuine add from someone already on this roster.
+                empty($result['attached']) ? $already++ : $added++;
             }
         });
 
         $league->forgetRosterCache();
 
-        $noun = $added === 1 ? 'golfer' : 'golfers';
+        return back()->with('success', $this->addSummary($added, $already));
+    }
 
-        return back()->with('success', "{$added} {$noun} added.");
+    /**
+     * A human summary of an add-golfers batch, so re-adding someone who's already
+     * on the roster reads as clear feedback instead of a silent "added".
+     */
+    private function addSummary(int $added, int $already): string
+    {
+        $parts = [];
+
+        if ($added > 0) {
+            $parts[] = $added.' '.Str::plural('golfer', $added).' added';
+        }
+        if ($already > 0) {
+            $parts[] = $already.' already on your roster';
+        }
+
+        return $parts === [] ? 'No golfers were added.' : ucfirst(implode(' · ', $parts)).'.';
     }
 
     /**
@@ -219,7 +238,7 @@ class GolfersController extends Controller
      * @param  array<string, mixed>  $row
      * @param  Collection<int, int>  $leagueIds
      */
-    private function resolveUser(array $row, $leagueIds): ?User
+    private function resolveUser(array $row, $leagueIds, League $league): ?User
     {
         if (! empty($row['golfer_id'])) {
             // Reuse: a user already on one of the acting user's leagues.
@@ -250,9 +269,11 @@ class GolfersController extends Controller
         // colliding on the unique email.
         $email = $row['email'] ?? null;
 
-        if ($email) {
+        $rowEmail = $email ? mb_strtolower(trim((string) $email)) : null;
+
+        if ($rowEmail) {
             $existing = User::query()
-                ->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $email))])
+                ->whereRaw('lower(email) = ?', [$rowEmail])
                 ->first();
 
             if ($existing) {
@@ -260,9 +281,33 @@ class GolfersController extends Controller
             }
         }
 
+        $first = strtolower(trim((string) ($row['first_name'] ?? '')));
+        $last = strtolower(trim((string) ($row['last_name'] ?? '')));
+
+        // Guard against a same-named duplicate already on THIS roster. Reuse them
+        // unless both sides carry a *different* email — proof they're genuinely two
+        // people who happen to share a name (a name-only row can't be told apart,
+        // so it always reuses). This is what stops the "add Test User twice" dupe.
+        if ($first !== '' && $last !== '') {
+            $dupe = User::query()
+                ->whereRaw('lower(first_name) = ?', [$first])
+                ->whereRaw('lower(last_name) = ?', [$last])
+                ->whereHas('leagues', fn ($q) => $q->where('leagues.id', $league->id))
+                ->first();
+
+            if ($dupe) {
+                $dupeEmail = $dupe->email ? mb_strtolower(trim($dupe->email)) : null;
+                $distinctPerson = $rowEmail !== null && $dupeEmail !== null && $rowEmail !== $dupeEmail;
+
+                if (! $distinctPerson) {
+                    return $dupe;
+                }
+            }
+        }
+
         return User::create([
-            'first_name' => strtolower((string) $row['first_name']),
-            'last_name' => strtolower((string) $row['last_name']),
+            'first_name' => $first,
+            'last_name' => $last,
             'email' => $email,
             'phone' => $row['phone'] ?? null,
             'password' => null, // roster user, not a login account

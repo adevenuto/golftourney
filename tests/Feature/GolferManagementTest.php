@@ -33,6 +33,47 @@ class GolferManagementTest extends TestCase
         $this->assertDatabaseHas('league_user', ['league_id' => $league->id, 'role' => 'player']);
     }
 
+    public function test_a_name_only_golfer_is_not_duplicated_on_the_same_roster(): void
+    {
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        // A login-less "Test User" (no email) already on this roster.
+        $this->golferIn($league, ['first_name' => 'test', 'last_name' => 'user', 'email' => null]);
+
+        // Re-adding the same name — even with an email — must not create a second.
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['first_name' => 'Test', 'last_name' => 'User', 'email' => 'test@example.com']],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(1, User::query()
+            ->whereRaw('lower(first_name) = ?', ['test'])
+            ->whereRaw('lower(last_name) = ?', ['user'])
+            ->count());
+    }
+
+    public function test_two_different_people_who_share_a_name_can_coexist_via_distinct_emails(): void
+    {
+        $league = League::factory()->create();
+        $admin = $this->adminOf($league);
+
+        $this->golferIn($league, ['first_name' => 'test', 'last_name' => 'user', 'email' => 'first@example.com']);
+
+        // A genuinely different person (own, distinct email) is still allowed.
+        $this->actingAs($admin)
+            ->post(route('golfers.store'), [
+                'golfers' => [['first_name' => 'Test', 'last_name' => 'User', 'email' => 'second@example.com']],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(2, User::query()
+            ->whereRaw('lower(first_name) = ?', ['test'])
+            ->whereRaw('lower(last_name) = ?', ['user'])
+            ->count());
+    }
+
     public function test_each_batch_row_requires_a_name_or_existing_golfer(): void
     {
         $league = League::factory()->create();
