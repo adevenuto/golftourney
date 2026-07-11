@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
         <!-- results -->
         <ul
             v-if="open"
-            class="absolute left-0 right-0 z-30 max-h-80 overflow-auto rounded-xl border border-parchment-dark bg-cream py-1 shadow-xl"
+            class="absolute left-0 right-0 z-50 max-h-80 overflow-auto rounded-xl border border-parchment-dark bg-cream py-1 shadow-xl"
             :class="dropUp ? 'bottom-full mb-1' : 'top-full mt-1'"
         >
             <li

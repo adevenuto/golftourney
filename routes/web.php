@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CoursesController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GamesController;
 use App\Http\Controllers\GolfersController;
 use App\Http\Controllers\HandicapsController;
 use App\Http\Controllers\LeaguesController;
@@ -44,6 +45,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/golfers/{user}/rounds', [RoundsController::class, 'store'])->name('rounds.store');
     Route::put('/rounds/{round}', [RoundsController::class, 'update'])->name('rounds.update');
     Route::delete('/rounds/{round}', [RoundsController::class, 'destroy'])->name('rounds.destroy');
+
+    // Live games (realtime hole-by-hole scorecard, casual/outside leagues).
+    // Authorization is per-action in GamesController (only players; own scores).
+    Route::get('/games', [GamesController::class, 'index'])->name('games.index');
+    Route::post('/games', [GamesController::class, 'store'])->name('games.store');
+    Route::post('/games/join', [GamesController::class, 'join'])->name('games.join');
+    Route::post('/games/{game}/leave', [GamesController::class, 'leave'])->name('games.leave');
+    Route::get('/games/{game}', [GamesController::class, 'show'])->name('games.show');
+    Route::patch('/games/{game}/scores', [GamesController::class, 'updateScore'])->name('games.scores.update');
+    Route::post('/games/{game}/start', [GamesController::class, 'start'])->name('games.start');
+    Route::post('/games/{game}/finish', [GamesController::class, 'finish'])->name('games.finish');
+    Route::post('/games/{game}/reopen', [GamesController::class, 'reopen'])->name('games.reopen');
+    Route::post('/games/{game}/finalize', [GamesController::class, 'finalize'])->name('games.finalize');
+    Route::post('/games/{game}/abandon', [GamesController::class, 'abandon'])->name('games.abandon');
 
     // Profile (Breeze).
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

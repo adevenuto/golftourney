@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     title: { type: String, default: '' },
@@ -8,6 +8,21 @@ const props = defineProps({
 });
 
 const open = ref(props.defaultOpen);
+
+// Clip content while animating/closed so the height transition is clean, but go
+// overflow-visible once fully open so descendant dropdowns (e.g. the course
+// search) aren't cut off. Starts visible when defaultOpen (no transition fires).
+const clip = ref(!props.defaultOpen);
+
+watch(open, (isOpen) => {
+    if (!isOpen) clip.value = true; // clip immediately when collapsing
+});
+
+function onTransitionEnd(e) {
+    if (e.propertyName === 'grid-template-rows') {
+        clip.value = !open.value; // visible only once fully open
+    }
+}
 </script>
 
 <template>
@@ -52,8 +67,9 @@ const open = ref(props.defaultOpen);
         <div
             class="grid transition-[grid-template-rows] duration-300 ease-out"
             :class="open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+            @transitionend="onTransitionEnd"
         >
-            <div class="overflow-hidden">
+            <div :class="clip ? 'overflow-hidden' : 'overflow-visible'">
                 <div class="pt-4">
                     <slot />
                 </div>

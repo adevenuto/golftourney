@@ -109,6 +109,64 @@ class Course extends Model
     }
 
     /**
+     * Per-hole par for a teebox, keyed by hole number (1-based): {1:4, 2:5, …}.
+     * Used to snapshot a game's hole pars (PAR row + score colouring).
+     *
+     * @return array<int, int>
+     */
+    public function holePars(?string $teebox): array
+    {
+        return $this->holeField($teebox, 'par');
+    }
+
+    /**
+     * Per-hole length (yardage) for a teebox, keyed by hole number: {1:507, …}.
+     * Used to snapshot a game's hole yardages for the scorecard's Yards row.
+     *
+     * @return array<int, int>
+     */
+    public function holeLengths(?string $teebox): array
+    {
+        return $this->holeField($teebox, 'length');
+    }
+
+    /**
+     * Per-hole integer values for a teebox field ('par' | 'length'), keyed by
+     * hole number (1-based). Empty if the tee or its hole data is missing.
+     *
+     * @return array<int, int>
+     */
+    private function holeField(?string $teebox, string $field): array
+    {
+        $match = null;
+        foreach ($this->teeboxes() as $tee) {
+            if ($teebox && strcasecmp((string) ($tee['name'] ?? ''), $teebox) === 0) {
+                $match = $tee;
+                break;
+            }
+        }
+        $match ??= $this->teeboxes()[0] ?? null;
+
+        if (! $match || ! is_array($match['holes'] ?? null)) {
+            return [];
+        }
+
+        $values = [];
+        $i = 0;
+        foreach ($match['holes'] as $key => $hole) {
+            $i++;
+            $n = preg_match('/(\d+)/', (string) $key, $m) ? (int) $m[1] : $i;
+            $value = (int) ($hole[$field] ?? 0);
+            if ($n >= 1 && $value > 0) {
+                $values[$n] = $value;
+            }
+        }
+        ksort($values);
+
+        return $values;
+    }
+
+    /**
      * The handicap-scoring context for a teebox: normalized course rating,
      * slope, par, and hole count. Null if the teebox or its data is missing.
      * Used to snapshot a casual round's course onto the round.
