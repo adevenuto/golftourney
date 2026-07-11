@@ -210,7 +210,10 @@ class GolfersController extends Controller
 
         $league->forgetRosterCache();
 
-        return back()->with('success', $this->addSummary($added, $already));
+        // A real add is a success; "already on your roster" (nothing new) is a warning.
+        $type = $added > 0 ? 'success' : 'warning';
+
+        return back()->with($type, $this->addSummary($added, $already));
     }
 
     /**

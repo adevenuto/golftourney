@@ -241,39 +241,40 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 class="shrink-0 rounded-b-[2rem] px-5 pt-5 pb-6 text-cream"
                 style="background: radial-gradient(120% 90% at 50% -12%, #1f6146 0%, #14432f 48%, #0d2e20 100%)"
             >
-                <div class="flex items-center justify-between">
-                    <Link :href="route('games.index')" class="inline-flex items-center gap-1 text-sm font-medium text-cream/80 transition hover:text-cream" aria-label="Back to games">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                        Games
+                <div class="relative flex min-h-[2.25rem] items-center">
+                    <Link :href="route('games.index')" class="relative z-10 inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold transition border rounded-full shrink-0 border-cream/25 text-cream/85 hover:border-brass hover:text-brass-light sm:text-sm" aria-label="Back to games">
+                        <svg class="w-2 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        Back
                     </Link>
-                    <div class="flex items-center gap-3.5">
+
+                    <!-- Course name — absolutely centered so the side widths never nudge it off-centre; truncates before the buttons. -->
+                    <div class="pointer-events-none absolute left-1/2 top-1/2 max-w-[52%] -translate-x-1/2 -translate-y-1/2 text-center">
+                        <p class="text-sm font-semibold leading-tight capitalize truncate">{{ game.course_name }}</p>
+                        <p v-if="game.course_sub" class="truncate text-[11px] capitalize leading-tight text-cream/55">{{ game.course_sub }}</p>
+                    </div>
+
+                    <div class="relative z-10 ml-auto flex shrink-0 items-center gap-3.5">
                         <!-- Host: throw in the towel (white flag) → fills solid on hover, confirm first. Everyone else can share. -->
-                        <button v-if="isOwner && game.status !== 'completed'" type="button" @click="confirmCancel = true" class="group text-cream/75 transition hover:text-cream" aria-label="Cancel game">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path class="fill-transparent transition-colors group-hover:fill-cream" stroke-linecap="round" stroke-linejoin="round" d="M4 5h13l-2.5 4L17 14H4z" />
+                        <button v-if="isOwner && game.status !== 'completed'" type="button" @click="confirmCancel = true" class="transition group text-cream/75 hover:text-cream" aria-label="Cancel game">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path class="transition-colors fill-transparent group-hover:fill-cream" stroke-linecap="round" stroke-linejoin="round" d="M4 5h13l-2.5 4L17 14H4z" />
                                 <path stroke-linecap="round" d="M4 21V4" />
                             </svg>
                         </button>
-                        <button v-else-if="isOwner" type="button" @click="share" class="text-cream/80 transition hover:text-cream" aria-label="Share game">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
+                        <button v-else-if="isOwner" type="button" @click="share" class="transition text-cream/80 hover:text-cream" aria-label="Share game">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zm0 8a3 3 0 10-3 3 3 3 0 003-3zM6 15a3 3 0 10-3-3 3 3 0 003 3z" /></svg>
                         </button>
                         <!-- Scorecard — larger + more prominent (easy phone tap target) -->
-                        <button v-if="game.status !== 'lobby'" type="button" @click="scorecardOpen = true" class="-m-1 p-1 text-cream transition hover:text-brass-light" aria-label="Open scorecard">
-                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
+                        <button v-if="game.status !== 'lobby'" type="button" @click="scorecardOpen = true" class="p-1 -m-1 transition text-cream hover:text-brass-light" aria-label="Open scorecard">
+                            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="16" rx="2" /><path stroke-linecap="round" d="M3 9h18M9 9v11M15 9v11" /></svg>
                         </button>
                     </div>
                 </div>
 
-                <!-- Course name -->
-                <div class="mt-4 text-center">
-                    <p class="truncate text-base font-semibold capitalize">{{ game.course_name }}</p>
-                    <p v-if="game.course_sub" class="truncate text-xs capitalize text-cream/50">{{ game.course_sub }}</p>
-                </div>
-
                 <!-- Players -->
-                <div class="mt-4 flex flex-wrap items-start justify-center gap-6">
-                    <div v-for="p in game.players" :key="p.user_id" class="flex w-16 flex-col items-center gap-2 text-center">
-                        <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="lg" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
+                <div class="flex flex-wrap items-start justify-center gap-6 mt-5">
+                    <div v-for="p in game.players" :key="p.user_id" class="flex flex-col items-center gap-2 text-center w-14">
+                        <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="md" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
                         <span class="w-full truncate text-[13px] font-medium capitalize text-cream/90">{{ p.first_name }}</span>
                     </div>
                 </div>
@@ -281,17 +282,17 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 <!-- Stat band (while I'm still playing) -->
                 <div v-if="playing" class="mt-6 grid grid-cols-3 items-center rounded-2xl bg-[#0b241a]/70 px-3 py-4 text-center">
                     <div>
-                        <p class="font-display text-3xl font-semibold leading-none tabular-nums text-brass-light">{{ toParDisplay }}</p>
+                        <p class="text-3xl font-semibold leading-none font-display tabular-nums text-brass-light">{{ toParDisplay }}</p>
                         <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">To Par</p>
                     </div>
                     <div>
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-cream/85">Hole</p>
-                        <p class="font-display text-6xl font-semibold leading-none tabular-nums">{{ currentHole }}</p>
+                        <p class="mb-1 text-xs font-semibold tracking-widest uppercase text-cream/85">Hole</p>
+                        <p class="text-6xl font-semibold leading-none font-display tabular-nums">{{ currentHole }}</p>
                         <p class="mt-1.5 text-[11px] font-semibold uppercase tracking-widest text-cream/60">Par {{ parFor(currentHole) ?? '—' }}</p>
                         <p v-if="lengthFor(currentHole)" class="mt-0.5 text-[10px] font-medium tabular-nums text-cream/40">{{ lengthFor(currentHole) }} yds</p>
                     </div>
                     <div>
-                        <p class="font-display text-3xl font-semibold leading-none tabular-nums">{{ myStrokes ?? '—' }}</p>
+                        <p class="text-3xl font-semibold leading-none font-display tabular-nums">{{ myStrokes ?? '—' }}</p>
                         <p class="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-cream/45">Score</p>
                     </div>
                 </div>
@@ -309,20 +310,20 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                     </button>
 
                     <!-- Live roster — players appear here by name as they join -->
-                    <div class="mx-auto mt-8 max-w-xs">
+                    <div class="max-w-xs mx-auto mt-8">
                         <p class="text-[11px] font-medium uppercase tracking-widest text-ink/40">
                             {{ game.players.length }} {{ game.players.length === 1 ? 'player' : 'players' }}
                         </p>
                         <ul class="mt-3 space-y-2">
-                            <li v-for="p in game.players" :key="p.user_id" class="flex items-center gap-3 rounded-xl border border-parchment-dark bg-parchment/40 px-3 py-2 text-left">
+                            <li v-for="p in game.players" :key="p.user_id" class="flex items-center gap-3 px-3 py-2 text-left border rounded-xl border-parchment-dark bg-parchment/40">
                                 <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="sm" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
-                                <span class="min-w-0 flex-1 truncate text-sm font-medium capitalize text-ink">{{ fullName(p) }}</span>
+                                <span class="flex-1 min-w-0 text-sm font-medium capitalize truncate text-ink">{{ fullName(p) }}</span>
                                 <span v-if="p.is_owner" class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-brass-dark">Host</span>
                             </li>
                         </ul>
                     </div>
 
-                    <div v-if="isOwner" class="mt-8 flex flex-col gap-3">
+                    <div v-if="isOwner" class="flex flex-col gap-3 mt-8">
                         <!-- Solo escape hatch while waiting on others -->
                         <button v-if="!canStart" type="button" @click="start" class="w-full rounded-full bg-pine px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99]">
                             Play solo
@@ -332,15 +333,15 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                             type="button"
                             :disabled="!canStart"
                             @click="start"
-                            class="w-full rounded-full px-6 py-3 text-sm font-semibold transition disabled:cursor-default"
+                            class="w-full px-6 py-3 text-sm font-semibold transition rounded-full disabled:cursor-default"
                             :class="canStart ? 'bg-pine text-cream hover:bg-pine-light' : 'border border-pine/20 text-pine/50'"
                         >
                             {{ canStart ? 'Start game' : 'Waiting for players…' }}
                         </button>
                     </div>
-                    <div v-else class="mt-8 flex flex-col gap-2">
+                    <div v-else class="flex flex-col gap-2 mt-8">
                         <p class="text-sm text-ink/50">The host will start the game.</p>
-                        <button type="button" @click="leave" class="text-sm font-medium text-ink/50 transition hover:text-red-700">Leave game</button>
+                        <button type="button" @click="leave" class="text-sm font-medium transition text-ink/50 hover:text-red-700">Leave game</button>
                     </div>
                 </div>
 
@@ -361,10 +362,10 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                 <!-- Results — I've finished (or the whole game is complete) -->
                 <div v-else class="px-5 py-8">
                     <div class="text-center">
-                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pine/10 text-pine">
+                        <div class="flex items-center justify-center mx-auto rounded-full h-14 w-14 bg-pine/10 text-pine">
                             <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
-                        <h2 class="mt-4 font-display text-2xl font-semibold text-pine">{{ game.status === 'completed' ? 'Game finished' : 'You’re all done' }}</h2>
+                        <h2 class="mt-4 text-2xl font-semibold font-display text-pine">{{ game.status === 'completed' ? 'Game finished' : 'You’re all done' }}</h2>
                         <p class="mt-1 text-sm text-ink/50">
                             {{ game.status === 'completed'
                                 ? 'Every round was posted to each player’s handicap.'
@@ -372,40 +373,40 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         </p>
                     </div>
 
-                    <ul class="mx-auto mt-6 max-w-xs divide-y divide-parchment-dark">
+                    <ul class="max-w-xs mx-auto mt-6 divide-y divide-parchment-dark">
                         <li v-for="p in game.players" :key="p.user_id" class="flex items-center justify-between gap-3 py-3">
                             <span class="inline-flex min-w-0 items-center gap-2.5">
                                 <PlayerAvatar :first-name="p.first_name" :last-name="p.last_name" size="sm" :online="isOnline(p.user_id)" :ring-color="ringFor(p.user_id)" />
                                 <span class="min-w-0">
-                                    <span class="block truncate text-sm font-medium capitalize text-ink">{{ fullName(p) }}</span>
+                                    <span class="block text-sm font-medium capitalize truncate text-ink">{{ fullName(p) }}</span>
                                     <span class="text-[11px]" :class="playerDone(p) ? 'font-medium text-pine/70' : 'text-ink/40'">
                                         {{ playerDone(p) ? 'Finished' : 'In-round' }}
                                     </span>
                                 </span>
                             </span>
-                            <span class="shrink-0 font-display text-lg font-semibold tabular-nums text-pine">{{ grossOf(p) || '—' }}</span>
+                            <span class="text-lg font-semibold shrink-0 font-display tabular-nums text-pine">{{ grossOf(p) || '—' }}</span>
                         </li>
                     </ul>
 
-                    <div class="mt-8 flex flex-col items-center gap-3">
+                    <div class="flex flex-col items-center gap-3 mt-8">
                         <button
                             v-if="game.status === 'active'"
                             type="button"
                             @click="reopen"
                             class="inline-flex items-center gap-1.5 rounded-full bg-pine px-6 py-2.5 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99]"
                         >
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                             Resume my card
                         </button>
                         <button
                             v-if="isOwner && game.status !== 'completed'"
                             type="button"
                             @click="finalize"
-                            class="text-sm font-medium text-ink/50 transition hover:text-ink"
+                            class="text-sm font-medium transition text-ink/50 hover:text-ink"
                         >
                             End game for everyone
                         </button>
-                        <Link :href="route('games.index')" class="text-sm font-medium text-pine/70 transition hover:text-brass-dark">Back to Games →</Link>
+                        <Link :href="route('games.index')" class="text-sm font-medium transition text-pine/70 hover:text-brass-dark">Back to Games →</Link>
                     </div>
                 </div>
             </main>
@@ -413,7 +414,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
             <!-- Sticky bottom nav (while I'm still playing) -->
             <footer
                 v-if="playing"
-                class="shrink-0 border-t border-parchment-dark bg-cream px-5 py-4"
+                class="px-5 py-4 border-t shrink-0 border-parchment-dark bg-cream"
                 style="box-shadow: 0 -8px 20px -16px rgba(0, 0, 0, 0.3)"
             >
                 <p v-if="!currentHoleComplete" class="mb-2.5 text-center text-xs text-ink/45">Enter your strokes to continue.</p>
@@ -424,7 +425,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         @click="currentIdx--"
                         class="flex-[1] inline-flex items-center justify-center gap-1 rounded-full border border-pine/25 py-3.5 text-sm font-semibold text-pine transition hover:border-brass hover:text-brass-dark disabled:opacity-30"
                     >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Back
                     </button>
                     <button
@@ -434,7 +435,7 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
                         class="flex-[3] inline-flex items-center justify-center gap-1.5 rounded-full bg-pine py-3.5 text-sm font-semibold text-cream transition hover:bg-pine-light active:scale-[0.99] disabled:opacity-50"
                     >
                         {{ primaryLabel }}
-                        <svg v-if="!isLastHole" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        <svg v-if="!isLastHole" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                 </div>
             </footer>
@@ -443,10 +444,10 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
         <!-- Scorecard modal -->
         <Modal :show="scorecardOpen" @close="scorecardOpen = false" max-width="2xl">
             <div class="overflow-hidden rounded-lg bg-cream">
-                <div class="flex items-center justify-between border-b border-parchment-dark px-4 py-4">
-                    <h2 class="font-display text-lg font-semibold text-pine">Scorecard</h2>
-                    <button type="button" @click="scorecardOpen = false" class="text-ink/40 transition hover:text-ink" aria-label="Close">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                <div class="flex items-center justify-between px-4 py-4 border-b border-parchment-dark">
+                    <h2 class="text-lg font-semibold font-display text-pine">Scorecard</h2>
+                    <button type="button" @click="scorecardOpen = false" class="transition text-ink/40 hover:text-ink" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
                     </button>
                 </div>
                 <Scorecard
@@ -464,13 +465,13 @@ onBeforeUnmount(() => { if (window.Echo) window.Echo.leave(`game.${game.id}`); }
 
         <!-- Confirm cancel (host) -->
         <Modal :show="confirmCancel" @close="confirmCancel = false" max-width="sm">
-            <div class="overflow-hidden rounded-lg bg-cream p-6 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V4m0 1h13l-2.5 4L17 14H4" /></svg>
+            <div class="p-6 overflow-hidden text-center rounded-lg bg-cream">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto text-red-600 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V4m0 1h13l-2.5 4L17 14H4" /></svg>
                 </div>
-                <h2 class="mt-4 font-display text-xl font-semibold text-pine">Call it off?</h2>
+                <h2 class="mt-4 text-xl font-semibold font-display text-pine">Call it off?</h2>
                 <p class="mt-1.5 text-sm text-ink/60">This ends the game for everyone and discards all scores — no rounds will be posted. This can’t be undone.</p>
-                <div class="mt-6 flex gap-3">
+                <div class="flex gap-3 mt-6">
                     <button type="button" @click="confirmCancel = false" class="flex-1 rounded-full border border-pine/20 py-2.5 text-sm font-semibold text-pine transition hover:border-brass">Keep playing</button>
                     <button type="button" @click="doCancel" class="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-semibold text-cream transition hover:bg-red-700">Cancel game</button>
                 </div>
