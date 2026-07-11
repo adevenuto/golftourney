@@ -87,6 +87,11 @@ jobs:
           cache: 'npm'
 
       - name: Build production artifacts
+        env:
+          # Vite bakes these into the client bundle at build time; without them
+          # Echo has no key and realtime silently no-ops in prod.
+          VITE_PUSHER_APP_KEY: ${{ secrets.VITE_PUSHER_APP_KEY }}
+          VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
         run: |
           composer install --no-dev --optimize-autoloader --no-interaction --no-progress
           npm ci
